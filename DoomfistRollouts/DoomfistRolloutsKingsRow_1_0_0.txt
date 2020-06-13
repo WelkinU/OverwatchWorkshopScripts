@@ -1,0 +1,987 @@
+settings
+{
+	main
+	{
+		Description: "Practice Doomfist rollouts on King's Row. Complete the kill within the time limit to move to the next checkpoint. Created by WelkinTern, multilevel framework inspired by Diaz's original framework."
+	}
+
+	lobby
+	{
+		Max Team 2 Players: 0
+	}
+
+	modes
+	{
+		Assault
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Control
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Escort
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Hybrid
+		{
+			enabled maps
+			{
+				King's Row
+			}
+		}
+
+		General
+		{
+			Game Mode Start: Manual
+			Hero Limit: Off
+			Kill Cam: Off
+			Kill Feed: Off
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Ana
+			{
+				Sleep Dart Cooldown Time: 10%
+			}
+
+			Doomfist
+			{
+				Ultimate Ability Meteor Strike: Off
+			}
+
+			Pharah
+			{
+				Damage Dealt: 70%
+				Hover Jets Unlimited Fuel: On
+			}
+
+			Soldier: 76
+			{
+				Damage Dealt: 70%
+			}
+
+			Widowmaker
+			{
+				Damage Dealt: 80%
+			}
+
+			enabled heroes
+			{
+				Doomfist
+			}
+		}
+	}
+}
+
+variables
+{
+	global:
+		0: CPStartLocation
+		1: CPEndLocation
+		3: CPHero
+		4: CPRadiusConstant
+		5: CPMaxTime
+		6: CPLevelOrigins
+		7: TempIterator
+		8: LevelSelectEffectsCreated
+		9: BestTimesArray
+		10: BestTimePlayerNamesArray
+		11: InitialSpawnFacingDirection
+
+	player:
+		0: CurrentCP
+		1: CPTimer
+		2: CurrentLevel
+		3: LevelTimer
+		5: OppositeTeamSameSlotPlayer
+}
+
+subroutines
+{
+	0: RespawnPlayer
+	1: CreateLevelSelectEffects
+	2: GoNextCP
+}
+
+disabled rule("Initial Setup")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("---->>> CHECKPOINT LOCATIONS - MODIFY CHECKPOINT PARAMETERS HERE AND ONLY HERE <<<----")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.CPMaxTime = 3.750;
+		Global.CPRadiusConstant = 2;
+		"Initial Spawn Position Goes Here - Level Origins Will Be Appended To Later"
+		Global.CPLevelOrigins = Array(Vector(-3.600, 5.200, 2.660));
+		Global.InitialSpawnFacingDirection = Vector(-0.560, 0, -0.830);
+		Global.TempIterator = 0;
+		"Level 1"
+		Global.TempIterator += 1;
+		Global.CPStartLocation[Global.TempIterator] = Array(Vector(-18, 6, -0.440), Vector(3.900, 6, -3.850), Vector(2.200, 0, -23.200),
+			Vector(2.240, 0, -23.200), Vector(4.350, 6, -35.600), Vector(-29.700, 9, -15.470), Vector(-33.600, 9, -34.200), Vector(-82.300,
+			6, -15.900), Vector(-106.500, 0.430, -7.250), Vector(-60, 12.660, -11), Vector(-113, 6, 5.500), Vector(-99, 1, -6.600));
+		Modify Global Variable(CPLevelOrigins, Append To Array, Global.CPStartLocation[Global.TempIterator][0]);
+		Global.CPEndLocation[Global.TempIterator] = Array(Vector(-9, 6, -42.600), Vector(-17.300, 12, -28), Vector(-27.830, 6, -46.300),
+			Vector(-35.340, 0, -23.900), Vector(-4, 0, -16.600), Vector(6.510, 6.110, -27.800), Vector(-79, 4.500, -40), Vector(-97, 1,
+			-14.200), Vector(-80.600, 4.500, -40.700), Vector(-80, 12, -23), Vector(-132.600, 7, 33.300), Vector(-130.400, 6.310, 10.320));
+		Global.CPHero[Global.TempIterator] = Array(Hero(Hanzo), Hero(Pharah), Hero(Widowmaker), Hero(Zenyatta), Hero(Ana), Hero(
+			Widowmaker), Hero(Hanzo), Hero(Lúcio), Hero(Widowmaker), Hero(Pharah), Hero(Hanzo), Hero(McCree));
+		"Level 2"
+		Global.TempIterator += 1;
+		Global.CPStartLocation[Global.TempIterator] = Array(Vector(2.780, 0, -6.800), Vector(0, 0, 0), Vector(-13, 0, -0.640), Vector(
+			2.200, 0, -23.220), Vector(-25.230, 0.050, -22), Vector(-14.700, -0.100, -29), Vector(-41.770, 7.950, -13.520), Vector(-60,
+			12.660, -10.900), Vector(-141.700, 7, 9.800), Vector(-144.200, 0, 43.600));
+		Modify Global Variable(CPLevelOrigins, Append To Array, Global.CPStartLocation[Global.TempIterator][0]);
+		Global.CPEndLocation[Global.TempIterator] = Array(Vector(4.200, 6, -35), Vector(-10.300, 6, -42.300), Vector(3.840, 6, -36),
+			Vector(-34, 9, -34), Vector(3.420, 6, -37), Vector(-29.500, 9, -15.400), Vector(-60, 12.660, -11), Vector(-64.700, -0.330,
+			-29.500), Vector(-159, 0, 15.250), Vector(-130.400, 6.300, 12.100));
+		Global.CPHero[Global.TempIterator] = Array(Hero(Soldier: 76), Hero(Hanzo), Hero(Soldier: 76), Hero(Widowmaker), Hero(Soldier: 76),
+			Hero(Widowmaker), Null, Hero(Ana), Hero(Ana), Hero(Ashe));
+		"Best Times HUD's - Make one of these for each level you add"
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.BestTimesArray[1] != Null), Custom String(""), Null, Custom String(
+			"Level 1: {0} {1}", Global.BestTimePlayerNamesArray[1], Global.BestTimesArray[1]), Right, 1, White, White, White,
+			Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.BestTimesArray[2] != Null), Custom String(""), Null, Custom String(
+			"Level 2: {0} {1}", Global.BestTimePlayerNamesArray[2], Global.BestTimesArray[2]), Right, 2, White, White, Yellow,
+			Visible To and String, Default Visibility);
+		"Unused as there is no lvl3 right now"
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.BestTimesArray[3] != Null), Custom String(""), Null, Custom String(
+			"Level 3: {0} {1}", Global.BestTimePlayerNamesArray[3], Global.BestTimesArray[3]), Right, 3, White, White, Yellow,
+			Visible To and String, Default Visibility);
+	}
+}
+
+rule("Misc. Setup")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Disable Built-In Game Mode Completion;
+		Disable Built-In Game Mode Scoring;
+		disabled Disable Built-In Game Mode Respawning(All Players(All Teams));
+		Set Match Time(3599);
+		"Use this to hide the default game HUD"
+		Create HUD Text(All Players(All Teams), Null, Custom String(
+			"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"),
+			Custom String(
+			"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"),
+			Top, 0, White, White, White, Visible To and String, Default Visibility);
+	}
+}
+
+rule("Initialize Player Variables and HUD when player joins match")
+{
+	event
+	{
+		Player Joined Match;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) != True;
+	}
+
+	actions
+	{
+		Event Player.CurrentCP = -1;
+		"Checkpoint Number HUD"
+		Create HUD Text(Filtered Array(Event Player, Event Player.CurrentCP >= 0), Custom String("Level {2} Checkpoint: {0}/{1}",
+			Event Player.CurrentCP, Count Of(Global.CPStartLocation[Event Player.CurrentLevel]), Event Player.CurrentLevel), Null, Null,
+			Top, -3, White, White, White, Visible To and String, Default Visibility);
+		"CP Timer HUD"
+		Create HUD Text(Filtered Array(Event Player, Event Player.CurrentCP >= 0), Custom String("Run Time: {1}  CP {0}",
+			Event Player.CPTimer, Event Player.LevelTimer), Null, Null, Top, -2, White, White, White, Visible To and String,
+			Default Visibility);
+		"Create Circles / Text / Icon - These will be dynamically updated as the player progresses through their level. These are hidden during level selection stage."
+		Create Effect(Filtered Array(Event Player, Event Player.CurrentCP >= 0), Ring, Purple,
+			Global.CPStartLocation[Event Player.CurrentLevel][Event Player.CurrentCP], Global.CPRadiusConstant,
+			Visible To Position and Radius);
+		Create Effect(Filtered Array(Event Player, Event Player.CurrentCP >= 0), Ring, Purple,
+			Global.CPEndLocation[Event Player.CurrentLevel][Event Player.CurrentCP], Global.CPRadiusConstant,
+			Visible To Position and Radius);
+		Create In-World Text(Filtered Array(Event Player, Event Player.CurrentCP >= 0 && Event Player.CurrentCP < Count Of(
+			Global.CPStartLocation[Event Player.CurrentLevel])), Custom String("Here"),
+			Global.CPEndLocation[Event Player.CurrentLevel][Event Player.CurrentCP], 2, Do Not Clip, Visible To Position and String, White,
+			Default Visibility);
+		Create Icon(Filtered Array(Event Player, Event Player.CurrentCP >= 0 && Event Player.CurrentCP < Count Of(
+			Global.CPStartLocation[Event Player.CurrentLevel])), Global.CPEndLocation[Event Player.CurrentLevel][Event Player.CurrentCP],
+			Flag, Visible To and Position, Yellow, True);
+		"Help HUD Stuff"
+		Create HUD Text(Event Player, Custom String(""), Null, Custom String(
+			"Workshop Code: TEATW\r\nQuick Reset: Reload\r\nSkip Checkpoint: Jump + Interact\r\nRestart From Beginning: Ult + Interact"),
+			Left, 2, White, White, White, Visible To and String, Default Visibility);
+		disabled If(Event Player == Host Player);
+		"Debug HUD Stuff"
+		disabled Create HUD Text(Event Player, Custom String("Position: {0}", Position Of(Event Player)), Null, Null, Right, 5, White, White, White,
+			Visible To and String, Default Visibility);
+		disabled Create HUD Text(Event Player, Custom String("Facing: {0}", Facing Direction Of(Event Player)), Null, Null, Right, 6, White, White,
+			White, Visible To and String, Default Visibility);
+		disabled End;
+	}
+}
+
+rule("Initialize Level Selection Effects / Text / Flags (CP = -1)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Event Player.CurrentCP == -1;
+		Is Dummy Bot(Event Player) != True;
+	}
+
+	actions
+	{
+		Teleport(Event Player, Global.CPLevelOrigins[0]);
+		Call Subroutine(CreateLevelSelectEffects);
+		Set Facing(Event Player, Global.InitialSpawnFacingDirection, To World);
+	}
+}
+
+disabled rule("Level Selection Stuff")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Handle Player Level Selection")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) != True;
+		Event Player.CurrentCP == -1;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait(0.300, Ignore Condition);
+		For Player Variable(Event Player, Z, 1, Count Of(Global.CPLevelOrigins), 1);
+			If(Is On Ground(Event Player) && Distance Between(Position Of(Event Player), Global.CPLevelOrigins[Event Player.Z])
+				<= Global.CPRadiusConstant);
+				Event Player.CurrentCP = 0;
+				Event Player.CurrentLevel = Event Player.Z;
+				Wait(0.100, Ignore Condition);
+				Big Message(Event Player, Custom String("Eliminate the target within the time limit!"));
+				Kill(Event Player, Null);
+				Abort;
+			End;
+		End;
+		Loop If Condition Is True;
+	}
+}
+
+disabled rule("Game Architecture Rules")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Respawn Player When They Die (Next Rule Handles Bot Deaths)")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) != True;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, CPTimer);
+		"If they were killed by a bot (ex. McCree High Noon), wait a little before respawning to show player why they died."
+		If(Attacker != Event Player);
+			Wait(1, Ignore Condition);
+		End;
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Destroy Bot When Killed")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Destroy Dummy Bot(Team Of(Event Player), Slot Of(Event Player));
+	}
+}
+
+rule("Detect When Player Has Left Circle and Start Rollout Timer and Start Level Timer if first CP")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) != True;
+		Distance Between(Position Of(Event Player), Global.CPStartLocation[Event Player.CurrentLevel][Event Player.CurrentCP])
+			> Global.CPRadiusConstant;
+	}
+
+	actions
+	{
+		Wait(0.250, Abort When False);
+		Event Player.CPTimer = 0;
+		Chase Player Variable At Rate(Event Player, CPTimer, 10000, 1, Destination and Rate);
+		"start level timer on first CP"
+		If(Event Player.CurrentCP == 0);
+			Event Player.LevelTimer = 0;
+			Chase Player Variable At Rate(Event Player, LevelTimer, 10000, 1, Destination and Rate);
+		End;
+	}
+}
+
+rule("Bot Not Destroyed In Time")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CPTimer > Global.CPMaxTime;
+		Is Dummy Bot(Event Player) != True;
+		"Stop this rule from executing if CP > # CP's in level (CP location arrays will be null if CP > #CP's in level)"
+		Event Player.CurrentCP < Count Of(Global.CPStartLocation[Event Player.CurrentLevel]);
+		Is In Spawn Room(Event Player) != True;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, CPTimer);
+		Call Subroutine(RespawnPlayer);
+		Small Message(Event Player, Custom String("Didn't complete the rollout in time!"));
+	}
+}
+
+rule("Advance To Next CP - If Bot Killed (Within Time Limit)")
+{
+	event
+	{
+		Player Dealt Final Blow;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		disabled Is Alive(Event Player) == True;
+		Is Dummy Bot(Event Player) != True;
+	}
+
+	actions
+	{
+		Call Subroutine(GoNextCP);
+	}
+}
+
+rule("Advance To Next CP - If Player Is In Checkpoint and Bot for that point is NULL")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) != True;
+		"Bot for this point is NULL"
+		Global.CPHero[Event Player.CurrentLevel][Event Player.CurrentCP] == Null;
+		"Is in CP end circle"
+		Distance Between(Position Of(Event Player), Global.CPEndLocation[Event Player.CurrentLevel][Event Player.CurrentCP])
+			<= Global.CPRadiusConstant;
+		Event Player.CurrentCP >= 0;
+		"Stop this rule from executing if CP > # CP's in level (CP location arrays will be null if CP > #CP's in level)"
+		Event Player.CurrentCP < Count Of(Global.CPStartLocation[Event Player.CurrentLevel]);
+	}
+
+	actions
+	{
+		Small Message(Event Player, Custom String("Arrived at point!"));
+		Call Subroutine(GoNextCP);
+	}
+}
+
+rule("Destroy a player's dummy bot when they leave the game")
+{
+	event
+	{
+		Player Left Match;
+		All;
+		Doomfist;
+	}
+
+	actions
+	{
+		Destroy Dummy Bot(Opposite Team Of(Team Of(Event Player)), Slot Of(Event Player));
+	}
+}
+
+disabled rule("Additional Convenience Features")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Respawn Player When They Use R Key")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Reload) == True;
+		Is In Spawn Room(Event Player) != True;
+	}
+
+	actions
+	{
+		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Jump + Interact To Skip CP")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Jump) == True;
+		Is In Spawn Room(Event Player) != True;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, LevelTimer);
+		Event Player.LevelTimer = 0;
+		Small Message(Event Player, Custom String("Run Over!"));
+		Event Player.CurrentCP += 1;
+		If(Event Player.CurrentCP >= Count Of(Global.CPStartLocation[Event Player.CurrentLevel]));
+			Event Player.CurrentCP = 0;
+		End;
+		Kill(Event Player, Null);
+		Wait(0.250, Ignore Condition);
+	}
+}
+
+rule("Ultimate + Interact To Restart")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Ultimate) == True;
+		Is Dummy Bot(Event Player) != True;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, CPTimer);
+		Stop Chasing Player Variable(Event Player, LevelTimer);
+		Event Player.LevelTimer = 0;
+		Event Player.CurrentCP = -1;
+		Teleport(Event Player, Global.CPLevelOrigins[0]);
+	}
+}
+
+disabled rule("Subroutines")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Sub0: RespawnPlayer")
+{
+	event
+	{
+		Subroutine;
+		RespawnPlayer;
+	}
+
+	actions
+	{
+		"To make upper cooldown look like its resetting properly if used for final damage"
+		Stop Holding Button(Event Player, Ability 1);
+		Destroy Dummy Bot(Opposite Team Of(Team Of(Event Player)), Slot Of(Event Player));
+		Stop Chasing Player Variable(Event Player, CPTimer);
+		Event Player.CPTimer = 0;
+		disabled Wait(0.100, Ignore Condition);
+		Respawn(Event Player);
+		Wait(0.100, Ignore Condition);
+		"Handle special case of first point"
+		If(Event Player.CurrentCP == -1);
+			Teleport(Event Player, Global.CPLevelOrigins[0]);
+			Abort;
+		End;
+		Teleport(Event Player, Global.CPStartLocation[Event Player.CurrentLevel][Event Player.CurrentCP]);
+		Set Facing(Event Player, Direction Towards(Eye Position(Event Player),
+			Global.CPEndLocation[Event Player.CurrentLevel][Event Player.CurrentCP]), To World);
+		If(Global.CPHero[Event Player.CurrentLevel][Event Player.CurrentCP] != Null);
+			Create Dummy Bot(Global.CPHero[Event Player.CurrentLevel][Event Player.CurrentCP], Opposite Team Of(Team Of(Event Player)),
+				Slot Of(Event Player), Global.CPEndLocation[Event Player.CurrentLevel][Event Player.CurrentCP], Direction Towards(
+				Global.CPEndLocation[Event Player.CurrentLevel][Event Player.CurrentCP],
+				Global.CPStartLocation[Event Player.CurrentLevel][Event Player.CurrentCP]));
+		End;
+		disabled Wait(0.100, Ignore Condition);
+		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+	}
+}
+
+rule("Sub1: CreateLevelSelectEffects - Create World Circles/Text For Origin Circles")
+{
+	event
+	{
+		Subroutine;
+		CreateLevelSelectEffects;
+	}
+
+	actions
+	{
+		Abort If(Global.LevelSelectEffectsCreated == True);
+		For Global Variable(TempIterator, 1, Count Of(Global.CPLevelOrigins), 1);
+			Create Effect(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == -1), Ring, White,
+				Global.CPLevelOrigins[Global.TempIterator], Global.CPRadiusConstant, Visible To);
+			Create In-World Text(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == -1), Custom String(
+				"Level {0} Start", Global.TempIterator), Global.CPLevelOrigins[Global.TempIterator], 2, Do Not Clip, Visible To, White,
+				Default Visibility);
+			Create Icon(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == -1),
+				Global.CPLevelOrigins[Global.TempIterator], Flag, Visible To, Yellow, True);
+			Wait(0.050, Ignore Condition);
+		End;
+		Global.LevelSelectEffectsCreated = True;
+	}
+}
+
+rule("Sub2: GoNextCP - Also handles end of run stuff")
+{
+	event
+	{
+		Subroutine;
+		GoNextCP;
+	}
+
+	actions
+	{
+		Event Player.CurrentCP += 1;
+		Stop Chasing Player Variable(Event Player, CPTimer);
+		"Finished Level"
+		If(Event Player.CurrentCP + 0 >= Count Of(Global.CPStartLocation[Event Player.CurrentLevel]));
+			Stop Chasing Player Variable(Event Player, LevelTimer);
+			If(Event Player.LevelTimer != 0);
+				"If player beat best time for the level, update the best time/player"
+				If(
+					Global.BestTimesArray[Event Player.CurrentLevel] == Null || Global.BestTimesArray[Event Player.CurrentLevel] > Event Player.LevelTimer);
+					Global.BestTimesArray[Event Player.CurrentLevel] = Event Player.LevelTimer;
+					Global.BestTimePlayerNamesArray[Event Player.CurrentLevel] = Event Player;
+				End;
+				Big Message(All Players(All Teams), Custom String("{0} finished level {1} in {2}sec!", Event Player, Event Player.CurrentLevel,
+					Event Player.LevelTimer));
+				Wait(3, Ignore Condition);
+			End;
+			Big Message(Event Player, Custom String("Use Ultimate + Interact To Restart!"));
+		Else;
+			Call Subroutine(RespawnPlayer);
+		End;
+	}
+}
+
+disabled rule("Bot Modifiers")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Target Bot Movement Left Right")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		If(Hero Of(Event Player) == Hero(Widowmaker));
+			Set Move Speed(Event Player, 50);
+		End;
+		Start Throttle In Direction(Event Player, Right, 1, To Player, Replace existing throttle, Direction and Magnitude);
+		Wait(0.250, Ignore Condition);
+		While(True);
+			Start Throttle In Direction(Event Player, Left, 1, To Player, Replace existing throttle, Direction and Magnitude);
+			Wait(0.500, Ignore Condition);
+			Start Throttle In Direction(Event Player, Right, 1, To Player, Replace existing throttle, Direction and Magnitude);
+			Wait(0.500, Ignore Condition);
+		End;
+	}
+}
+
+rule("Soldier76 Bot Auto Use Heal Station")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Soldier: 76;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait(0.250, Ignore Condition);
+		Start Holding Button(Event Player, Ability 2);
+		Wait(0.250, Ignore Condition);
+		Stop Holding Button(Event Player, Ability 2);
+	}
+}
+
+rule("Ana - Dealt Damage: LVL1 = Use Heal Nade, LVL2+ = Use Sleep Dart")
+{
+	event
+	{
+		Player Took Damage;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		If(Attacker.CurrentLevel == 1);
+			disabled Wait(0.100, Ignore Condition);
+			Set Facing(Event Player, Down, To World);
+			"Throw Anti-Nade Downward"
+			Start Holding Button(Event Player, Ability 2);
+		Else If(Attacker.CurrentLevel >= 2);
+			"Try to sleep attacker"
+			Start Holding Button(Event Player, Ability 1);
+			disabled Wait(0.150, Ignore Condition);
+			For Player Variable(Event Player, G, 0, 10, 1);
+				Set Facing(Event Player, Direction Towards(Eye Position(Event Player), Position Of(Attacker)), To World);
+				Wait(0.033, Ignore Condition);
+			End;
+		End;
+	}
+}
+
+rule("Ana - Sleep You For Using Rocket Punch Too Long")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+		Is Firing Secondary(Players In Slot(Slot Of(Event Player), Opposite Team Of(Team Of(Event Player)))) == True;
+	}
+
+	actions
+	{
+		Event Player.OppositeTeamSameSlotPlayer = Players In Slot(Slot Of(Event Player), Opposite Team Of(Team Of(Event Player)));
+		Wait(0.500, Ignore Condition);
+		If(Is Firing Secondary(Event Player.OppositeTeamSameSlotPlayer));
+			If(Event Player.OppositeTeamSameSlotPlayer.CurrentLevel >= 2);
+				If(Distance Between(
+					Global.CPStartLocation[Event Player.OppositeTeamSameSlotPlayer.CurrentLevel][Event Player.OppositeTeamSameSlotPlayer.CurrentCP],
+					Position Of(Event Player.OppositeTeamSameSlotPlayer)) > Global.CPRadiusConstant);
+					"Try to sleep attacker"
+					Start Holding Button(Event Player, Ability 1);
+					For Player Variable(Event Player, G, 0, 10, 1);
+						"Attempts to compensate Ana aim for fall time before dart hits you, should probably use actual physics model instead of constant"
+						disabled Set Facing(Event Player, Direction Towards(Position Of(Event Player), Position Of(Event Player.OppositeTeamSameSlotPlayer)
+							+ Down * Min(Altitude Of(Event Player.OppositeTeamSameSlotPlayer), Vertical Speed Of(Event Player.OppositeTeamSameSlotPlayer)
+							* -0.250)), To World);
+						"Attempts to compensate Ana aim for fall time before dart hits you, should probably use actual physics model instead of constant"
+						Set Facing(Event Player, Direction Towards(Position Of(Event Player), Position Of(Event Player.OppositeTeamSameSlotPlayer)
+							+ Down * Min(Altitude Of(Event Player.OppositeTeamSameSlotPlayer), 3.250 * 1)), To World);
+						Wait(0.033, Ignore Condition);
+					End;
+				End;
+			End;
+	}
+}
+
+rule("Mccree - LVL1 = Use High Noon, LVL2+ = Flashbang You")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		McCree;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Create HUD Text(All Players(All Teams), Custom String("Deadeye Counter {0}", Event Player.E), Null, Null, Left, 0, White, White,
+			White, Visible To and String, Default Visibility);
+		Event Player.OppositeTeamSameSlotPlayer = Players In Slot(Slot Of(Event Player), Opposite Team Of(Team Of(Event Player)));
+		If(Players In Slot(Slot Of(Event Player), Opposite Team Of(Team Of(Event Player))).CurrentLevel == 1);
+			While(Is Alive(Event Player) && True);
+				Stop Holding Button(Event Player, Primary Fire);
+				Wait(0.200, Ignore Condition);
+				Set Ultimate Charge(Event Player, 100);
+				"Use High Noon"
+				Press Button(Event Player, Ultimate);
+				Event Player.E = 0;
+				"Wait for player to be in deadeye for 2 sec, then left click"
+				While(Event Player.E <= 40);
+					Wait(0.033, Ignore Condition);
+					If(Is In Line of Sight(Eye Position(Event Player), Eye Position(Event Player.OppositeTeamSameSlotPlayer),
+						Barriers Do Not Block LOS));
+						Set Facing(Event Player, Direction Towards(Position Of(Event Player), Position Of(Event Player.OppositeTeamSameSlotPlayer)),
+							To World);
+						Event Player.E += 1;
+					End;
+					If(!Is Using Ultimate(Event Player));
+						Break;
+					End;
+				End;
+				disabled Stop Holding Button(Event Player, Ultimate);
+				Press Button(Event Player, Primary Fire);
+			End;
+		Else If(Players In Slot(Slot Of(Event Player), Opposite Team Of(Team Of(Event Player))).CurrentLevel >= 2);
+			"Wait for attacker to come in range"
+			While(Distance Between(Position Of(Event Player), Event Player.OppositeTeamSameSlotPlayer) < 4);
+				Wait(0.033, Ignore Condition);
+				Set Facing(Event Player, Direction Towards(Position Of(Event Player), Position Of(Event Player.OppositeTeamSameSlotPlayer)),
+					To World);
+			End;
+			Start Holding Button(Event Player, Ability 2);
+		End;
+	}
+}
+
+rule("Ashe - Use Coach Gun When Damaged")
+{
+	event
+	{
+		Player Took Damage;
+		All;
+		Ashe;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait(0.100, Ignore Condition);
+		Start Holding Button(Event Player, Ability 1);
+		"Should be slightly over 0.5sec"
+		For Player Variable(Event Player, E, 0, 10, 1);
+			Set Facing(Event Player, Direction Towards(Position Of(Event Player), Position Of(Attacker)) + World Vector Of(
+				Random Value In Array(Array(Left, Right)), Event Player, Rotation), To World);
+			Wait(0.033, Ignore Condition);
+		End;
+	}
+}
+
+rule("Pharah - LVL1 Hover")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Pharah;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.OppositeTeamSameSlotPlayer = Players In Slot(Slot Of(Event Player), Opposite Team Of(Team Of(Event Player)));
+		"Hover on Level 1"
+		If(Event Player.OppositeTeamSameSlotPlayer.CurrentLevel == 1);
+			While(True);
+				Start Holding Button(Event Player, Jump);
+				Wait(0.200, Ignore Condition);
+				Stop Holding Button(Event Player, Jump);
+				Wait(0.300, Ignore Condition);
+			End;
+		"Hover"
+		Else If(Event Player.OppositeTeamSameSlotPlayer.CurrentLevel == 2);
+			While(True);
+				Start Holding Button(Event Player, Jump);
+				Wait(0.250, Ignore Condition);
+				Stop Holding Button(Event Player, Jump);
+				Wait(0.250, Ignore Condition);
+			End;
+		End;
+	}
+}
+
+rule("Lucio - Boop When You Take Damage")
+{
+	event
+	{
+		Player Took Damage;
+		All;
+		Lúcio;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Facing(Event Player, Direction Towards(Position Of(Event Player), Position Of(Attacker)), To World);
+		Press Button(Event Player, Secondary Fire);
+	}
+}
+
+disabled rule("Target Bot - When Damaged Shoot Left Clicks to Distract You [DISABLED, CAN MAKE SOME POINTS IMPOSSIBLE IN MULTIPLAYER]")
+{
+	event
+	{
+		Player Took Damage;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+		"Otherwise high noon is impossible to beat"
+		Hero Of(Event Player) != Hero(McCree);
+	}
+
+	actions
+	{
+		Start Holding Button(Event Player, Primary Fire);
+		While(Is Alive(Event Player));
+			Set Facing(Event Player, Direction Towards(Position Of(Event Player), Position Of(Attacker)), To World);
+			Wait(0.033, Ignore Condition);
+		End;
+	}
+}
