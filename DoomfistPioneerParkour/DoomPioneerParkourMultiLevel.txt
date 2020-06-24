@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - MultiLevel Edition! Host creates levels, different levels have different restrictions on the Pioneer."
+		Description: "Doomfist Pioneering Parkour - MultiLevel Edition! Host creates levels, different levels have different restrictions on the Pioneer. Version 0.9. Made by WelkinTern, source control here:   https://github.com/WelkinU/OverwatchWorkshopScripts"
 	}
 
 	modes
@@ -57,19 +57,7 @@ settings
 			{
 				Ammunition Clip Size Scalar: 25%
 				Swift Strike Cooldown Time: 75%
-				Ultimate Duration: 33%
-			}
-
-			Roadhog
-			{
-				Ammunition Clip Size Scalar: 25%
-				Chain Hook Cooldown Time: 75%
-				Take a Breather Cooldown Time: 75%
-			}
-
-			enabled heroes
-			{
-				Doomfist
+				Ultimate Duration: 34%
 			}
 		}
 
@@ -79,14 +67,31 @@ settings
 			{
 				Ammunition Clip Size Scalar: 25%
 				Swift Strike Cooldown Time: 75%
-				Ultimate Duration: 33%
+				Ultimate Duration: 34%
 			}
+		}
 
+		Team FFA
+		{
+			Genji
+			{
+				Swift Strike Cooldown Time: 75%
+				Ultimate Duration: 34%
+			}
+		}
+
+		General
+		{
 			Roadhog
 			{
 				Ammunition Clip Size Scalar: 25%
 				Chain Hook Cooldown Time: 75%
 				Take a Breather Cooldown Time: 75%
+			}
+
+			Widowmaker
+			{
+				Grappling Hook Cooldown Time: 0%
 			}
 
 			enabled heroes
@@ -210,18 +215,20 @@ rule("Initialize Global HUD")
 		Create HUD Text(Filtered Array(All Players(All Teams), !Global.GameStarted), Custom String(
 			"{0} leave the spawn and press R\r\nto create the origin point!", Host Player), Null, Null, Top, -3, Green, White, White,
 			Visible To and String, Default Visibility);
+		"Controls HUD"
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+			"Reload: Quick Reset\r\nJump + Interact: Go back a CP\r\n{0}\r\n{1}\r\n{2}", Custom String(
+			"Change Level: Return to CP 0\r\nMelee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot"),
+			Custom String("Melee + Interact: Skip Level (after 3 min)"), Custom String("Emote: Switch Hero (Multi-Hero Level Only)")),
+			Left, 1, White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, 0, White, White, White, Visible To and String,
+			Default Visibility);
 		"Player level/CP leaderboard HUD"
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0}", Global.LeaderboardString), Right, 0, White, White, White,
 			Visible To and String, Default Visibility);
 		"Workshop Code HUD"
-		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: KN199P"), Null, Null, Right, -1, White, White, White,
+		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: KN199P"), Null, Null, Right, -2, White, White, White,
 			Visible To and String, Default Visibility);
-		"Controls HUD"
-		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Custom String(
-			"Reload: Quick Reset\r\nJump + Interact: Go back a CP\r\n{0}\r\n{1}\r\n{2}", Custom String(
-			"Change Level: Return to CP 0\r\nMelee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot"),
-			Custom String("Melee + Interact: Skip Level (after 3 min)"), Custom String("Emote: Switch Hero (Multi-Hero Level Only)")),
-			Left, 0, White, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -271,8 +278,10 @@ rule("Initialize Player Variables and HUD")
 			Global.LevelDescriptions[Event Player.CurrentLevel]), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
 			Default Visibility);
 		"Hero Help HUD"
-		Create HUD Text(Event Player, Custom String("Hero Help"), Null, Global.HeroHelp[Index Of Array Value(Global.HeroList, Hero Of(
-			Event Player))], Left, 5, White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, Null, Null, Global.HeroHelp[Index Of Array Value(Global.HeroList, Hero Of(Event Player))], Left, 5,
+			White, White, Green, Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, Custom String("Hero Info"), Null, Null, Left, 4, White, White, White, Visible To and String,
+			Default Visibility);
 	}
 }
 
