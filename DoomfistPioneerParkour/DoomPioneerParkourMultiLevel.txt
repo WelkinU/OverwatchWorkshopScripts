@@ -7,32 +7,38 @@ settings
 
 	modes
 	{
-		Assault
+		Capture the Flag
 		{
 			enabled maps
 			{
-				Hanamura
+				Ayutthaya
+				Busan Downtown Lunar New Year
 			}
 		}
 
-		Control
+		Deathmatch
 		{
 			enabled maps
 			{
+				Château Guillard
+				Petra
 			}
 		}
 
-		Escort
+		Skirmish
 		{
-			enabled maps
+			disabled maps
 			{
-			}
-		}
-
-		Hybrid
-		{
-			enabled maps
-			{
+				Blizzard World Winter
+				Hanamura Winter
+				Hollywood Halloween
+				King's Row
+				Lijiang Tower Lunar New Year
+				Workshop Chamber
+				Workshop Expanse
+				Workshop Expanse Night
+				Workshop Island
+				Workshop Island Night
 			}
 		}
 
@@ -45,7 +51,29 @@ settings
 
 	heroes
 	{
-		General
+		Team 1
+		{
+			Genji
+			{
+				Ammunition Clip Size Scalar: 25%
+				Swift Strike Cooldown Time: 75%
+				Ultimate Duration: 33%
+			}
+
+			Roadhog
+			{
+				Ammunition Clip Size Scalar: 25%
+				Chain Hook Cooldown Time: 75%
+				Take a Breather Cooldown Time: 75%
+			}
+
+			enabled heroes
+			{
+				Doomfist
+			}
+		}
+
+		Team 2
 		{
 			Genji
 			{
@@ -81,6 +109,7 @@ variables
 		8: CountPunchUpperSlam
 		9: CountMeteorTeleportNano
 		13: HeroList
+		14: HeroHelp
 		17: CPRadius
 		18: SinglePlayerModeEnabled
 		19: TextLevelCreateMenu
@@ -95,6 +124,7 @@ variables
 		3: CheckpointTimer
 		4: PunchUpperSlamUsed
 		5: CountUltimateTeleportNano
+		6: TotalTimeSpentOnLastCP
 		10: ForceRespawn
 		17: WinstonWallClimbEnabled
 		18: WinstonBubbleLocation
@@ -146,6 +176,49 @@ rule("Initialize Global Variables")
 		End;
 		"Set the hero rotation for multi-hero level"
 		Global.HeroList = Array(Hero(Doomfist), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji));
+		"Set a custom \"player help string\" for each hero. Make sure the help text order is same as hero order above."
+		Global.HeroHelp = Array(Custom String("Doomfist\r\nYour Seismic Slam Now Resets Bhop"), Custom String(
+			"Winston\r\nUse Bubble Shield creates sphere that you can bounce on\r\nNew passive ability: Wall Climb"), Custom String(
+			"Roadhog\r\n{0}\r\n{1}", Custom String(
+			"Chain Hook now functions like Widowmaker hook\r\nTake a Breather makes you bounce - faster fall = higher bounce"),
+			Custom String("Right Click is like Ashe Coach Gun\r\nWhole Hog knocks you back - even through walls")), Custom String(
+			"Lucio\r\nUltimate prevents you from dying while touching ground"), Custom String("Genji\r\nUltimate Duration Lowered"),
+			Custom String("Baptiste\r\nAbility 1 is now slide\r\nUltimate doesn't do anything right now"), Custom String(
+			"Zenyatta\r\n{0}\r\n{1}\r\n{2}", Custom String(
+			"Right Click - Hover. Combine with melee cancel for more height/distance\r\nAttractor Orb - Attracts you when active"),
+			Custom String("Repeller Orb - Repels you when active"), Custom String(
+			"Hold Ability 1/2 to place orbs. Crouch to activate/deactivate orb\r\nUltimate - Hover 1m above ground for ult duration")));
+	}
+}
+
+rule("Initialize Global HUD")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		"Move Game HUD Offscreen"
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+			"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"),
+			Top, -1, White, White, White, Visible To and String, Default Visibility);
+		"If first checkpoint has not been placed, show HUD prompting pioneer (Host Player) to press R to start the map."
+		Create HUD Text(Filtered Array(All Players(All Teams), !Global.GameStarted), Custom String(
+			"{0} leave the spawn and press R\r\nto create the origin point!", Host Player), Null, Null, Top, -3, Green, White, White,
+			Visible To and String, Default Visibility);
+		"Player level/CP leaderboard HUD"
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0}", Global.LeaderboardString), Right, 0, White, White, White,
+			Visible To and String, Default Visibility);
+		"Workshop Code HUD"
+		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: KN199P"), Null, Null, Right, -1, White, White, White,
+			Visible To and String, Default Visibility);
+		"Controls HUD"
+		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Custom String(
+			"R: Quick Reset\r\nJump + Interact: Go back a CP\r\nChange Level: Return to CP 0\r\n{0}", Custom String(
+			"Melee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot\r\nEmote: Switch Hero (Multi-Hero Level Only)")),
+			Left, 0, White, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -163,6 +236,9 @@ rule("Initialize Player Variables and HUD")
 		Event Player.CurrentCP = 0;
 		Event Player.CurrentLevel = 0;
 		Set Status(Event Player, Null, Phased Out, 9999);
+		"Initialize Total Spent Time On CP (used for level skip option)"
+		Event Player.TotalTimeSpentOnLastCP = 0;
+		Chase Player Variable At Rate(Event Player, TotalTimeSpentOnLastCP, 9999, 1, Destination and Rate);
 		"Rings and Pioneer Text HUD"
 		Create Effect(Filtered Array(Event Player, Event Player.CurrentCP > 0), Ring, Purple,
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Global.CPRadius, Visible To Position and Radius);
@@ -190,32 +266,9 @@ rule("Initialize Player Variables and HUD")
 			Global.CurrentPioneer[Event Player.CurrentLevel])), Custom String("{0} - Waiting for next pioneer",
 			Global.LevelDescriptions[Event Player.CurrentLevel]), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
 			Default Visibility);
-	}
-}
-
-rule("Initialize Global HUD")
-{
-	event
-	{
-		Ongoing - Global;
-	}
-
-	actions
-	{
-		"Move Game HUD Offscreen"
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
-			"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"),
-			Top, -1, White, White, White, Visible To and String, Default Visibility);
-		"If first checkpoint has not been placed, show HUD prompting pioneer (Host Player) to press R to start the map."
-		Create HUD Text(Filtered Array(All Players(All Teams), !Global.GameStarted), Custom String(
-			"{0} leave the spawn and press R to create the first checkpoint!", Host Player), Null, Null, Top, -3, Green, White, White,
-			Visible To and String, Default Visibility);
-		"Player level/CP leaderboard HUD"
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0}", Global.LeaderboardString), Right, 0, White, White, White,
-			Visible To and String, Default Visibility);
-		"Workshop Code HUD"
-		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: KN199P"), Null, Null, Right, -1, White, White, White,
-			Visible To and String, Default Visibility);
+		"Hero Help HUD"
+		Create HUD Text(Event Player, Custom String("Hero Help"), Null, Global.HeroHelp[Index Of Array Value(Global.HeroList, Hero Of(
+			Event Player))], Left, 5, White, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -248,7 +301,7 @@ rule("Player Leaderboard Computation & String Generation")
 	}
 }
 
-rule("Debug HUD")
+disabled rule("Debug HUD")
 {
 	event
 	{
@@ -262,6 +315,8 @@ rule("Debug HUD")
 		disabled Create HUD Text(Event Player, Custom String("Current Level Pioneer: {0}", Last Of(
 			Global.CurrentPioneer[Event Player.CurrentLevel])), Null, Null, Left, 9, White, White, White, Visible To and String,
 			Default Visibility);
+		Create HUD Text(Event Player, Custom String("Time spent on CP: {0}", Event Player.TotalTimeSpentOnLastCP), Null, Null, Right, 9,
+			White, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -446,10 +501,14 @@ rule("Pioneer - Create New Point")
 	actions
 	{
 		Event Player.W = Position Of(Event Player);
+		Call Subroutine(CancelMomentum);
+		Set Status(Event Player, Null, Rooted, 1);
+		"Stops this rule from executing out of order with the player respawn when dead rule. This stops player from pioneering in spawn by jumping off map."
 		Wait(0.250, Abort When False);
 		Event Player.CancelPointTimer = 3;
 		Chase Player Variable At Rate(Event Player, CancelPointTimer, 0, 1, Destination and Rate);
 		Big Message(Event Player, Custom String("Press R within 3 sec to cancel point!"));
+		Clear Status(Event Player, Rooted);
 		While(Event Player.CancelPointTimer > 0);
 			Wait(0.033, Ignore Condition);
 			Call Subroutine(CancelMomentum);
@@ -466,8 +525,6 @@ rule("Pioneer - Create New Point")
 			Event Player.CountUltimateTeleportNano);
 		Modify Global Variable At Index(HeroUseArrayofArrays, Event Player.CurrentLevel, Append To Array, Hero Of(Event Player));
 		Modify Global Variable At Index(CPLocations, Event Player.CurrentLevel, Append To Array, Event Player.W);
-		disabled Call Subroutine(RespawnPlayer);
-		disabled Wait(0.200, Ignore Condition);
 		"Respawn other players"
 		Filtered Array(All Players(All Teams),
 			Current Array Element.CurrentLevel == Event Player.CurrentLevel && Current Array Element.CurrentCP == Event Player.CurrentCP)
@@ -547,6 +604,7 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 			End;
 		End;
 		Call Subroutine(RespawnPlayer);
+		Event Player.TotalTimeSpentOnLastCP = 0;
 	}
 }
 
@@ -568,6 +626,7 @@ rule("Handle ForceRespawn")
 	{
 		Call Subroutine(RespawnPlayer);
 		Event Player.ForceRespawn = False;
+		Event Player.TotalTimeSpentOnLastCP = 0;
 	}
 }
 
@@ -818,6 +877,84 @@ rule("R is Respawn Player")
 	}
 }
 
+rule("Ultimate Status: Camera To See Next Point")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Communicating(Event Player, Ultimate Status) == True;
+		"Make sure next point exists"
+		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
+	}
+
+	actions
+	{
+		Event Player.I = Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
+		Start Camera(Event Player, Ray Cast Hit Position(Event Player.I, Event Player.I + Vector(10, 10, 0), All Players(All Teams),
+			Event Player, True), Event Player.I, 0);
+		Wait(3, Ignore Condition);
+		Stop Camera(Event Player);
+	}
+}
+
+rule("Skip Level Option Message - Only available if you spent 3 min on a point")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentCP > 0;
+		"Make sure next point exists"
+		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
+		Event Player.TotalTimeSpentOnLastCP > 180;
+	}
+
+	actions
+	{
+		Big Message(Event Player, Custom String("Spent more than 3 min on point. Melee + Interact to skip to next checkpoint."));
+	}
+}
+
+rule("Skip Level Option Implementation - Only available if you spent 3 min on a point")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentCP > 0;
+		"Make sure next point exists"
+		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
+		Event Player.TotalTimeSpentOnLastCP > 180;
+		Is Button Held(Event Player, Melee) == True;
+		Is Button Held(Event Player, Interact) == True;
+	}
+
+	actions
+	{
+		Small Message(Event Player, Custom String("Skipped to next level!"));
+		Event Player.CurrentCP += 1;
+		Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel] = Event Player.CurrentCP;
+		Call Subroutine(RespawnPlayer);
+		Event Player.TotalTimeSpentOnLastCP = 0;
+	}
+}
+
 disabled rule("Subroutines")
 {
 	event
@@ -836,6 +973,7 @@ rule("Sub0: RespawnPlayer")
 
 	actions
 	{
+		Stop Holding Button(Event Player, Secondary Fire);
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
 		Set Facing(Event Player, Direction Towards(Position Of(Event Player),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1]), To World);
@@ -949,7 +1087,7 @@ disabled rule("Level Modifiers")
 	}
 }
 
-rule("Level 1 Modifer - Only Have 6 Seconds To Make Point (Part 1)")
+rule("Level 1 Modifer - Only Have 6 Seconds To Make Point")
 {
 	event
 	{
@@ -969,19 +1107,19 @@ rule("Level 1 Modifer - Only Have 6 Seconds To Make Point (Part 1)")
 
 	actions
 	{
-		Event Player.CheckpointTimer = 6;
+		Event Player.CheckpointTimer = 5;
 		Chase Player Variable At Rate(Event Player, CheckpointTimer, 0, 1, Destination and Rate);
 		While(Event Player.CheckpointTimer > 0);
 			Wait(0.100, Ignore Condition);
 		End;
 		Abort If Condition Is False;
 		Abort If(Event Player.CancelPointTimer > 0);
-		Small Message(Event Player, Custom String("Level 1 Restriction: Complete Point In 6 Seconds!"));
+		Small Message(Event Player, Custom String("Level 1 Restriction: Complete Point In 5 Seconds!"));
 		Call Subroutine(RespawnPlayer);
 	}
 }
 
-rule("Multi-Hero Level: Switch Hero When Player Emotes")
+rule("Level 4 (Multi-Hero Level): Switch Hero When Player Emotes")
 {
 	event
 	{
@@ -1003,6 +1141,26 @@ rule("Multi-Hero Level: Switch Hero When Player Emotes")
 		Start Forcing Player To Be Hero(Event Player, Global.HeroList[(Index Of Array Value(Global.HeroList, Hero Of(Event Player)) + 1)
 			% Count Of(Global.HeroList)]);
 		Set Ultimate Charge(Event Player, 100);
+	}
+}
+
+rule("Level 4 Reminder: Emote to Switch Hero")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentLevel == 4;
+	}
+
+	actions
+	{
+		Big Message(Event Player, Custom String("Emote to switch hero!"));
 	}
 }
 
