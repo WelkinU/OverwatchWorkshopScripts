@@ -220,8 +220,8 @@ rule("Initialize Global HUD")
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Custom String(
 			"Reload: Quick Reset\r\nJump + Interact: Go back a CP\r\n{0}\r\n{1}\r\n{2}", Custom String(
 			"Change Level: Return to CP 0\r\nMelee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot"),
-			Custom String("Melee + Interact: Skip Level (after 3 min)\r\nEmote: Switch Hero (Multi-Hero Level Only)")), Left, 0, White,
-			White, White, Visible To and String, Default Visibility);
+			Custom String("Melee + Interact: Skip Level (after 3 min)"), Custom String("Emote: Switch Hero (Multi-Hero Level Only)")),
+			Left, 0, White, White, White, Visible To and String, Default Visibility);
 	}
 }
 
