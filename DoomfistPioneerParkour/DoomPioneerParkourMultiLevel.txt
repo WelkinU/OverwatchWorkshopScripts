@@ -75,6 +75,7 @@ variables
 		0: CPLocations
 		3: LevelDescriptions
 		4: CurrentPioneer
+		5: PlayerLeaderboard
 		6: GameStarted
 		7: HeroUseArrayofArrays
 		8: CountPunchUpperSlam
@@ -84,6 +85,8 @@ variables
 		18: SinglePlayerModeEnabled
 		19: TextLevelCreateMenu
 		20: IndexLevelCreateMenu
+		23: LeaderboardString
+		24: TempLeaderboardIterator
 
 	player:
 		0: CurrentCP
@@ -171,18 +174,21 @@ rule("Initialize Player Variables and HUD")
 			Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP + 0]),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1], 2, Do Not Clip, Visible To Position and String,
 			Purple, Default Visibility);
+		"Player Current Level and Checkpoint HUD text"
 		Create HUD Text(Event Player, Custom String("Level {0} CP {1}", Event Player.CurrentLevel, Event Player.CurrentCP), Null, Null,
-			Left, 0, White, White, White, Visible To and String, Default Visibility);
+			Top, -2, White, White, White, Visible To and String, Default Visibility);
 		disabled Create HUD Text(Event Player, Custom String("{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero(Doomfist), Button(
 			Secondary Fire)), X Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero(
 			Doomfist), Button(Ability 1)), Y Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(
 			Hero(Doomfist), Button(Ability 2)), Z Component Of(Event Player.PunchUpperSlamUsed))), Null, Null, Left, 2, White, White,
 			White, Visible To and String, Default Visibility);
+		"Checkpoint Timer HUD - Used on Level 1"
 		Create HUD Text(Filtered Array(Event Player, Current Array Element.CheckpointTimer > 0), Custom String("Time Remaining: {0}sec",
-			Event Player.CheckpointTimer), Null, Null, Top, 2, White, White, White, Visible To and String, Default Visibility);
+			Event Player.CheckpointTimer), Null, Null, Top, -1, White, White, White, Visible To and String, Default Visibility);
+		"HUD indicating player is waiting for pioneer to make next point"
 		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Count Of(
 			Global.CurrentPioneer[Event Player.CurrentLevel])), Custom String("{0} - Waiting for next pioneer",
-			Global.LevelDescriptions[Event Player.CurrentLevel]), Null, Null, Top, 1, Green, White, White, Visible To and String,
+			Global.LevelDescriptions[Event Player.CurrentLevel]), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
 			Default Visibility);
 	}
 }
@@ -196,12 +202,49 @@ rule("Initialize Global HUD")
 
 	actions
 	{
+		"Move Game HUD Offscreen"
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+			"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"),
+			Top, -1, White, White, White, Visible To and String, Default Visibility);
 		"If first checkpoint has not been placed, show HUD prompting pioneer (Host Player) to press R to start the map."
 		Create HUD Text(Filtered Array(All Players(All Teams), !Global.GameStarted), Custom String(
-			"{0} leave the spawn and press R to create the first checkpoint!", Host Player), Null, Null, Top, 1, Green, White, White,
+			"{0} leave the spawn and press R to create the first checkpoint!", Host Player), Null, Null, Top, -3, Green, White, White,
 			Visible To and String, Default Visibility);
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: KN199P"), Right, -1, White, White, White,
+		"Player level/CP leaderboard HUD"
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0}", Global.LeaderboardString), Right, 0, White, White, White,
 			Visible To and String, Default Visibility);
+		"Workshop Code HUD"
+		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: KN199P"), Null, Null, Right, -1, White, White, White,
+			Visible To and String, Default Visibility);
+	}
+}
+
+rule("Player Leaderboard Computation & String Generation")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Wait(0.250, Ignore Condition);
+		Global.PlayerLeaderboard = Sorted Array(All Players(All Teams),
+			Current Array Element.CurrentLevel * -1000 + Current Array Element.CurrentCP * -1);
+		For Global Variable(TempLeaderboardIterator, 0, Count Of(Global.PlayerLeaderboard), 1);
+			If(Global.TempLeaderboardIterator == 0);
+				Global.LeaderboardString = Custom String("{1}", Global.LeaderboardString, Custom String("{0} Level {1} CP {2}",
+					Global.PlayerLeaderboard[Global.TempLeaderboardIterator],
+					Global.PlayerLeaderboard[Global.TempLeaderboardIterator].CurrentLevel,
+					Global.PlayerLeaderboard[Global.TempLeaderboardIterator].CurrentCP));
+			Else;
+				Global.LeaderboardString = Custom String("{0}\r\n{1}", Global.LeaderboardString, Custom String("{0} Level {1} CP {2}",
+					Global.PlayerLeaderboard[Global.TempLeaderboardIterator],
+					Global.PlayerLeaderboard[Global.TempLeaderboardIterator].CurrentLevel,
+					Global.PlayerLeaderboard[Global.TempLeaderboardIterator].CurrentCP));
+			End;
+		End;
+		Loop;
 	}
 }
 
@@ -262,10 +305,8 @@ rule("First Pioneer (Host) Create Multilevel Origin Point")
 		Global.IndexLevelCreateMenu = 1;
 		Call Subroutine(MakeMenuText);
 		"Create Level Type Creation Menu"
-		Create HUD Text(Filtered Array(Host Player, Current Array Element.CurrentCP == 0), Global.TextLevelCreateMenu, Null, Null, Top, 3,
+		Create HUD Text(Filtered Array(Host Player, Current Array Element.CurrentCP == 0), Global.TextLevelCreateMenu, Null, Null, Top, -2,
 			White, White, White, Visible To and String, Default Visibility);
-		"Move all players to the origin point"
-		disabled Teleport(All Players(All Teams), Global.CPLocations[0][0]);
 		Call Subroutine(RespawnPlayer);
 	}
 }
@@ -355,30 +396,6 @@ rule("Enter Into Level")
 		End;
 		Wait(0.033, Ignore Condition);
 		Loop If Condition Is True;
-	}
-}
-
-rule("Handle Player Death")
-{
-	event
-	{
-		Player Died;
-		All;
-		All;
-	}
-
-	actions
-	{
-		"To fix bug where pioneer jumps off map and tele's back to spawn"
-		Wait(0.050, Ignore Condition);
-		Respawn(Event Player);
-		If(Global.GameStarted);
-			Wait(0.100, Ignore Condition);
-			Small Message(Event Player, Custom String("Don't die!"));
-			Call Subroutine(RespawnPlayer);
-		End;
-		Wait(0.100, Ignore Condition);
-		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
 
@@ -551,6 +568,30 @@ rule("Handle ForceRespawn")
 	{
 		Call Subroutine(RespawnPlayer);
 		Event Player.ForceRespawn = False;
+	}
+}
+
+rule("Handle Player Death")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	actions
+	{
+		"To fix bug where pioneer jumps off map and tele's back to spawn"
+		Wait(0.050, Ignore Condition);
+		Respawn(Event Player);
+		If(Global.GameStarted);
+			Wait(0.100, Ignore Condition);
+			Small Message(Event Player, Custom String("Don't die!"));
+			Call Subroutine(RespawnPlayer);
+		End;
+		Wait(0.100, Ignore Condition);
+		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
 
