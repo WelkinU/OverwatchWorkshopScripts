@@ -125,6 +125,7 @@ variables
 		4: PunchUpperSlamUsed
 		5: CountUltimateTeleportNano
 		6: TotalTimeSpentOnLastCP
+		7: TeleportEnabled
 		10: ForceRespawn
 		17: WinstonWallClimbEnabled
 		18: WinstonBubbleLocation
@@ -236,6 +237,7 @@ rule("Initialize Player Variables and HUD")
 		Event Player.CurrentCP = 0;
 		Event Player.CurrentLevel = 0;
 		Set Status(Event Player, Null, Phased Out, 9999);
+		Event Player.TeleportEnabled = True;
 		"Initialize Total Spent Time On CP (used for level skip option)"
 		Event Player.TotalTimeSpentOnLastCP = 0;
 		Chase Player Variable At Rate(Event Player, TotalTimeSpentOnLastCP, 9999, 1, Destination and Rate);
@@ -301,7 +303,7 @@ rule("Player Leaderboard Computation & String Generation")
 	}
 }
 
-disabled rule("Debug HUD")
+rule("Debug HUD")
 {
 	event
 	{
@@ -484,6 +486,8 @@ rule("Pioneer - Create New Point")
 		Is On Ground(Event Player) == True;
 		"Inside a level, not in multilevel portion"
 		Event Player.CurrentCP > 0;
+		"Redundant, but putting this here just to be safe"
+		Event Player.CurrentLevel > 0;
 		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player)) > 10;
 		"Doesn't always work, as there are locations that are inaccessable for a certain team but not in spawn room"
 		Is In Spawn Room(Event Player) != True;
@@ -525,6 +529,7 @@ rule("Pioneer - Create New Point")
 			Event Player.CountUltimateTeleportNano);
 		Modify Global Variable At Index(HeroUseArrayofArrays, Event Player.CurrentLevel, Append To Array, Hero Of(Event Player));
 		Modify Global Variable At Index(CPLocations, Event Player.CurrentLevel, Append To Array, Event Player.W);
+		Event Player.TotalTimeSpentOnLastCP = 0;
 		"Respawn other players"
 		Filtered Array(All Players(All Teams),
 			Current Array Element.CurrentLevel == Event Player.CurrentLevel && Current Array Element.CurrentCP == Event Player.CurrentCP)
@@ -789,12 +794,14 @@ rule("Melee + Left Click = Teleport")
 	{
 		Is Button Held(Event Player, Primary Fire) == True;
 		Is Button Held(Event Player, Melee) == True;
+		Event Player.TeleportEnabled == True;
 	}
 
 	actions
 	{
 		Teleport(Event Player, Ray Cast Hit Position(Position Of(Event Player), Position Of(Event Player) + Facing Direction Of(
 			Event Player) * 60, All Players(All Teams), Event Player, True));
+		Event Player.CountUltimateTeleportNano += Up;
 	}
 }
 
@@ -991,6 +998,7 @@ rule("Sub0: RespawnPlayer")
 		Event Player.CancelPointTimer = 0;
 		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportNano = Vector(0, 0, 0);
+		"If player is on point that has already been created (ie. player is not pioneer, player is not waiting for pioneer, etc.)"
 		If(Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1);
 			If(X Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
 				Set Secondary Fire Enabled(Event Player, False);
@@ -1012,10 +1020,20 @@ rule("Sub0: RespawnPlayer")
 			Else;
 				Set Ultimate Ability Enabled(Event Player, True);
 			End;
+			If(Y Component Of(Global.CountMeteorTeleportNano[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+				Event Player.TeleportEnabled = False;
+			Else;
+				Event Player.TeleportEnabled = True;
+				If(Event Player.CurrentCP > 0);
+					Big Message(Event Player, Custom String("Teleport enabled for this point! Use Left Click + Melee to teleport!"));
+				End;
+			End;
+		"Is beginning of match, or player is pioneer, or player is waiting for pioneer"
 		Else;
 			Set Secondary Fire Enabled(Event Player, True);
 			Set Ability 1 Enabled(Event Player, True);
 			Set Ability 2 Enabled(Event Player, True);
+			Event Player.TeleportEnabled = True;
 			Set Ultimate Ability Enabled(Event Player, True);
 		End;
 		Event Player.WinstonBouncyBubbleCooldown = 0;
@@ -1131,7 +1149,7 @@ rule("Level 4 (Multi-Hero Level): Switch Hero When Player Emotes")
 	conditions
 	{
 		Is Communicating Any Emote(Event Player) == True;
-		disabled Event Player.H == True;
+		disabled Event Player.TeleportEnabled == True;
 		(Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]) && True) == True;
 		Event Player.CurrentLevel == 4;
 	}
