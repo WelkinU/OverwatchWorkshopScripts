@@ -126,6 +126,7 @@ variables
 		5: CountUltimateTeleportNano
 		6: TotalTimeSpentOnLastCP
 		7: TeleportEnabled
+		9: SpectateMode
 		10: ForceRespawn
 		17: WinstonWallClimbEnabled
 		18: WinstonBubbleLocation
@@ -217,9 +218,10 @@ rule("Initialize Global HUD")
 			Visible To and String, Default Visibility);
 		"Controls HUD"
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Custom String(
-			"R: Quick Reset\r\nJump + Interact: Go back a CP\r\nChange Level: Return to CP 0\r\n{0}", Custom String(
-			"Melee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot\r\nEmote: Switch Hero (Multi-Hero Level Only)")),
-			Left, 0, White, White, White, Visible To and String, Default Visibility);
+			"Reload: Quick Reset\r\nJump + Interact: Go back a CP\r\n{0}\r\n{1}\r\n{2}", Custom String(
+			"Change Level: Return to CP 0\r\nMelee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot"),
+			Custom String("Melee + Interact: Skip Level (after 3 min)\r\nEmote: Switch Hero (Multi-Hero Level Only)")), Left, 0, White,
+			White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -303,7 +305,7 @@ rule("Player Leaderboard Computation & String Generation")
 	}
 }
 
-rule("Debug HUD")
+disabled rule("Debug HUD")
 {
 	event
 	{
@@ -644,10 +646,15 @@ rule("Handle Player Death")
 		All;
 	}
 
+	conditions
+	{
+		Event Player.SpectateMode != True;
+	}
+
 	actions
 	{
 		"To fix bug where pioneer jumps off map and tele's back to spawn"
-		Wait(0.050, Ignore Condition);
+		Wait(0.050, Abort When False);
 		Respawn(Event Player);
 		If(Global.GameStarted);
 			Wait(0.100, Ignore Condition);
@@ -884,7 +891,7 @@ rule("R is Respawn Player")
 	}
 }
 
-rule("Ultimate Status: Camera To See Next Point")
+rule("Ultimate Status Voiceline: Camera To See Next Point")
 {
 	event
 	{
@@ -904,9 +911,39 @@ rule("Ultimate Status: Camera To See Next Point")
 	{
 		Event Player.I = Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		Start Camera(Event Player, Ray Cast Hit Position(Event Player.I, Event Player.I + Vector(10, 10, 0), All Players(All Teams),
-			Event Player, True), Event Player.I, 0);
+			Event Player, True), Event Player.I + Facing Direction Of(Event Player) * 10, 30);
 		Wait(3, Ignore Condition);
 		Stop Camera(Event Player);
+	}
+}
+
+rule("Need Healing Voiceline: Spectate Other Players")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Communicating(Event Player, Need Healing) == True;
+	}
+
+	actions
+	{
+		If(Is Dead(Event Player));
+			Enable Built-In Game Mode Respawning(Event Player);
+			Resurrect(Event Player);
+			Call Subroutine(RespawnPlayer);
+			Event Player.SpectateMode = False;
+		Else;
+			Big Message(Event Player, Custom String("Use \"Need Healing\" voiceline to exit Spectate Mode!"));
+			Event Player.SpectateMode = True;
+			Disable Built-In Game Mode Respawning(Event Player);
+			Kill(Event Player, Null);
+		End;
 	}
 }
 
