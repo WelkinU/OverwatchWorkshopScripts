@@ -1,0 +1,704 @@
+settings
+{
+	modes
+	{
+		Skirmish
+		{
+			enabled maps
+			{
+				Workshop Island
+			}
+		}
+
+		Team Deathmatch
+		{
+			enabled maps
+			{
+			}
+		}
+
+		General
+		{
+			Hero Limit: Off
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Sigma
+			{
+				Accretion Cooldown Time: 0%
+				Accretion Knockback Scalar: 0%
+				Damage Dealt: 500%
+				Jump Vertical Speed: 200%
+				Kinetic Grasp Cooldown Time: 40%
+				Movement Speed: 150%
+				Primary Fire: Off
+				Projectile Speed: 120%
+				Ultimate Ability Gravitic Flux: Off
+			}
+
+			enabled heroes
+			{
+				Sigma
+			}
+		}
+	}
+}
+
+variables
+{
+	global:
+		3: MatchStarted
+		4: GamePhaseDescription
+		7: ReloadDistanceFromMid
+		8: TempIterator
+
+	player:
+		0: IsUsingCatch
+		3: DodgeballCount
+}
+
+subroutines
+{
+	0: SpawnPlayer
+	1: CancelMomentum
+}
+
+disabled rule("Initial Setup")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Initialize Game Mode Stuff")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Disable Built-In Game Mode Scoring;
+		Disable Built-In Game Mode Completion;
+		Set Match Time(20);
+		Global.ReloadDistanceFromMid = 3;
+		Wait(0.250, Ignore Condition);
+		Global.MatchStarted = False;
+		Global.GamePhaseDescription = Custom String("Warmup Phase");
+		Create HUD Text(All Players(All Teams), Custom String("{0}", Global.GamePhaseDescription), Null, Null, Top, 1, White, White, White,
+			Visible To and String, Default Visibility);
+	}
+}
+
+rule("Initialize Player Variables")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Disable Built-In Game Mode Respawning(Event Player);
+		Set Respawn Max Time(Event Player, 9999);
+		Call Subroutine(SpawnPlayer);
+		Event Player.DodgeballCount = 999;
+		Create HUD Text(Event Player, Custom String("Dodgeballs Remaining: {0}", Event Player.DodgeballCount), Null, Null, Left, 0, White,
+			White, White, Visible To and String, Default Visibility);
+		Event Player.IsUsingCatch = False;
+	}
+}
+
+rule("Sub0: SpawnPlayer")
+{
+	event
+	{
+		Subroutine;
+		SpawnPlayer;
+	}
+
+	actions
+	{
+		Wait(0.100, Ignore Condition);
+		Respawn(Event Player);
+		Wait(0.100, Ignore Condition);
+		If(Team Of(Event Player) == Team 1);
+			Teleport(Event Player, Vector(Random Integer(-15, 15), 0, 19));
+			Set Facing(Event Player, Backward, To World);
+		Else;
+			Teleport(Event Player, Vector(Random Integer(-15, 15), 0, -19));
+			Set Facing(Event Player, Forward, To World);
+		End;
+		If(!Global.MatchStarted);
+			disabled Set Status(Event Player, Null, Invincible, 9999);
+		End;
+	}
+}
+
+rule("Sub1: Cancel Momentum")
+{
+	event
+	{
+		Subroutine;
+		CancelMomentum;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Left, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Right, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Forward, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Backward, 0.001, To World, Cancel Contrary Motion);
+		Wait(0.100, Ignore Condition);
+	}
+}
+
+disabled rule("Game Rules")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("5 Sec Before Match Starts, Move Player To Start Location")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.MatchStarted == False;
+		Match Time <= 5;
+	}
+
+	actions
+	{
+		Call Subroutine(SpawnPlayer);
+		Set Move Speed(Event Player, 0);
+		Set Status(Event Player, Null, Invincible, 9999);
+		Set Ability 2 Enabled(Event Player, False);
+		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+		Call Subroutine(CancelMomentum);
+		Call Subroutine(CancelMomentum);
+		Call Subroutine(CancelMomentum);
+		Call Subroutine(CancelMomentum);
+		Call Subroutine(CancelMomentum);
+	}
+}
+
+rule("[GLOBAL] Start Match After Warmup Phase")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.MatchStarted == False;
+		Match Time == 0;
+	}
+
+	actions
+	{
+		Set Match Time(300);
+		Wait(0.100, Ignore Condition);
+		Global.MatchStarted = True;
+		Global.GamePhaseDescription = Custom String("Fight!");
+	}
+}
+
+rule("[PLAYER] Set Start of Match Variables")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.MatchStarted == True;
+	}
+
+	actions
+	{
+		Clear Status(Event Player, Invincible);
+		Set Move Speed(Event Player, 100);
+		Set Ability 2 Enabled(Event Player, True);
+		"Player starts match with this many dodgeballs"
+		Event Player.DodgeballCount = 2;
+	}
+}
+
+rule("Get more Dodgeballs by going to middle fence and pressing interact")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Reload) == True;
+		Absolute Value(Z Component Of(Position Of(Event Player))) < 5;
+	}
+
+	actions
+	{
+		Event Player.DodgeballCount += 1;
+		Play Effect(Event Player, Buff Explosion Sound, White, Event Player, 60);
+		disabled Wait(0.250, Ignore Condition);
+	}
+}
+
+rule("Declare Victory If A Team Is Eliminated")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		(Count Of(All Living Players(Team 1)) == 0 || Count Of(All Living Players(Team 2)) == 0) == True;
+		Global.MatchStarted == True;
+	}
+
+	actions
+	{
+		If(Count Of(All Living Players(Team 1)) == 0);
+			Declare Team Victory(Team 2);
+		Else;
+			Declare Team Victory(Team 1);
+		End;
+	}
+}
+
+disabled rule("Sigma Modifiers")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Decrement Dodgeball Count when player fires one")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+		"Give dummy bots infinite ammo"
+		Is Dummy Bot(Event Player) != True;
+	}
+
+	actions
+	{
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+		Event Player.DodgeballCount -= 1;
+	}
+}
+
+rule("Disable Dodgeball when player has none remaining")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.DodgeballCount == 0;
+		Global.MatchStarted == True;
+	}
+
+	actions
+	{
+		Set Ability 2 Enabled(Event Player, False);
+		Big Message(Event Player, Custom String("Out of dodgeballs! Go to middle fence and press reload!"));
+	}
+}
+
+rule("Enable Dodgeball when player has them available")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.DodgeballCount > 0;
+	}
+
+	actions
+	{
+		Set Ability 2 Enabled(Event Player, True);
+	}
+}
+
+rule("Right Click Barrier - Auto Withdraw Barrier After 1 Sec")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+		Wait(1, Ignore Condition);
+		Press Button(Event Player, Secondary Fire);
+	}
+}
+
+rule("Sigma Catch Ability - Damage Modifier")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.IsUsingCatch = True;
+		Set Damage Received(Event Player, 1);
+		Wait(0.100, Ignore Condition);
+		Cancel Primary Action(Event Player);
+		Set Damage Received(Event Player, 100);
+		Event Player.IsUsingCatch = False;
+	}
+}
+
+rule("Sigma Catch Ability - Heavily Damage Attacker, Res Teammate")
+{
+	event
+	{
+		Player Dealt Damage;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		disabled Is Using Ability 1(Victim) == True;
+		Victim.IsUsingCatch == True;
+	}
+
+	actions
+	{
+		"Is subject to Sigma damage multiplier in lobby settings"
+		Damage(Attacker, Victim, 60);
+		disabled Kill(Attacker, Victim);
+		"Res closest dead teammate of victim"
+		Resurrect(First Of(Sorted Array(All Dead Players(Team Of(Victim)), Distance Between(Position Of(Victim), Position Of(
+			Current Array Element)))));
+		Small Message(All Players(All Teams), Custom String("Successful Catch"));
+	}
+}
+
+rule("Sigma Melee Block Ability - Probably OP")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Meleeing(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Status(Event Player, Null, Unkillable, 9999);
+		Wait(0.250, Ignore Condition);
+		Loop If Condition Is True;
+		Clear Status(Event Player, Unkillable);
+	}
+}
+
+disabled rule("Map Boundaries")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Create Fence Effects")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		For Global Variable(TempIterator, 0.500, 2, 0.500);
+			Create Beam Effect(All Players(All Teams), Grapple Beam, Vector(-20, Global.TempIterator, 0), Vector(20, Global.TempIterator, 0),
+				White, Visible To);
+			Create Beam Effect(All Players(All Teams), Grapple Beam, Vector(-20, Global.TempIterator, -20), Vector(-20, Global.TempIterator,
+				20), White, Visible To);
+			Create Beam Effect(All Players(All Teams), Grapple Beam, Vector(-20, Global.TempIterator, -20), Vector(20, Global.TempIterator,
+				-20), White, Visible To);
+			Create Beam Effect(All Players(All Teams), Grapple Beam, Vector(20, Global.TempIterator, 20), Vector(-20, Global.TempIterator, 20),
+				White, Visible To);
+			Create Beam Effect(All Players(All Teams), Grapple Beam, Vector(20, Global.TempIterator, 20), Vector(20, Global.TempIterator, -20),
+				White, Visible To);
+		End;
+		Create Beam Effect(All Players(All Teams), Grapple Beam, Vector(-20, 0, Global.ReloadDistanceFromMid * -1), Vector(20, 0,
+			Global.ReloadDistanceFromMid * -1), Red, Visible To);
+		Create Beam Effect(All Players(All Teams), Grapple Beam, Vector(-20, 0, Global.ReloadDistanceFromMid * 1), Vector(20, 0,
+			Global.ReloadDistanceFromMid * 1), Red, Visible To);
+		For Global Variable(TempIterator, -15, 25, 10);
+			Create In-World Text(All Players(All Teams), Custom String("Reload Here"), Vector(Global.TempIterator, 0, 0), 1,
+				Clip Against Surfaces, Visible To, Red, Default Visibility);
+		End;
+	}
+}
+
+rule("X-Axis Fences Physics Rule")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		"abs(x) > 19"
+		Absolute Value(Dot Product(Vector(1, 0, 0), Position Of(Event Player))) > 19;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Left, Dot Product(Position Of(Event Player), Vector(-0.500, 0, 0)), To World, Cancel Contrary Motion);
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Z-Axis Boundary Fences Physics Rule")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		"abs(x) > 19"
+		Absolute Value(Z Component Of(Position Of(Event Player))) > 19;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Forward, Dot Product(Position Of(Event Player), Vector(0, 0, -0.500)), To World,
+			Cancel Contrary Motion);
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Middle Fence Physics Rule Team 1")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Team Of(Event Player) == Team 1 && Z Component Of(Position Of(Event Player)) <= 0) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Forward, 10, To World, Cancel Contrary Motion);
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Middle Fence Physics Rule Team 2")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Team Of(Event Player) == Team 2 && Z Component Of(Position Of(Event Player)) >= 0) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Backward, 10, To World, Cancel Contrary Motion);
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+disabled rule("Debug")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Position And Facing HUDs")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Create HUD Text(Event Player, Custom String("position {0}\r\nfacing {1}", Position Of(Event Player), Facing Direction Of(
+			Event Player)), Null, Null, Right, 0, White, White, White, Visible To and String, Default Visibility);
+	}
+}
+
+rule("Create Some Dummy Bots When Match Started")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		disabled Global.MatchStarted == True;
+	}
+
+	actions
+	{
+		Wait(5, Ignore Condition);
+		"2 enemy bots"
+		Create Dummy Bot(Hero(Sigma), Team 2, -1, Vector(0, 0, -10), Forward);
+		Create Dummy Bot(Hero(Sigma), Team 2, -1, Vector(0, 0, -10), Forward);
+		"1 friendly bot"
+		Create Dummy Bot(Hero(Sigma), Team 1, -1, Vector(0, 0, 10), Backward);
+	}
+}
+
+rule("Bot Sigma Throw Rock At You")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Press Button(Event Player, Ability 2);
+		Wait(0.250, Ignore Condition);
+		Set Facing(Event Player, Direction Towards(Position Of(Event Player), Player Closest To Reticle(Event Player, Opposite Team Of(
+			Team Of(Event Player)))), To World);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Bot Sigma Movement")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == True;
+		Is Alive(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.Z = Random Integer(0, 2);
+		If(Event Player.Z == 0);
+			Start Throttle In Direction(Event Player, Left, 1, To World, Replace existing throttle, Direction and Magnitude);
+		Else If(Event Player.Z == 1);
+			Start Throttle In Direction(Event Player, Right, 1, To World, Replace existing throttle, Direction and Magnitude);
+		End;
+		Wait(0.250, Ignore Condition);
+		If(Event Player.Z == 0);
+			Press Button(Event Player, Jump);
+		End;
+		Loop If Condition Is True;
+	}
+}
