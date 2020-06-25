@@ -164,6 +164,9 @@ rule("Initialize Global Variables")
 
 	actions
 	{
+		Enable Death Spectate All Players(All Players(All Teams));
+		Disable Inspector Recording;
+		Disable Built-In Game Mode Completion;
 		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
 		Global.SinglePlayerModeEnabled = False;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
@@ -945,6 +948,7 @@ rule("Need Healing Voiceline: Spectate Other Players")
 		If(Is Dead(Event Player));
 			Enable Built-In Game Mode Respawning(Event Player);
 			Resurrect(Event Player);
+			Wait(0.100, Ignore Condition);
 			Call Subroutine(RespawnPlayer);
 			Event Player.SpectateMode = False;
 		Else;
@@ -1032,7 +1036,6 @@ rule("Sub0: RespawnPlayer")
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1]), To World);
 		Event Player.CheckpointTimer = 0;
 		Stop Chasing Player Variable(Event Player, CheckpointTimer);
-		Set Status(Event Player, Null, Phased Out, 9999);
 		Cancel Primary Action(Event Player);
 		Call Subroutine(CancelMomentum);
 		"Added this to fix issue where if you pressed R while using slam, the slam cooldown wasn't reset"
@@ -1087,6 +1090,7 @@ rule("Sub0: RespawnPlayer")
 		Event Player.WinstonBubbleLocation = Null;
 		Cancel Primary Action(Event Player);
 		Start Forcing Player To Be Hero(Event Player, Global.HeroUseArrayofArrays[Event Player.CurrentLevel][Event Player.CurrentCP]);
+		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
 
