@@ -82,6 +82,11 @@ settings
 
 		General
 		{
+			Baptiste
+			{
+				Regenerative Burst Cooldown Time: 70%
+			}
+
 			Roadhog
 			{
 				Ammunition Clip Size Scalar: 25%
@@ -92,6 +97,12 @@ settings
 			Widowmaker
 			{
 				Grappling Hook Cooldown Time: 0%
+			}
+
+			Winston
+			{
+				No Ammunition Requirement: On
+				Ultimate Duration: 60%
 			}
 
 			enabled heroes
@@ -186,7 +197,7 @@ rule("Initialize Global Variables")
 			Global.HeroUseArrayofArrays[Global.Z] = Array(Hero(Doomfist));
 		End;
 		"Set the hero rotation for multi-hero level"
-		Global.HeroList = Array(Hero(Doomfist), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji));
+		Global.HeroList = Array(Hero(Doomfist), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji), Hero(Baptiste));
 		"Set a custom \"player help string\" for each hero. Make sure the help text order is same as hero order above."
 		Global.HeroHelp = Array(Custom String("Doomfist\r\nYour Seismic Slam Now Resets Bhop"), Custom String(
 			"Winston\r\nUse Bubble Shield creates sphere that you can bounce on\r\nNew passive ability: Wall Climb"), Custom String(
@@ -564,6 +575,9 @@ rule("Pioneer - Create New Point")
 		"Player can't pioneer if they were the last pioneer on that level and Single Player Mode isn't engaged"
 		(Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1])
 			== True;
+		"Baptiste doesn't die when in Immortality Field "
+		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
+			== False;
 	}
 
 	actions
@@ -627,6 +641,9 @@ rule("Pioneered less than 10m")
 		"Player can't pioneer if they were the last pioneer on that level and Single Player Mode isn't engaged"
 		(Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1])
 			== True;
+		"Baptiste doesn't die when in Immortality Field "
+		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
+			== False;
 	}
 
 	actions
@@ -656,6 +673,9 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 			< Global.CPRadius;
 		"Give Doomfist ability to get a jump after using Seismic Slam"
 		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
+		"Baptiste doesn't die when in Immortality Field "
+		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
+			== False;
 	}
 
 	actions
@@ -754,6 +774,9 @@ rule("Touch Ground = Respawn")
 		disabled !(Event Player == Host Player && Event Player.CurrentCP == 0) == True;
 		"Give Doomfist ability to get a jump after using Seismic Slam"
 		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
+		"Baptiste doesn't die when in Immortality Field "
+		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
+			== False;
 	}
 
 	actions
@@ -1590,5 +1613,122 @@ rule("Wall Climb Reset When On Ground")
 	actions
 	{
 		Event Player.WinstonWallClimbEnabled = True;
+	}
+}
+
+disabled rule("BAPTISTE MODIFIERS")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Baptiste Slide (LSHIFT / Ability 1) Part 1")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Baptiste;
+	}
+
+	conditions
+	{
+		disabled Is Button Held(Event Player, Ability 1) == True;
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Clear Status(Event Player, Phased Out);
+		Set Status(Event Player, Null, Knocked Down, 9999);
+	}
+}
+
+rule("Baptiste Slide (LSHIFT / Ability 1) Part 2")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Baptiste;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Ability 1) == False;
+	}
+
+	actions
+	{
+		Clear Status(Event Player, Knocked Down);
+		Apply Impulse(Event Player, Up, 6, To World, Cancel Contrary Motion);
+		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+rule("Baptiste Slide (LSHIFT / Ability 1) Part 3")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Baptiste;
+	}
+
+	conditions
+	{
+		Has Status(Event Player, Knocked Down) == True;
+	}
+
+	actions
+	{
+		Wait(5, Abort When False);
+		Clear Status(Event Player, Knocked Down);
+		Apply Impulse(Event Player, Up, 6, To World, Cancel Contrary Motion);
+		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+rule("Baptiste Slide (LSHIFT / Ability 1) Part 4")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Baptiste;
+	}
+
+	conditions
+	{
+		Has Status(Event Player, Knocked Down) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Forward, 10, To Player, Cancel Contrary Motion);
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Baptiste Immortality Small Modifier")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Baptiste;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+	}
+
+	actions
+	{
+		Clear Status(Event Player, Phased Out);
 	}
 }
