@@ -348,6 +348,11 @@ disabled rule("Debug HUD")
 			Default Visibility);
 		Create HUD Text(Event Player, Custom String("Time spent on CP: {0}", Event Player.TotalTimeSpentOnLastCP), Null, Null, Right, 9,
 			White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, Custom String("{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero(Doomfist), Button(
+			Secondary Fire)), X Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero(
+			Doomfist), Button(Ability 1)), Y Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(
+			Hero(Doomfist), Button(Ability 2)), Z Component Of(Event Player.PunchUpperSlamUsed))), Null, Null, Left, 2, White, White,
+			White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -1253,16 +1258,20 @@ rule("Level 4 (Multi-Hero Level): Switch Hero When Player Emotes")
 	conditions
 	{
 		Is Communicating Any Emote(Event Player) == True;
-		disabled Event Player.TeleportEnabled == True;
 		(Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]) && True) == True;
 		Event Player.CurrentLevel == 4;
+		"So player cannot switch hero while in 3 sec reset after making point"
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
 	{
+		"To prevent conflict between this and Pioneering New Point Rule if emoting in 3 sec reset window"
+		Wait(0.250, Abort When False);
 		Start Forcing Player To Be Hero(Event Player, Global.HeroList[(Index Of Array Value(Global.HeroList, Hero Of(Event Player)) + 1)
 			% Count Of(Global.HeroList)]);
 		Set Ultimate Charge(Event Player, 100);
+		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
 	}
 }
 
