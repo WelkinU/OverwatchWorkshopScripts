@@ -364,7 +364,7 @@ disabled rule("Multi-Level Architecture")
 	}
 }
 
-rule("First Pioneer (Host) Create Multilevel Origin Point")
+rule("Host Create Multilevel Origin Point")
 {
 	event
 	{
@@ -541,6 +541,60 @@ disabled rule("Doom Parkour Pioneer Architecture - Individual Level")
 	event
 	{
 		Ongoing - Global;
+	}
+}
+
+rule("Pioneer Is Invisible")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		"Inside a level, not in multilevel portion"
+		Event Player.CurrentCP > 0;
+		"Redundant, but putting this here just to be safe"
+		Event Player.CurrentLevel > 0;
+		"event player = pioneer for this level / CP"
+		Event Player == Last Of(Global.CurrentPioneer[Event Player.CurrentLevel]);
+		"Is on last checkpoint of the level"
+		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
+		Count Of(Global.CPLocations[Event Player.CurrentLevel]) == Count Of(Global.CurrentPioneer[Event Player.CurrentLevel]);
+	}
+
+	actions
+	{
+		Set Invisible(Event Player, All);
+		disabled Small Message(Event Player, Custom String("You are now invisible!"));
+	}
+}
+
+rule("Non-Pioneer Is Visible (not invisible)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		"Inside a level, not in multilevel portion"
+		(Event Player.CurrentCP > 0 && Count Of(Global.CPLocations[Event Player.CurrentLevel]) == Count Of(
+			Global.CurrentPioneer[Event Player.CurrentLevel]) && True && Event Player == Last Of(
+			Global.CurrentPioneer[Event Player.CurrentLevel]) && Event Player.CurrentCP + 1 == Count Of(
+			Global.CPLocations[Event Player.CurrentLevel])) == False;
+	}
+
+	actions
+	{
+		Set Invisible(Event Player, None);
+		disabled Small Message(Event Player, Custom String("You are now visible!"));
 	}
 }
 
