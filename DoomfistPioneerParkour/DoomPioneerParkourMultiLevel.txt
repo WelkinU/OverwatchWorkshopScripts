@@ -133,6 +133,7 @@ variables
 		7: TeleportEnabled
 		9: SpectateMode
 		10: ForceRespawn
+		11: LevelCreationEnabled
 		17: WinstonWallClimbEnabled
 		18: WinstonBubbleLocation
 		19: WinstonBouncyBubbleCooldown
@@ -222,8 +223,8 @@ rule("Initialize Global HUD")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Reload: Quick Reset\r\nJump + Interact: Go back a CP\r\n{0}\r\n{1}\r\n{2}", Custom String(
 			"Change Level: Return to CP 0\r\nMelee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot"),
-			Custom String("Melee + Interact: Skip Level (after 3 min)"), Custom String("Emote: Switch Hero (Multi-Hero Level Only)")),
-			Left, 1, White, White, White, Visible To and String, Default Visibility);
+			Custom String("Interact + Melee: Skip Level (after 3 min)\r\nInteract + Crouch: Enable Level Creation"), Custom String(
+			"Emote: Switch Hero (Multi-Hero Level Only)")), Left, 1, White, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, 0, White, White, White, Visible To and String,
 			Default Visibility);
 		"Player level/CP leaderboard HUD"
@@ -248,6 +249,9 @@ rule("Initialize Player Variables and HUD")
 	{
 		Event Player.CurrentCP = 0;
 		Event Player.CurrentLevel = 0;
+		If(Event Player == Host Player);
+			Event Player.LevelCreationEnabled = True;
+		End;
 		Set Status(Event Player, Null, Phased Out, 9999);
 		Event Player.TeleportEnabled = True;
 		"Initialize Total Spent Time On CP (used for level skip option)"
@@ -376,9 +380,31 @@ rule("First Pioneer (Host) Create Multilevel Origin Point")
 		Global.IndexLevelCreateMenu = 1;
 		Call Subroutine(MakeMenuText);
 		"Create Level Type Creation Menu"
-		Create HUD Text(Filtered Array(Host Player, Current Array Element.CurrentCP == 0), Global.TextLevelCreateMenu, Null, Null, Top, -2,
-			White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled == True),
+			Global.TextLevelCreateMenu, Null, Null, Top, -2, White, White, White, Visible To and String, Default Visibility);
 		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Interact + Crouch On CP 0 To Enable Level Creation")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentCP == 0;
+		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Crouch) == True;
+	}
+
+	actions
+	{
+		Event Player.LevelCreationEnabled = True;
 	}
 }
 
@@ -394,19 +420,20 @@ rule("Create New Level")
 	conditions
 	{
 		Distance Between(Global.CPLocations[0][0], Position Of(Event Player)) > 10;
-		Event Player == Host Player;
+		disabled Event Player == Host Player;
 		Event Player.CurrentCP == 0;
 		"Make sure level hasn't already been created"
 		Count Of(Global.CPLocations[Global.IndexLevelCreateMenu]) < 2;
 		Is On Ground(Event Player) == True;
 		Is In Spawn Room(Event Player) != True;
+		Event Player.LevelCreationEnabled == True;
 	}
 
 	actions
 	{
+		Event Player.CancelPointTimer = 3;
 		Wait(0.100, Abort When False);
 		Big Message(Event Player, Custom String("Press R within 3 sec to cancel point!"));
-		Event Player.CancelPointTimer = 3;
 		Chase Player Variable At Rate(Event Player, CancelPointTimer, 0, 1, Destination and Rate);
 		While(Event Player.CancelPointTimer > 0);
 			Wait(0.033, Ignore Condition);
@@ -454,7 +481,6 @@ rule("Enter Into Level")
 				If(Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.Z][1]) < Global.CPRadius);
 					Event Player.CurrentCP = 1;
 					Event Player.CurrentLevel = Event Player.Z;
-					disabled Small Message(Event Player, Custom String("Entered {0}", Global.LevelDescriptions[Event Player.CurrentLevel]));
 					"If no pioneer for the current level and player is on last checkpoint of the level, set them as pioneer"
 					If(Count Of(Global.CurrentPioneer[Event Player.CurrentLevel]) == 1 && True);
 						Big Message(Event Player, Custom String("You Are Pioneer! Use your skills to create the next point!"));
@@ -467,6 +493,30 @@ rule("Enter Into Level")
 		End;
 		Wait(0.033, Ignore Condition);
 		Loop If Condition Is True;
+	}
+}
+
+rule("Melee to Select Level in Level Creation Menu If On Checkpoint 0")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentCP == 0;
+		Event Player.LevelCreationEnabled == True;
+		Global.GameStarted == True;
+		Is Button Held(Host Player, Melee) == True;
+	}
+
+	actions
+	{
+		Global.IndexLevelCreateMenu = Global.IndexLevelCreateMenu % (Count Of(Global.LevelDescriptions) - 1) + 1;
+		Call Subroutine(MakeMenuText);
 	}
 }
 
@@ -701,13 +751,18 @@ rule("Touch Ground = Respawn")
 		"Origin Point Exists"
 		Global.GameStarted == True;
 		"Is not making a new level at CP0"
-		!(Event Player == Host Player && Event Player.CurrentCP == 0) == True;
+		disabled !(Event Player == Host Player && Event Player.CurrentCP == 0) == True;
 		"Give Doomfist ability to get a jump after using Seismic Slam"
 		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
 	}
 
 	actions
 	{
+		"Added this if statement to stop this rule from conflicting with the \"Create New Level\" rule."
+		If(Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled);
+			Wait(0.100, Ignore Condition);
+			Abort If(Event Player.CancelPointTimer > 0);
+		End;
 		Call Subroutine(RespawnPlayer);
 	}
 }
@@ -821,30 +876,6 @@ rule("Melee + Left Click = Teleport")
 		Teleport(Event Player, Ray Cast Hit Position(Position Of(Event Player), Position Of(Event Player) + Facing Direction Of(
 			Event Player) * 60, All Players(All Teams), Event Player, True));
 		Event Player.CountUltimateTeleportNano += Up;
-	}
-}
-
-rule("Melee = Next Menu Selection")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Event Player.CurrentCP == 0;
-		Event Player == Host Player;
-		Global.GameStarted == True;
-		Is Button Held(Host Player, Melee) == True;
-	}
-
-	actions
-	{
-		Global.IndexLevelCreateMenu = Global.IndexLevelCreateMenu % (Count Of(Global.LevelDescriptions) - 1) + 1;
-		Call Subroutine(MakeMenuText);
 	}
 }
 
