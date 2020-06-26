@@ -232,10 +232,10 @@ rule("Initialize Global HUD")
 			Visible To and String, Default Visibility);
 		"Controls HUD"
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
-			"Reload: Quick Reset\r\nJump + Interact: Go back a CP\r\n{0}\r\n{1}\r\n{2}", Custom String(
-			"Change Level: Return to CP 0\r\nMelee + Left Click: Teleport (Use Sparingly)\r\nUltimate Status: View Next CP Spot"),
-			Custom String("Interact + Melee: Skip Level (after 3 min)\r\nInteract + Crouch: Enable Level Creation"), Custom String(
-			"Emote: Switch Hero (Multi-Hero Level Only)")), Left, 1, White, White, White, Visible To and String, Default Visibility);
+			"Quick Reset: Reload\r\nGo back a CP: Jump + Interact\r\n{0}\r\n{1}\r\n{2}", Custom String(
+			"Change Level: Return to CP 0\r\nTeleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Ultimate Status"),
+			Custom String("Skip Level (after 3 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouch"), Custom String(
+			"Switch Hero (Multi-Hero Level Only): Emote")), Left, 1, White, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, 0, White, White, White, Visible To and String,
 			Default Visibility);
 		"Player level/CP leaderboard HUD"
@@ -1635,7 +1635,6 @@ rule("Baptiste Slide (LSHIFT / Ability 1) Part 1")
 
 	conditions
 	{
-		disabled Is Button Held(Event Player, Ability 1) == True;
 		Is Using Ability 1(Event Player) == True;
 	}
 
@@ -1646,7 +1645,7 @@ rule("Baptiste Slide (LSHIFT / Ability 1) Part 1")
 	}
 }
 
-rule("Baptiste Slide (LSHIFT / Ability 1) Part 2")
+rule("Baptiste Slide (LSHIFT / Ability 1) - Cancel slide if player stops pressing shift")
 {
 	event
 	{
@@ -1663,12 +1662,14 @@ rule("Baptiste Slide (LSHIFT / Ability 1) Part 2")
 	actions
 	{
 		Clear Status(Event Player, Knocked Down);
-		Apply Impulse(Event Player, Up, 6, To World, Cancel Contrary Motion);
 		Set Status(Event Player, Null, Phased Out, 9999);
+		If(Is On Ground(Event Player));
+			Apply Impulse(Event Player, Up, 6, To World, Cancel Contrary Motion);
+		End;
 	}
 }
 
-rule("Baptiste Slide (LSHIFT / Ability 1) Part 3")
+rule("Baptiste Slide (LSHIFT / Ability 1) - Cancel slide after preset time")
 {
 	event
 	{
@@ -1691,7 +1692,7 @@ rule("Baptiste Slide (LSHIFT / Ability 1) Part 3")
 	}
 }
 
-rule("Baptiste Slide (LSHIFT / Ability 1) Part 4")
+rule("Baptiste Slide (LSHIFT / Ability 1) - Apply impulse when knocked down")
 {
 	event
 	{
