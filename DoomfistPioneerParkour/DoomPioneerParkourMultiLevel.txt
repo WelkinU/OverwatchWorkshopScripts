@@ -85,6 +85,8 @@ settings
 			Ana
 			{
 				Ammunition Clip Size Scalar: 25%
+				Biotic Grenade Cooldown Time: 6%
+				Sleep Dart Cooldown Time: 75%
 			}
 
 			Baptiste
@@ -185,11 +187,11 @@ rule("Initialize Global Variables")
 
 	actions
 	{
-		Enable Death Spectate All Players(All Players(All Teams));
 		Disable Inspector Recording;
+		Enable Death Spectate All Players(All Players(All Teams));
 		Disable Built-In Game Mode Completion;
 		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
-		Global.SinglePlayerModeEnabled = True;
+		Global.SinglePlayerModeEnabled = False;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
 		Global.LevelDescriptions = Array(Null, Custom String("Level 1: Easy"), Custom String("Level 2: Medium"), Custom String(
 			"Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Ana Parkour"));
@@ -291,8 +293,9 @@ rule("Initialize Player Variables and HUD")
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1], 2, Do Not Clip, Visible To Position and String,
 			Purple, Default Visibility);
 		"Player Current Level and Checkpoint HUD text"
-		Create HUD Text(Event Player, Custom String("Level {0} CP {1}", Event Player.CurrentLevel, Event Player.CurrentCP), Null, Null,
-			Top, -2, White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, Custom String("Level {0} CP {1}/{2}", Event Player.CurrentLevel, Event Player.CurrentCP, Count Of(
+			Global.CPLocations[Event Player.CurrentLevel]) - 1), Null, Null, Top, -2, White, White, White, Visible To and String,
+			Default Visibility);
 		disabled Create HUD Text(Event Player, Custom String("{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero(Doomfist), Button(
 			Secondary Fire)), X Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero(
 			Doomfist), Button(Ability 1)), Y Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(
@@ -309,7 +312,11 @@ rule("Initialize Player Variables and HUD")
 		"Hero Help HUD"
 		Create HUD Text(Event Player, Null, Null, Global.HeroHelp[Index Of Array Value(Global.HeroList, Hero Of(Event Player))], Left, 5,
 			White, White, Green, Visible To and String, Default Visibility);
-		Create HUD Text(Event Player, Custom String("Hero Info"), Null, Null, Left, 4, White, White, White, Visible To and String,
+		Create HUD Text(Event Player, Custom String("{0} Modifiers", Hero Of(Event Player)), Null, Null, Left, 4, White, White, White,
+			Visible To and String, Default Visibility);
+		"Pioneer Timer"
+		Create HUD Text(Filtered Array(Event Player, Event Player.IsPioneer == True), Custom String("Pioneer Timer: {0}/{1}",
+			Event Player.TotalTimeSpentOnLastCP, 180), Null, Null, Right, -0.100, White, White, White, Visible To and String,
 			Default Visibility);
 	}
 }
@@ -618,7 +625,6 @@ rule("Pioneer Is Invisible")
 	actions
 	{
 		Set Invisible(Event Player, All);
-		disabled Small Message(Event Player, Custom String("You are now invisible!"));
 		Event Player.IsPioneer = True;
 	}
 }
@@ -644,16 +650,7 @@ rule("Non-Pioneer Is Visible (not invisible)")
 	actions
 	{
 		Set Invisible(Event Player, None);
-		disabled Small Message(Event Player, Custom String("You are now visible!"));
 		Event Player.IsPioneer = False;
-	}
-}
-
-rule("LevelTimers [NOT IMPLEMENTED YET]")
-{
-	event
-	{
-		Ongoing - Global;
 	}
 }
 
@@ -806,6 +803,76 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 		End;
 		Call Subroutine(RespawnPlayer);
 		Event Player.TotalTimeSpentOnLastCP = 0;
+	}
+}
+
+rule("Pioneer Runs Out of Time On Making Point")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.IsPioneer == True;
+		Event Player.TotalTimeSpentOnLastCP > 180;
+	}
+
+	actions
+	{
+		"Give player extra 3 seconds to pioneer if they make point in last 3 seconds of pioneer time"
+		If(Event Player.CancelPointTimer > 0);
+			Wait(3.100, Ignore Condition);
+			Abort If Condition Is False;
+		End;
+		"get all other players on the same point"
+		Event Player.I = Filtered Array(All Players(All Teams),
+			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player != Current Array Element && True);
+		"If there is a player to pass pioneer to"
+		If(Count Of(Event Player.I) > 0);
+			Big Message(Event Player, Custom String("ran out of time on pioneer"));
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
+			Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
+				Global.CurrentPioneer[Event Player.CurrentLevel])));
+		Else;
+			disabled Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+			Big Message(Event Player, Custom String("No one else to pass pioneer to"));
+		End;
+	}
+}
+
+rule("Pioneer Leaves Match")
+{
+	event
+	{
+		Player Left Match;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.IsPioneer == True;
+	}
+
+	actions
+	{
+		"get all other players on the same point"
+		Event Player.I = Filtered Array(All Players(All Teams),
+			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player != Current Array Element && True);
+		"If there is a player to pass pioneer to"
+		If(Count Of(Event Player.I) > 0);
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
+			Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
+				Global.CurrentPioneer[Event Player.CurrentLevel])));
+		Else;
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+		End;
 	}
 }
 
@@ -2016,7 +2083,7 @@ rule("Heal = Impulse {must be damaged when spawning}")
 	}
 }
 
-rule("Ana Health")
+rule("Ana Health Managment")
 {
 	event
 	{
@@ -2036,7 +2103,6 @@ rule("Ana Health")
 		Clear Status(Event Player, Phased Out);
 		Damage(Event Player, Event Player, 50);
 		Wait(0.250, Ignore Condition);
-		Small Message(All Players(All Teams), Custom String("damage"));
 		Loop If Condition Is True;
 		Set Status(Event Player, Null, Phased Out, 9999);
 	}
