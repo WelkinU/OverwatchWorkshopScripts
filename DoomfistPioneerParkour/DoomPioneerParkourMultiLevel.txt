@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - MultiLevel Edition! Host creates levels, different levels have different restrictions on the Pioneer. Version 0.9. Made by WelkinTern, source control here:   https://github.com/WelkinU/OverwatchWorkshopScripts"
+		Description: "Doomfist Pioneering Parkour - MultiLevel Edition! Host creates levels, different levels have different restrictions on the Pioneer. Version 0.9. Made by WelkinTern. Source Control:   https://github.com/WelkinU/OverwatchWorkshopScripts"
 	}
 
 	modes
@@ -150,6 +150,7 @@ variables
 		19: WinstonBouncyBubbleCooldown
 		21: WinstonBubbleEffect
 		23: CancelPointTimer
+		25: EnterIntoLevelIterator
 }
 
 subroutines
@@ -332,6 +333,29 @@ rule("Player Leaderboard Computation & String Generation")
 	}
 }
 
+rule("If player joins after origin point created, start them at origin point")
+{
+	event
+	{
+		Player Joined Match;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.GameStarted == True;
+	}
+
+	actions
+	{
+		Wait(0.100, Ignore Condition);
+		Loop If(!Has Spawned(Event Player));
+		Wait(0.100, Ignore Condition);
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
 disabled rule("Debug HUD")
 {
 	event
@@ -385,8 +409,8 @@ rule("Host Create Multilevel Origin Point")
 	actions
 	{
 		Small Message(All Players(All Teams), Custom String("Creating origin point"));
-		For Player Variable(Event Player, Z, 0, Count Of(Global.LevelDescriptions), 1);
-			Global.CPLocations[Event Player.Z] = Array(Position Of(Event Player));
+		For Player Variable(Event Player, EnterIntoLevelIterator, 0, Count Of(Global.LevelDescriptions), 1);
+			Global.CPLocations[Event Player.EnterIntoLevelIterator] = Array(Position Of(Event Player));
 		End;
 		"Create origin ring - visible to all players on Level 0 (level selection part)."
 		Create Effect(Filtered Array(All Players(All Teams), Global.GameStarted && Current Array Element.CurrentCP == 0), Ring, Purple,
@@ -399,6 +423,10 @@ rule("Host Create Multilevel Origin Point")
 		Create HUD Text(Filtered Array(All Players(All Teams), Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled == True),
 			Global.TextLevelCreateMenu, Null, Null, Top, -2, White, White, White, Visible To and String, Default Visibility);
 		Call Subroutine(RespawnPlayer);
+		"Respawn other players"
+		Filtered Array(All Players(All Teams),
+			Current Array Element.CurrentLevel == Event Player.CurrentLevel && Current Array Element.CurrentCP == Event Player.CurrentCP)
+			.ForceRespawn = True;
 	}
 }
 
@@ -420,7 +448,13 @@ rule("Interact + Crouch On CP 0 To Enable Level Creation")
 
 	actions
 	{
-		Event Player.LevelCreationEnabled = True;
+		If(Event Player.LevelCreationEnabled);
+			Event Player.LevelCreationEnabled = False;
+			Small Message(All Players(All Teams), Custom String("Level Creation Disabled"));
+		Else;
+			Event Player.LevelCreationEnabled = True;
+			Small Message(All Players(All Teams), Custom String("Level Creation Enabled"));
+		End;
 	}
 }
 
@@ -443,6 +477,7 @@ rule("Create New Level")
 		Is On Ground(Event Player) == True;
 		Is In Spawn Room(Event Player) != True;
 		Event Player.LevelCreationEnabled == True;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
@@ -475,7 +510,7 @@ rule("Create New Level")
 	}
 }
 
-rule("Enter Into Level")
+rule("Enter Into Level - Runs continuously on Checkpoint 0")
 {
 	event
 	{
@@ -488,15 +523,19 @@ rule("Enter Into Level")
 	{
 		Event Player.CurrentCP == 0;
 		Is On Ground(Event Player) == True;
+		"Redundant"
+		Global.GameStarted == True;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
 	{
-		For Player Variable(Event Player, Z, 1, Count Of(Global.CPLocations), 1);
-			If(Count Of(Global.CPLocations[Event Player.Z]) > 1);
-				If(Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.Z][1]) < Global.CPRadius);
+		For Player Variable(Event Player, EnterIntoLevelIterator, 1, Count Of(Global.CPLocations), 1);
+			If(Count Of(Global.CPLocations[Event Player.EnterIntoLevelIterator]) > 1);
+				If(Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.EnterIntoLevelIterator][1]) < Global.CPRadius);
 					Event Player.CurrentCP = 1;
-					Event Player.CurrentLevel = Event Player.Z;
+					Event Player.CurrentLevel = Event Player.EnterIntoLevelIterator;
+					Event Player.TotalTimeSpentOnLastCP = 0;
 					"If no pioneer for the current level and player is on last checkpoint of the level, set them as pioneer"
 					If(Count Of(Global.CurrentPioneer[Event Player.CurrentLevel]) == 1 && True);
 						Big Message(Event Player, Custom String("You Are Pioneer! Use your skills to create the next point!"));
@@ -526,7 +565,7 @@ rule("Melee to Select Level in Level Creation Menu If On Checkpoint 0")
 		Event Player.CurrentCP == 0;
 		Event Player.LevelCreationEnabled == True;
 		Global.GameStarted == True;
-		Is Button Held(Host Player, Melee) == True;
+		Is Button Held(Event Player, Melee) == True;
 	}
 
 	actions
@@ -637,6 +676,7 @@ rule("Pioneer - Create New Point")
 		"Baptiste doesn't die when in Immortality Field "
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
@@ -735,6 +775,7 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 		"Baptiste doesn't die when in Immortality Field "
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
@@ -829,22 +870,22 @@ rule("Touch Ground = Respawn")
 			> Global.CPRadius;
 		"Origin Point Exists"
 		Global.GameStarted == True;
-		"Is not making a new level at CP0"
-		disabled !(Event Player == Host Player && Event Player.CurrentCP == 0) == True;
 		"Give Doomfist ability to get a jump after using Seismic Slam"
 		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
 		"Baptiste doesn't die when in Immortality Field "
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
+		"Ignore This On CP 0"
+		Event Player.CurrentCP > 0;
 	}
 
 	actions
 	{
 		"Added this if statement to stop this rule from conflicting with the \"Create New Level\" rule."
-		If(Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled);
-			Wait(0.100, Ignore Condition);
-			Abort If(Event Player.CancelPointTimer > 0);
-		End;
+		disabled If(Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled);
+		disabled Wait(0.100, Ignore Condition);
+		disabled Abort If(Event Player.CancelPointTimer > 0);
+		disabled End;
 		Call Subroutine(RespawnPlayer);
 	}
 }
@@ -1058,6 +1099,7 @@ rule("Need Healing Voiceline: Spectate Other Players")
 
 	actions
 	{
+		Enable Death Spectate All Players(All Players(All Teams));
 		If(Is Dead(Event Player));
 			Enable Built-In Game Mode Respawning(Event Player);
 			Resurrect(Event Player);
@@ -1070,6 +1112,7 @@ rule("Need Healing Voiceline: Spectate Other Players")
 			Disable Built-In Game Mode Respawning(Event Player);
 			Kill(Event Player, Null);
 		End;
+		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
 
@@ -1092,6 +1135,7 @@ rule("Skip Level Option Message - Only available if you spent 3 min on a point")
 
 	actions
 	{
+		Wait(0.250, Abort When False);
 		Big Message(Event Player, Custom String("Spent more than 3 min on point. Melee + Interact to skip to next checkpoint."));
 	}
 }
