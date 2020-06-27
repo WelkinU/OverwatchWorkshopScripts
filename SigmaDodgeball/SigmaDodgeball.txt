@@ -93,6 +93,8 @@ rule("Initialize Game Mode Stuff")
 		Global.GamePhaseDescription = Custom String("Warmup Phase");
 		Create HUD Text(All Players(All Teams), Custom String("{0}", Global.GamePhaseDescription), Null, Null, Top, 1, White, White, White,
 			Visible To and String, Default Visibility);
+		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: Y8DKQ"), Null, Null, Right, -1, White, White, White,
+			Visible To and String, Default Visibility);
 	}
 }
 
@@ -609,7 +611,7 @@ disabled rule("Debug")
 	}
 }
 
-rule("Position And Facing HUDs")
+disabled rule("Position And Facing HUDs")
 {
 	event
 	{
