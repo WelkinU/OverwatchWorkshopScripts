@@ -123,9 +123,10 @@ variables
 		6: GameStarted
 		7: HeroUseArrayofArrays
 		8: CountPunchUpperSlam
-		9: CountMeteorTeleportNano
+		9: CountMeteorTeleportPrimary
 		13: HeroList
 		14: HeroHelp
+		15: PrimaryFireUsefulForTheseHeros
 		17: CPRadius
 		18: SinglePlayerModeEnabled
 		19: TextLevelCreateMenu
@@ -139,12 +140,14 @@ variables
 		2: LevelMaxUnlockedCPArray
 		3: CheckpointTimer
 		4: PunchUpperSlamUsed
-		5: CountUltimateTeleportNano
+		5: CountUltimateTeleportPrimary
 		6: TotalTimeSpentOnLastCP
 		7: TeleportEnabled
 		9: SpectateMode
 		10: ForceRespawn
 		11: LevelCreationEnabled
+		15: IsPioneer
+		16: AnaSleepDartTeleLocation
 		17: WinstonWallClimbEnabled
 		18: WinstonBubbleLocation
 		19: WinstonBouncyBubbleCooldown
@@ -181,10 +184,11 @@ rule("Initialize Global Variables")
 		Disable Inspector Recording;
 		Disable Built-In Game Mode Completion;
 		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
-		Global.SinglePlayerModeEnabled = False;
+		Global.SinglePlayerModeEnabled = True;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
 		Global.LevelDescriptions = Array(Null, Custom String("Level 1: Easy"), Custom String("Level 2: Medium"), Custom String(
 			"Level 3: Expert"), Custom String("Level 4: Multi-Hero"));
+		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		"Global constant for checkpoint circle radius"
 		Global.CPRadius = 2;
 		"Set to False, if pioneer has not set Multi-Level Origin point"
@@ -194,15 +198,16 @@ rule("Initialize Global Variables")
 			Global.CPLocations[Global.Z] = Null;
 			Global.CurrentPioneer[Global.Z] = Array(Host Player);
 			Global.CountPunchUpperSlam[Global.Z] = Array(Vector(9, 9, 9));
-			Global.CountMeteorTeleportNano[Global.Z] = Array(Vector(9, 9, 9));
+			Global.CountMeteorTeleportPrimary[Global.Z] = Array(Vector(9, 9, 9));
 			Global.HeroUseArrayofArrays[Global.Z] = Array(Hero(Doomfist));
 		End;
 		"Set the hero rotation for multi-hero level"
-		Global.HeroList = Array(Hero(Doomfist), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji), Hero(Baptiste));
+		Global.HeroList = Array(Hero(Doomfist), Hero(Ana), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji), Hero(Baptiste));
 		"Set a custom \"player help string\" for each hero. Make sure the help text order is same as hero order above."
 		Global.HeroHelp = Array(Custom String("Doomfist\r\nYour Seismic Slam Now Resets Bhop"), Custom String(
-			"Winston\r\nUse Bubble Shield creates sphere that you can bounce on\r\nNew passive ability: Wall Climb"), Custom String(
-			"Roadhog\r\n{0}\r\n{1}", Custom String(
+			"Ana\r\nPrimary Fire - Impulse in Direction\r\nSleep Dart - Teleport\r\nBiotic Nade - Impulse in Direction\r\nNano - Doesn't Do Anything "),
+			Custom String("Winston\r\nUse Bubble Shield creates sphere that you can bounce on\r\nNew passive ability: Wall Climb"),
+			Custom String("Roadhog\r\n{0}\r\n{1}", Custom String(
 			"Chain Hook now functions like Widowmaker hook\r\nTake a Breather makes you bounce - faster fall = higher bounce"),
 			Custom String("Right Click is like Ashe Coach Gun\r\nWhole Hog knocks you back - even through walls")), Custom String(
 			"Lucio\r\nUltimate prevents you from dying while touching ground"), Custom String("Genji\r\nUltimate Duration Lowered"),
@@ -609,6 +614,7 @@ rule("Pioneer Is Invisible")
 	{
 		Set Invisible(Event Player, All);
 		disabled Small Message(Event Player, Custom String("You are now invisible!"));
+		Event Player.IsPioneer = True;
 	}
 }
 
@@ -634,6 +640,7 @@ rule("Non-Pioneer Is Visible (not invisible)")
 	{
 		Set Invisible(Event Player, None);
 		disabled Small Message(Event Player, Custom String("You are now visible!"));
+		Event Player.IsPioneer = False;
 	}
 }
 
@@ -702,8 +709,8 @@ rule("Pioneer - Create New Point")
 		Abort If(Is In Spawn Room(Event Player));
 		Small Message(Event Player, Custom String("Created Point! {0}", Event Player.PunchUpperSlamUsed));
 		Modify Global Variable At Index(CountPunchUpperSlam, Event Player.CurrentLevel, Append To Array, Event Player.PunchUpperSlamUsed);
-		Modify Global Variable At Index(CountMeteorTeleportNano, Event Player.CurrentLevel, Append To Array,
-			Event Player.CountUltimateTeleportNano);
+		Modify Global Variable At Index(CountMeteorTeleportPrimary, Event Player.CurrentLevel, Append To Array,
+			Event Player.CountUltimateTeleportPrimary);
 		Modify Global Variable At Index(HeroUseArrayofArrays, Event Player.CurrentLevel, Append To Array, Hero Of(Event Player));
 		Modify Global Variable At Index(CPLocations, Event Player.CurrentLevel, Append To Array, Event Player.W);
 		Event Player.TotalTimeSpentOnLastCP = 0;
@@ -890,26 +897,6 @@ rule("Touch Ground = Respawn")
 	}
 }
 
-rule("Used Secondary (Rocket Punch)")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Firing Secondary(Event Player) == True;
-	}
-
-	actions
-	{
-		Event Player.PunchUpperSlamUsed += Left;
-	}
-}
-
 rule("Used Ability 1 (Uppercut)")
 {
 	event
@@ -966,7 +953,48 @@ rule("Used Ultimate")
 
 	actions
 	{
-		Event Player.CountUltimateTeleportNano += Left;
+		Event Player.CountUltimateTeleportPrimary += Left;
+	}
+}
+
+rule("Used Secondary (Rocket Punch)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.PunchUpperSlamUsed += Left;
+	}
+}
+
+rule("Used Primary On Hero Where Primary Is Relevant (Ana, etc.)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Firing Primary(Event Player) == True;
+		Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) >= 0;
+	}
+
+	actions
+	{
+		Event Player.CountUltimateTeleportPrimary += Forward;
 	}
 }
 
@@ -998,7 +1026,7 @@ rule("Melee + Left Click = Teleport")
 	{
 		Teleport(Event Player, Ray Cast Hit Position(Position Of(Event Player), Position Of(Event Player) + Facing Direction Of(
 			Event Player) * 60, All Players(All Teams), Event Player, True));
-		Event Player.CountUltimateTeleportNano += Up;
+		Event Player.CountUltimateTeleportPrimary += Up;
 	}
 }
 
@@ -1049,6 +1077,8 @@ rule("R is Respawn Player")
 		Event Player.CancelPointTimer == 0;
 		"So player can't R and get teleported outside map before origin point is selected"
 		Global.GameStarted == True;
+		"Quick Reset Disabled for Ana, so you can reload - modify the array here for additional disable"
+		Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) < 0;
 	}
 
 	actions
@@ -1203,7 +1233,7 @@ rule("Sub0: RespawnPlayer")
 		Set Ultimate Charge(Event Player, 100);
 		Event Player.CancelPointTimer = 0;
 		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
-		Event Player.CountUltimateTeleportNano = Vector(0, 0, 0);
+		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 		"If player is on point that has already been created (ie. player is not pioneer, player is not waiting for pioneer, etc.)"
 		If(Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1);
 			If(X Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
@@ -1221,17 +1251,24 @@ rule("Sub0: RespawnPlayer")
 			Else;
 				Set Ability 2 Enabled(Event Player, True);
 			End;
-			If(X Component Of(Global.CountMeteorTeleportNano[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+			If(X Component Of(Global.CountMeteorTeleportPrimary[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
 				Set Ultimate Ability Enabled(Event Player, False);
 			Else;
 				Set Ultimate Ability Enabled(Event Player, True);
 			End;
-			If(Y Component Of(Global.CountMeteorTeleportNano[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+			If(Y Component Of(Global.CountMeteorTeleportPrimary[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
 				Event Player.TeleportEnabled = False;
 			Else;
 				Event Player.TeleportEnabled = True;
 				If(Event Player.CurrentCP > 0);
 					Big Message(Event Player, Custom String("Teleport enabled for this point! Use Left Click + Melee to teleport!"));
+				End;
+			End;
+			If(Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) >= 0);
+				If(Z Component Of(Global.CountMeteorTeleportPrimary[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+					Set Primary Fire Enabled(Event Player, False);
+				Else;
+					Set Primary Fire Enabled(Event Player, True);
 				End;
 			End;
 		"Is beginning of match, or player is pioneer, or player is waiting for pioneer"
@@ -1241,6 +1278,7 @@ rule("Sub0: RespawnPlayer")
 			Set Ability 2 Enabled(Event Player, True);
 			Event Player.TeleportEnabled = True;
 			Set Ultimate Ability Enabled(Event Player, True);
+			Set Primary Fire Enabled(Event Player, True);
 		End;
 		Event Player.WinstonBouncyBubbleCooldown = 0;
 		Destroy Effect(Event Player.WinstonBubbleEffect);
@@ -1312,7 +1350,7 @@ disabled rule("Level Modifiers")
 	}
 }
 
-rule("Level 1 Modifer - Only Have 6 Seconds To Make Point")
+rule("Level 1 Modifer - Only Have 5 Seconds To Make Point")
 {
 	event
 	{
@@ -1328,6 +1366,8 @@ rule("Level 1 Modifer - Only Have 6 Seconds To Make Point")
 		"Player Has Left Point"
 		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP])
 			> Global.CPRadius;
+		"For Pioneer Only"
+		Event Player.IsPioneer == True;
 	}
 
 	actions
@@ -1684,13 +1724,13 @@ rule("Winston Wall Climb")
 
 	actions
 	{
-		Event Player.Q = 4;
+		Event Player.AnaSleepDartTeleLocation = 4;
 		"Set Wall Climb to have a max of 4 sec duration. This prevents you from wall climing against a roof/skybox for indefinite stall."
-		Chase Player Variable Over Time(Event Player, Q, 0, 4, Destination and Duration);
+		Chase Player Variable Over Time(Event Player, AnaSleepDartTeleLocation, 0, 4, Destination and Duration);
 		"Wall Climb while Jump is held, have been wall climbing less than 4 sec, are within 0.5m of wall"
-		While(Is Button Held(Event Player, Jump) && Event Player.Q > 0 && Distance Between(Ray Cast Hit Position(Eye Position(
-			Event Player), Eye Position(Event Player) + Direction From Angles(Horizontal Angle From Direction(Facing Direction Of(
-			Event Player)), 0) * 10, All Players(All Teams), Event Player, True), Eye Position(Event Player)) < 3);
+		While(Is Button Held(Event Player, Jump) && Event Player.AnaSleepDartTeleLocation > 0 && Distance Between(Ray Cast Hit Position(
+			Eye Position(Event Player), Eye Position(Event Player) + Direction From Angles(Horizontal Angle From Direction(
+			Facing Direction Of(Event Player)), 0) * 10, All Players(All Teams), Event Player, True), Eye Position(Event Player)) < 3);
 			Wait(0.033, Ignore Condition);
 			Set Move Speed(Event Player, 0);
 			Apply Impulse(Event Player, Up, 7, To World, Cancel Contrary Motion);
@@ -1838,5 +1878,122 @@ rule("Baptiste Immortality Small Modifier")
 	actions
 	{
 		Clear Status(Event Player, Phased Out);
+	}
+}
+
+disabled rule("ANA MODIFIERS")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Ana Primary Pulse")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Firing Primary(Event Player) == True;
+		Has Status(Event Player, Rooted) == False;
+		disabled Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Gravity(Event Player, 0);
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), 15, To World, Cancel Contrary Motion);
+		Wait(0.060, Ignore Condition);
+		Set Gravity(Event Player, 100);
+	}
+}
+
+rule("Ana Sleep Dart Teleport")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Stop Camera(Event Player);
+		"The duration before Ana fires sleep dart"
+		Wait(0.300, Ignore Condition);
+		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ Facing Direction Of(Event Player) * 180, All Players(All Teams), Event Player, True);
+		"Shorten ray cast to avoid unintended tele through surfaces"
+		Event Player.AnaSleepDartTeleLocation -= Facing Direction Of(Event Player) * 0.500;
+		If(Y Component Of(Event Player.AnaSleepDartTeleLocation) > 24);
+			Small Message(Event Player, Custom String("Teleport location elevation too high"));
+			Cancel Primary Action(Event Player);
+			Wait(0.100, Ignore Condition);
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+			Abort;
+		End;
+		"Sleep dart travel time"
+		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
+		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
+	}
+}
+
+rule("Heal = Impulse {must be damaged when spawning}")
+{
+	event
+	{
+		Player Dealt Healing;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Healee == Healer;
+		Has Status(Event Player, Rooted) == False;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), -15, To World, Cancel Contrary Motion);
+		Wait(1, Ignore Condition);
+	}
+}
+
+rule("Ana Health")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Normalized Health(Event Player) >= 1;
+		Is In Spawn Room(Event Player) != True;
+	}
+
+	actions
+	{
+		Clear Status(Event Player, Phased Out);
+		Damage(Event Player, Event Player, 50);
+		Wait(0.250, Ignore Condition);
+		Small Message(All Players(All Teams), Custom String("damage"));
+		Loop If Condition Is True;
+		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
