@@ -85,7 +85,7 @@ settings
 			Ana
 			{
 				Ammunition Clip Size Scalar: 25%
-				Biotic Grenade Cooldown Time: 6%
+				Biotic Grenade Cooldown Time: 60%
 				Sleep Dart Cooldown Time: 75%
 			}
 
@@ -193,8 +193,8 @@ rule("Initialize Global Variables")
 		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
 		Global.SinglePlayerModeEnabled = False;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
-		Global.LevelDescriptions = Array(Null, Custom String("Level 1: Easy"), Custom String("Level 2: Medium"), Custom String(
-			"Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Ana Parkour"));
+		Global.LevelDescriptions = Array(Custom String("Free Roam"), Custom String("Level 1: Easy"), Custom String("Level 2: Medium"),
+			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Ana Parkour"));
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		"Global constant for checkpoint circle radius"
 		Global.CPRadius = 2;
@@ -487,7 +487,6 @@ rule("Create New Level")
 	conditions
 	{
 		Distance Between(Global.CPLocations[0][0], Position Of(Event Player)) > 10;
-		disabled Event Player == Host Player;
 		Event Player.CurrentCP == 0;
 		"Make sure level hasn't already been created"
 		Count Of(Global.CPLocations[Global.IndexLevelCreateMenu]) < 2;
@@ -495,6 +494,8 @@ rule("Create New Level")
 		Is In Spawn Room(Event Player) != True;
 		Event Player.LevelCreationEnabled == True;
 		Has Spawned(Event Player) == True;
+		"Not in free roam mode"
+		Global.IndexLevelCreateMenu > 0;
 	}
 
 	actions
@@ -587,7 +588,7 @@ rule("Melee to Select Level in Level Creation Menu If On Checkpoint 0")
 
 	actions
 	{
-		Global.IndexLevelCreateMenu = Global.IndexLevelCreateMenu % (Count Of(Global.LevelDescriptions) - 1) + 1;
+		Global.IndexLevelCreateMenu = (Global.IndexLevelCreateMenu + 1) % (Count Of(Global.LevelDescriptions) - 0) + 0;
 		Call Subroutine(MakeMenuText);
 	}
 }
@@ -1049,7 +1050,7 @@ rule("Used Secondary (Rocket Punch)")
 	}
 }
 
-rule("Used Primary On Hero Where Primary Is Relevant (Ana, etc.)")
+rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
 {
 	event
 	{
@@ -1371,39 +1372,18 @@ rule("Sub1: MakeMenuText - Make Text For Level Creation Type Menu")
 
 	actions
 	{
-		disabled If(Global.IndexLevelCreateMenu == 1);
-		disabled Global.TextLevelCreateMenu = Custom String("Melee = Next Selection\r\n{0}\r\n{1}\r\n{2}", Custom String("{0} {1} {2}", Icon String(
-			Arrow: Right), Global.LevelDescriptions[1], Icon String(Arrow: Left)), Global.LevelDescriptions[2], Custom String("{0}\r\n{1}",
-			Global.LevelDescriptions[3], Global.LevelDescriptions[4]));
-		disabled Else If(Global.IndexLevelCreateMenu == 2);
-		disabled Global.TextLevelCreateMenu = Custom String("Melee = Next Selection\r\n{0}\r\n{1}\r\n{2}", Custom String("{1}", Icon String(
-			Arrow: Right), Global.LevelDescriptions[1], Icon String(Arrow: Left)), Custom String("{0} {1} {2}", Icon String(Arrow: Right),
-			Global.LevelDescriptions[2], Icon String(Arrow: Left)), Custom String("{0}\r\n{1}", Global.LevelDescriptions[3],
-			Global.LevelDescriptions[4]));
-		disabled Else If(Global.IndexLevelCreateMenu == 3);
-		disabled Global.TextLevelCreateMenu = Custom String("Melee = Next Selection\r\n{0}\r\n{1}\r\n{2}", Custom String("{1}", Icon String(
-			Arrow: Right), Global.LevelDescriptions[1], Icon String(Arrow: Left)), Custom String("{1}", Icon String(Arrow: Right),
-			Global.LevelDescriptions[2], Icon String(Arrow: Left)), Custom String("{0}\r\n{1}", Custom String("{0} {1} {2}", Icon String(
-			Arrow: Right), Global.LevelDescriptions[3], Icon String(Arrow: Left)), Global.LevelDescriptions[4]));
-		disabled Else If(Global.IndexLevelCreateMenu == 4);
-		disabled Global.TextLevelCreateMenu = Custom String("Melee = Next Selection\r\n{0}\r\n{1}\r\n{2}", Custom String("{1}", Icon String(
-			Arrow: Right), Global.LevelDescriptions[1], Icon String(Arrow: Left)), Custom String("{1}", Icon String(Arrow: Right),
-			Global.LevelDescriptions[2], Icon String(Arrow: Left)), Custom String("{0}\r\n{1}", Custom String("{1}", Icon String(
-			Arrow: Right), Global.LevelDescriptions[3], Icon String(Arrow: Left)), Custom String("{0} {1} {2}", Icon String(Arrow: Right),
-			Global.LevelDescriptions[4], Icon String(Arrow: Left))));
-		disabled End;
-		For Player Variable(Event Player, Y, 1, Count Of(Global.LevelDescriptions), 1);
+		For Player Variable(Event Player, Y, 0, Count Of(Global.LevelDescriptions), 1);
 			If(Event Player.Y == Global.IndexLevelCreateMenu);
-				If(Event Player.Y == 1);
+				If(Event Player.Y == 0);
 					Global.TextLevelCreateMenu = Custom String("Melee = Next Selection\r\n{0} {1} {2}", Icon String(Arrow: Right),
-						Global.LevelDescriptions[1], Icon String(Arrow: Left));
+						Global.LevelDescriptions[0], Icon String(Arrow: Left));
 				Else;
 					Global.TextLevelCreateMenu = Custom String("{0}\r\n{1}", Global.TextLevelCreateMenu, Custom String("{0} {1} {2}", Icon String(
 						Arrow: Right), Global.LevelDescriptions[Event Player.Y], Icon String(Arrow: Left)));
 				End;
 			Else;
-				If(Event Player.Y == 1);
-					Global.TextLevelCreateMenu = Custom String("Melee = Next Selection\r\n{1}", Null, Global.LevelDescriptions[1]);
+				If(Event Player.Y == 0);
+					Global.TextLevelCreateMenu = Custom String("Melee = Next Selection\r\n{1}", Null, Global.LevelDescriptions[0]);
 				Else;
 					Global.TextLevelCreateMenu = Custom String("{0}\r\n{1}", Global.TextLevelCreateMenu, Custom String("{1}", Null,
 						Global.LevelDescriptions[Event Player.Y]));
