@@ -187,11 +187,11 @@ rule("Initialize Global Variables")
 
 	actions
 	{
+		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
+		Global.SinglePlayerModeEnabled = False;
 		Disable Inspector Recording;
 		Enable Death Spectate All Players(All Players(All Teams));
 		Disable Built-In Game Mode Completion;
-		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
-		Global.SinglePlayerModeEnabled = False;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
 		Global.LevelDescriptions = Array(Custom String("Free Roam"), Custom String("Level 1: Easy"), Custom String("Level 2: Medium"),
 			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Ana Parkour"));
@@ -296,11 +296,6 @@ rule("Initialize Player Variables and HUD")
 		Create HUD Text(Event Player, Custom String("Level {0} CP {1}/{2}", Event Player.CurrentLevel, Event Player.CurrentCP, Count Of(
 			Global.CPLocations[Event Player.CurrentLevel]) - 1), Null, Null, Top, -2, White, White, White, Visible To and String,
 			Default Visibility);
-		disabled Create HUD Text(Event Player, Custom String("{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero(Doomfist), Button(
-			Secondary Fire)), X Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero(
-			Doomfist), Button(Ability 1)), Y Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(
-			Hero(Doomfist), Button(Ability 2)), Z Component Of(Event Player.PunchUpperSlamUsed))), Null, Null, Left, 2, White, White,
-			White, Visible To and String, Default Visibility);
 		"Checkpoint Timer HUD - Used on Level 1"
 		Create HUD Text(Filtered Array(Event Player, Current Array Element.CheckpointTimer > 0), Custom String("Time Remaining: {0}sec",
 			Event Player.CheckpointTimer), Null, Null, Top, -1, White, White, White, Visible To and String, Default Visibility);
@@ -824,6 +819,8 @@ rule("Pioneer Runs Out of Time On Making Point")
 
 	actions
 	{
+		"Prevent conflict between this rule and Arrive At Point rule setting next pioneer"
+		Wait(1, Abort When False);
 		"Give player extra 3 seconds to pioneer if they make point in last 3 seconds of pioneer time"
 		If(Event Player.CancelPointTimer > 0);
 			Wait(3.100, Ignore Condition);
@@ -843,6 +840,8 @@ rule("Pioneer Runs Out of Time On Making Point")
 			disabled Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
 			Big Message(Event Player, Custom String("No one else to pass pioneer to"));
 		End;
+		Event Player.I.TotalTimeSpentOnLastCP = 0;
+		Event Player.TotalTimeSpentOnLastCP = 0;
 	}
 }
 
@@ -862,6 +861,7 @@ rule("Pioneer Leaves Match")
 
 	actions
 	{
+		Small Message(All Players(All Teams), Custom String("Pioneer {0} Left Match", Event Player));
 		"get all other players on the same point"
 		Event Player.I = Filtered Array(All Players(All Teams),
 			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player != Current Array Element && True);
@@ -1358,6 +1358,8 @@ rule("Sub0: RespawnPlayer")
 		Event Player.WinstonBubbleLocation = Null;
 		Cancel Primary Action(Event Player);
 		Start Forcing Player To Be Hero(Event Player, Global.HeroUseArrayofArrays[Event Player.CurrentLevel][Event Player.CurrentCP]);
+		"Should Fix Phased Out Status issue"
+		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
@@ -2027,7 +2029,8 @@ rule("Ana Sleep Dart Teleport")
 		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
 			+ Facing Direction Of(Event Player) * 180, All Players(All Teams), Event Player, True);
 		"Shorten ray cast to avoid unintended tele through surfaces"
-		Event Player.AnaSleepDartTeleLocation -= Facing Direction Of(Event Player) * 0.500;
+		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Event Player.AnaSleepDartTeleLocation, Eye Position(Event Player))
+			* -0.500;
 		If(Y Component Of(Event Player.AnaSleepDartTeleLocation) > 24);
 			Small Message(Event Player, Custom String("Teleport location elevation too high"));
 			Cancel Primary Action(Event Player);
@@ -2038,6 +2041,7 @@ rule("Ana Sleep Dart Teleport")
 		"Sleep dart travel time"
 		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
 		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
+		Small Message(Event Player, Custom String("{0}", Event Player.AnaSleepDartTeleLocation));
 	}
 }
 
