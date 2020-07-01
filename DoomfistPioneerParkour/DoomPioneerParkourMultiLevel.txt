@@ -91,6 +91,7 @@ settings
 
 			Baptiste
 			{
+				Immortality Field Cooldown Time: 70%
 				Regenerative Burst Cooldown Time: 70%
 			}
 
@@ -189,7 +190,7 @@ rule("Initialize Global Variables")
 	actions
 	{
 		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
-		disabled Global.SinglePlayerModeEnabled = False;
+		Global.SinglePlayerModeEnabled = False;
 		"The amount of time a pioneer has to make a point"
 		Global.PioneerTimeLimitConstant = 150;
 		Disable Inspector Recording;
@@ -302,20 +303,26 @@ rule("Initialize Player Variables and HUD")
 		"Checkpoint Timer HUD - Used on Level 1"
 		Create HUD Text(Filtered Array(Event Player, Current Array Element.CheckpointTimer > 0), Custom String("Time Remaining: {0}sec",
 			Event Player.CheckpointTimer), Null, Null, Top, -1, White, White, White, Visible To and String, Default Visibility);
-		"HUD indicating player is waiting for pioneer to make next point"
-		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Count Of(
-			Global.CurrentPioneer[Event Player.CurrentLevel])), Custom String("{0} - Waiting for next pioneer",
-			Global.LevelDescriptions[Event Player.CurrentLevel]), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
-			Default Visibility);
 		"Hero Help HUD"
 		Create HUD Text(Event Player, Null, Null, Global.HeroHelp[Index Of Array Value(Global.HeroList, Hero Of(Event Player))], Left, 5,
 			White, White, Green, Visible To and String, Default Visibility);
 		Create HUD Text(Event Player, Custom String("{0} Modifiers", Hero Of(Event Player)), Null, Null, Left, 4, White, White, White,
 			Visible To and String, Default Visibility);
 		"Pioneer Timer"
-		Create HUD Text(Filtered Array(Event Player, Event Player.IsPioneer == True), Custom String("Pioneer Timer: {0}/{1}",
+		disabled Create HUD Text(Filtered Array(Event Player, Event Player.IsPioneer == True), Custom String("Pioneer Timer: {0}/{1}",
 			Event Player.TotalTimeSpentOnLastCP, Global.PioneerTimeLimitConstant), Null, Null, Right, -0.100, White, White, White,
 			Visible To and String, Default Visibility);
+		"HUD indicating player is waiting for pioneer to make next point"
+		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Count Of(
+			Global.CurrentPioneer[Event Player.CurrentLevel])), Custom String("{0} - Waiting for next pioneer",
+			Global.LevelDescriptions[Event Player.CurrentLevel]), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
+			Default Visibility);
+		"HUD indicating player is waiting for pioneer to make next point"
+		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations[Event Player.CurrentLevel]) == Count Of(
+			Global.CurrentPioneer[Event Player.CurrentLevel])), Custom String("Pioneer: {0} {1}/{2}sec", Last Of(
+			Global.CurrentPioneer[Event Player.CurrentLevel]), Last Of(Global.CurrentPioneer[Event Player.CurrentLevel])
+			.TotalTimeSpentOnLastCP, Global.PioneerTimeLimitConstant), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
+			Default Visibility);
 	}
 }
 
@@ -435,8 +442,9 @@ rule("Host Create Multilevel Origin Point")
 		Global.IndexLevelCreateMenu = 1;
 		Call Subroutine(MakeMenuText);
 		"Create Level Type Creation Menu"
-		Create HUD Text(Filtered Array(All Players(All Teams), Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled == True),
-			Global.TextLevelCreateMenu, Null, Null, Top, -2, White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams),
+			Current Array Element.CurrentCP == 0 && Current Array Element.LevelCreationEnabled == True), Global.TextLevelCreateMenu, Null,
+			Null, Top, -2, White, White, White, Visible To and String, Default Visibility);
 		Call Subroutine(RespawnPlayer);
 		"Respawn other players"
 		Filtered Array(All Players(All Teams),
@@ -515,7 +523,7 @@ rule("Create New Level")
 		Event Player.CurrentLevel = Global.IndexLevelCreateMenu;
 		Modify Global Variable At Index(CPLocations, Event Player.CurrentLevel, Append To Array, Position Of(Event Player));
 		"Create level entry ring - visible to all players on Level 0 (level selection part)."
-		Create Effect(Filtered Array(All Players(All Teams), True && Current Array Element.CurrentCP < 2), Ring, Purple,
+		Create Effect(Filtered Array(All Players(All Teams), True && Current Array Element.CurrentCP < 1), Ring, Purple,
 			Global.CPLocations[Event Player.CurrentLevel][1], Global.CPRadius, Visible To);
 		Create In-World Text(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Custom String("{0}",
 			Global.LevelDescriptions[Global.IndexLevelCreateMenu]), Global.CPLocations[Event Player.CurrentLevel][1], 2, Do Not Clip,
@@ -526,7 +534,7 @@ rule("Create New Level")
 	}
 }
 
-rule("Enter Into Level - Runs continuously on Checkpoint 0")
+rule("Enter Into Level - Runs continuously on Checkpoint 0 [POSSIBLE TO MAKE NOT CONTINUOUS LOOP]")
 {
 	event
 	{
@@ -679,12 +687,13 @@ rule("Pioneer - Create New Point")
 		"Give Doomfist ability to get a jump after using Seismic Slam"
 		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
 		"Player can't pioneer if they were the last pioneer on that level and Single Player Mode isn't engaged"
-		(Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1])
+		disabled (Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1])
 			== True;
 		"Baptiste doesn't die when in Immortality Field "
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
 		Has Spawned(Event Player) == True;
+		Event Player.IsPioneer == True;
 	}
 
 	actions
@@ -791,8 +800,8 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 		Wait(0.200, Abort When False);
 		Small Message(Event Player, Custom String("Arrived!"));
 		Event Player.CurrentCP += 1;
-		"Update maximum checkpoint the player has reached for this level"
-		Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel] = Event Player.CurrentCP;
+		Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel] = Max(
+			Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel], Event Player.CurrentCP);
 		"If no pioneer for the current level and player is on last checkpoint of the level, set them as pioneer"
 		If(Count Of(Global.CurrentPioneer[Event Player.CurrentLevel]) == Event Player.CurrentCP + 0);
 			If(Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1]);
@@ -831,7 +840,7 @@ rule("Pioneer Runs Out of Time On Making Point")
 		End;
 		"get all other players on the same point"
 		Event Player.I = Filtered Array(All Players(All Teams),
-			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player != Current Array Element && True);
+			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentLevel == Current Array Element.CurrentLevel && Event Player != Current Array Element && True);
 		"If there is a player to pass pioneer to"
 		If(Count Of(Event Player.I) > 0);
 			Big Message(Event Player, Custom String("ran out of time on pioneer"));
@@ -848,7 +857,7 @@ rule("Pioneer Runs Out of Time On Making Point")
 	}
 }
 
-rule("Pioneer Leaves Match")
+disabled rule("Pioneer Leaves Match")
 {
 	event
 	{
@@ -923,10 +932,10 @@ rule("Handle Player Death")
 		Respawn(Event Player);
 		If(Global.GameStarted);
 			Wait(0.100, Ignore Condition);
-			Small Message(Event Player, Custom String("Don't die!"));
 			Call Subroutine(RespawnPlayer);
 		End;
 		Wait(0.100, Ignore Condition);
+		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
@@ -1272,13 +1281,21 @@ rule("Skip Level Option Implementation - Only available if you spent 3 min on a 
 	{
 		Small Message(Event Player, Custom String("Skipped to next level!"));
 		Event Player.CurrentCP += 1;
-		Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel] = Event Player.CurrentCP;
+		Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel] = Max(
+			Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel], Event Player.CurrentCP);
+		"If no pioneer for the current level and player is on last checkpoint of the level, set them as pioneer"
+		If(Count Of(Global.CurrentPioneer[Event Player.CurrentLevel]) == Event Player.CurrentCP + 0);
+			If(Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1]);
+				Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Event Player);
+				Big Message(Event Player, Custom String("You Are Pioneer! Use your skills to create the next point!"));
+			End;
+		End;
 		Call Subroutine(RespawnPlayer);
 		Event Player.TotalTimeSpentOnLastCP = 0;
 	}
 }
 
-rule("Single Player Mode Engaged If Only 1 Player in Game")
+disabled rule("Single Player Mode Engaged If Only 1 Player in Game")
 {
 	event
 	{
@@ -1297,7 +1314,7 @@ rule("Single Player Mode Engaged If Only 1 Player in Game")
 	}
 }
 
-rule("Single Player Mode Disengaged If Multiple Players in Game")
+disabled rule("Single Player Mode Disengaged If Multiple Players in Game")
 {
 	event
 	{
@@ -1545,7 +1562,7 @@ rule("Level 4 Reminder: Emote to Switch Hero")
 
 	actions
 	{
-		Big Message(Event Player, Custom String("Emote to switch hero!"));
+		Big Message(Event Player, Custom String("{0} See Hero Modifiers on the Left", Icon String(Arrow: Left)));
 	}
 }
 
@@ -2015,6 +2032,9 @@ rule("Baptiste Immortality Small Modifier")
 	actions
 	{
 		Clear Status(Event Player, Phased Out);
+		Wait(0.250, Ignore Condition);
+		Loop If Condition Is True;
+		Set Status(Event Player, Null, Phased Out, 9999);
 	}
 }
 
