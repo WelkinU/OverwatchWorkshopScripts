@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - MultiLevel Edition! Host creates levels, different levels have different restrictions on the Pioneer. Version 0.9. Made by WelkinTern. Source Control:   https://github.com/WelkinU/OverwatchWorkshopScripts"
+		Description: "Doomfist Pioneering Parkour - MultiLevel Edition! Have multiple Pioneer Parkour Levels running, each with different rules. Supports multi-hero levels, with Sigma (by ReZero), Ana, Winston, Roadhog, and more! Version 0.9. Made by WelkinTern. Source Control:   https://github.com/WelkinU/OverwatchWorkshopScripts"
 	}
 
 	modes
