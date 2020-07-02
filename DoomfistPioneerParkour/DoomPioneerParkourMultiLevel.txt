@@ -102,6 +102,11 @@ settings
 				Take a Breather Cooldown Time: 75%
 			}
 
+			Sigma
+			{
+				Kinetic Grasp Cooldown Time: 20%
+			}
+
 			Widowmaker
 			{
 				Grappling Hook Cooldown Time: 0%
@@ -163,6 +168,12 @@ variables
 		21: WinstonBubbleEffect
 		23: CancelPointTimer
 		25: EnterIntoLevelIterator
+		26: sigma_barrier_ready_to_destroy
+		27: sigma_barrier_ON
+		28: sigma_barrier_direction
+		29: sigma_barrier_init_position
+		30: sigma_barrier_chase
+		31: sigma_barrier_position
 }
 
 subroutines
@@ -198,7 +209,8 @@ rule("Initialize Global Variables")
 		Disable Built-In Game Mode Completion;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
 		Global.LevelDescriptions = Array(Custom String("Free Roam"), Custom String("Level 1: Easy"), Custom String("Level 2: Medium"),
-			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Ana Parkour"));
+			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Ana Parkour"), Custom String(
+			"Level 6: Sigma Parkour"));
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		"Global constant for checkpoint circle radius"
 		Global.CPRadius = 2;
@@ -213,9 +225,12 @@ rule("Initialize Global Variables")
 			Global.HeroUseArrayofArrays[Global.Z] = Array(Hero(Doomfist));
 		End;
 		"Set the hero rotation for multi-hero level"
-		Global.HeroList = Array(Hero(Doomfist), Hero(Ana), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji), Hero(Baptiste));
+		Global.HeroList = Array(Hero(Doomfist), Hero(Sigma), Hero(Ana), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji), Hero(
+			Baptiste));
 		"Set a custom \"player help string\" for each hero. Make sure the help text order is same as hero order above."
 		Global.HeroHelp = Array(Custom String("Doomfist\r\nYou can jump after Seismic Slam"), Custom String(
+			"Barrier - Functions as bouncepad\r\nKinetic Grasp - Sets gravity to 0 for ability duration\r\nRock - Launches you in opposite direct"),
+			Custom String(
 			"Ana\r\nPrimary Fire - Impulse in Direction\r\nSleep Dart - Teleport\r\nBiotic Nade - Impulse in Direction\r\nNano - Doesn't Do Anything "),
 			Custom String("Winston\r\nUse Bubble Shield creates sphere that you can bounce on\r\nNew passive ability: Wall Climb"),
 			Custom String("Roadhog\r\n{0}\r\n{1}", Custom String(
@@ -1355,6 +1370,14 @@ rule("Sub0: RespawnPlayer")
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
 		Set Facing(Event Player, Direction Towards(Position Of(Event Player),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1]), To World);
+		"Sigma Barrier Reset"
+		If(Hero Of(Event Player) == Hero(Sigma));
+			If(Event Player.sigma_barrier_ready_to_destroy);
+				Press Button(Event Player, Secondary Fire);
+			End;
+			Event Player.sigma_barrier_ON = False;
+			Event Player.sigma_barrier_ready_to_destroy = False;
+		End;
 		Event Player.CheckpointTimer = 0;
 		Stop Chasing Player Variable(Event Player, CheckpointTimer);
 		Cancel Primary Action(Event Player);
@@ -1546,7 +1569,7 @@ rule("Level 4 (Multi-Hero Level): Switch Hero When Player Emotes")
 	}
 }
 
-rule("Level 4 Reminder: Emote to Switch Hero")
+rule("Level 4 Reminder to See Hero Modifiers on Left HUD")
 {
 	event
 	{
@@ -1584,6 +1607,29 @@ rule("Level 5: Ana Parkour Modifier")
 	actions
 	{
 		Start Forcing Player To Be Hero(Event Player, Hero(Ana));
+	}
+}
+
+rule("Level 6: Sigma Parkour Modifier")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentLevel == 6;
+		Event Player.CurrentCP > 0;
+	}
+
+	actions
+	{
+		Event Player.sigma_barrier_ON = False;
+		Wait(0.016, Ignore Condition);
+		Start Forcing Player To Be Hero(Event Player, Hero(Sigma));
 	}
 }
 
@@ -2093,8 +2139,8 @@ rule("Ana Sleep Dart Teleport")
 		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
 			+ Facing Direction Of(Event Player) * 180, All Players(All Teams), Event Player, True);
 		"Shorten ray cast to avoid unintended tele through surfaces"
-		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Event Player.AnaSleepDartTeleLocation, Eye Position(Event Player))
-			* -0.500;
+		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
+			* 0.500;
 		If(Y Component Of(Event Player.AnaSleepDartTeleLocation) > 24);
 			Small Message(Event Player, Custom String("Teleport location elevation too high"));
 			Cancel Primary Action(Event Player);
@@ -2105,7 +2151,8 @@ rule("Ana Sleep Dart Teleport")
 		"Sleep dart travel time"
 		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
 		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
-		Small Message(Event Player, Custom String("{0}", Event Player.AnaSleepDartTeleLocation));
+		Call Subroutine(CancelMomentum);
+		Small Message(Event Player, Custom String("{0} alt {1}", Event Player.AnaSleepDartTeleLocation, Altitude Of(Event Player)));
 	}
 }
 
@@ -2153,5 +2200,204 @@ rule("Ana Health Managment")
 		Wait(0.250, Ignore Condition);
 		Loop If Condition Is True;
 		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+disabled rule("Sigma Abilities")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Barrier {1}")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.sigma_barrier_ON = True;
+		Event Player.sigma_barrier_init_position = Eye Position(Event Player) + Facing Direction Of(Event Player) * 3;
+		Event Player.sigma_barrier_direction = Facing Direction Of(Event Player);
+		Event Player.sigma_barrier_chase = 0;
+		Chase Player Variable At Rate(Event Player, sigma_barrier_chase, Distance Between(Event Player.sigma_barrier_init_position,
+			Ray Cast Hit Position(Event Player.sigma_barrier_init_position,
+			Event Player.sigma_barrier_init_position + Event Player.sigma_barrier_direction * 200, Null, Event Player, False)), 16.500,
+			Destination and Rate);
+		"Updates barrier position"
+		While(True);
+			Event Player.sigma_barrier_position = Event Player.sigma_barrier_init_position + Event Player.sigma_barrier_direction * Event Player.sigma_barrier_chase;
+			Wait(0.016, Ignore Condition);
+			Abort If Condition Is False;
+		End;
+	}
+}
+
+rule("Barrier {2}")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == False;
+		Event Player.sigma_barrier_ON == True;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, sigma_barrier_chase);
+		Wait(0.192, Ignore Condition);
+		Event Player.sigma_barrier_ready_to_destroy = True;
+	}
+}
+
+rule("Barrier Launch")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Event Player.sigma_barrier_ON == True;
+		Distance Between(Eye Position(Event Player), Event Player.sigma_barrier_position) < 3;
+	}
+
+	actions
+	{
+		"{Turns shield into a bouncepad instead when turned on}"
+		disabled Event Player.sigma_barrier_direction = Vector(X Component Of(Event Player.sigma_barrier_direction), Absolute Value(Y Component Of(
+			Event Player.sigma_barrier_direction)), Z Component Of(Event Player.sigma_barrier_direction));
+		Apply Impulse(Event Player, Event Player.sigma_barrier_direction, 30, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("Remove Barrier")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Event Player.sigma_barrier_ready_to_destroy == True;
+		Is Button Held(Event Player, Secondary Fire) == True;
+	}
+
+	actions
+	{
+		Event Player.sigma_barrier_ON = False;
+		Wait(0.016, Ignore Condition);
+		Event Player.sigma_barrier_ready_to_destroy = False;
+	}
+}
+
+rule("Destroy Pulse On Death")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dead(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.sigma_barrier_ON = False;
+		Event Player.sigma_barrier_ready_to_destroy = False;
+	}
+}
+
+rule("Vortex Drag {By default, using vortex makes you glide across the ground without resetting during the animation}")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Gravity(Event Player, 0);
+		Set Move Speed(Event Player, 0);
+		Wait(2, Restart When True);
+		Set Gravity(Event Player, 100);
+		Set Move Speed(Event Player, 100);
+	}
+}
+
+rule("Vortex Refresh")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dead(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Move Speed(Event Player, 100);
+		Set Gravity(Event Player, 100);
+	}
+}
+
+rule("Rock Booster")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		"Rock can be used during the vortex animation"
+		Is Using Ability 2(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait(0.650, Ignore Condition);
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), -14, To World, Cancel Contrary Motion);
 	}
 }
