@@ -137,6 +137,7 @@ variables
 		7: HeroUseArrayofArrays
 		8: CountPunchUpperSlam
 		9: CountMeteorTeleportPrimary
+		11: MinPioneerDistanceConstant
 		12: PioneerTimeLimitConstant
 		13: HeroList
 		14: HeroHelp
@@ -204,6 +205,8 @@ rule("Initialize Global Variables")
 		Global.SinglePlayerModeEnabled = False;
 		"The amount of time a pioneer has to make a point"
 		Global.PioneerTimeLimitConstant = 150;
+		"Minimum distance between checkpoints that pioneer can make - don't make this less than 4m"
+		Global.MinPioneerDistanceConstant = 6;
 		Disable Inspector Recording;
 		Enable Death Spectate All Players(All Players(All Teams));
 		Disable Built-In Game Mode Completion;
@@ -266,7 +269,7 @@ rule("Initialize Global HUD")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Quick Reset: Reload\r\nGo back a CP: Jump + Interact\r\n{0}\r\n{1}\r\n{2}", Custom String(
 			"Change Level: Return to CP 0\r\nTeleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Ultimate Status"),
-			Custom String("Skip Level (after 3 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouch"), Custom String(
+			Custom String("Skip Level (after 4 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouch"), Custom String(
 			"Switch Hero (Multi-Hero Level Only): Emote")), Left, 1, White, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, 0, White, White, White, Visible To and String,
 			Default Visibility);
@@ -507,7 +510,7 @@ rule("Create New Level")
 
 	conditions
 	{
-		Distance Between(Global.CPLocations[0][0], Position Of(Event Player)) > 10;
+		Distance Between(Global.CPLocations[0][0], Position Of(Event Player)) > Global.MinPioneerDistanceConstant;
 		Event Player.CurrentCP == 0;
 		"Make sure level hasn't already been created"
 		Count Of(Global.CPLocations[Global.IndexLevelCreateMenu]) < 2;
@@ -622,7 +625,7 @@ disabled rule("Doom Parkour Pioneer Architecture - Individual Level")
 	}
 }
 
-rule("Pioneer Is Invisible")
+rule("Set IsPioneer, Set Pioneer Invisible")
 {
 	event
 	{
@@ -692,7 +695,8 @@ rule("Pioneer - Create New Point")
 		Event Player.CurrentCP > 0;
 		"Redundant, but putting this here just to be safe"
 		Event Player.CurrentLevel > 0;
-		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player)) > 10;
+		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player))
+			> Global.MinPioneerDistanceConstant;
 		"Doesn't always work, as there are locations that are inaccessable for a certain team but not in spawn room"
 		Is In Spawn Room(Event Player) != True;
 		"event player = pioneer for this level / CP"
@@ -746,7 +750,7 @@ rule("Pioneer - Create New Point")
 	}
 }
 
-rule("Pioneered less than 10m")
+rule("Pioneered less than distance threshold")
 {
 	event
 	{
@@ -760,7 +764,8 @@ rule("Pioneered less than 10m")
 		Is On Ground(Event Player) == True;
 		"Inside a level, not in multilevel portion"
 		Event Player.CurrentCP > 0;
-		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player)) < 10;
+		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player))
+			< Global.MinPioneerDistanceConstant;
 		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player))
 			> Global.CPRadius;
 		"event player = pioneer for this level / CP"
@@ -779,7 +784,7 @@ rule("Pioneered less than 10m")
 
 	actions
 	{
-		Small Message(Event Player, Custom String("Need to pioneer further than 10m"));
+		Small Message(Event Player, Custom String("Need to pioneer further than {0}m", Global.MinPioneerDistanceConstant));
 		Call Subroutine(RespawnPlayer);
 	}
 }
@@ -869,38 +874,6 @@ rule("Pioneer Runs Out of Time On Making Point")
 		End;
 		Event Player.I.TotalTimeSpentOnLastCP = 0;
 		Event Player.TotalTimeSpentOnLastCP = 0;
-	}
-}
-
-disabled rule("Pioneer Leaves Match")
-{
-	event
-	{
-		Player Left Match;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Event Player.IsPioneer == True;
-	}
-
-	actions
-	{
-		Small Message(All Players(All Teams), Custom String("Pioneer {0} Left Match", Event Player));
-		"get all other players on the same point"
-		Event Player.I = Filtered Array(All Players(All Teams),
-			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player != Current Array Element && True);
-		"If there is a player to pass pioneer to"
-		If(Count Of(Event Player.I) > 0);
-			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
-			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
-			Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
-				Global.CurrentPioneer[Event Player.CurrentLevel])));
-		Else;
-			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
-		End;
 	}
 }
 
@@ -1098,6 +1071,38 @@ rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
 	}
 }
 
+disabled rule("Pioneer Leaves Match")
+{
+	event
+	{
+		Player Left Match;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.IsPioneer == True;
+	}
+
+	actions
+	{
+		Small Message(All Players(All Teams), Custom String("Pioneer {0} Left Match", Event Player));
+		"get all other players on the same point"
+		Event Player.I = Filtered Array(All Players(All Teams),
+			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player != Current Array Element && True);
+		"If there is a player to pass pioneer to"
+		If(Count Of(Event Player.I) > 0);
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
+			Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
+				Global.CurrentPioneer[Event Player.CurrentLevel])));
+		Else;
+			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+		End;
+	}
+}
+
 disabled rule("Additional Features (and Key Bindings)")
 {
 	event
@@ -1263,13 +1268,13 @@ rule("Skip Level Option Message - Only available if you spent 3 min on a point")
 		Event Player.CurrentCP > 0;
 		"Make sure next point exists"
 		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
-		Event Player.TotalTimeSpentOnLastCP > 180;
+		Event Player.TotalTimeSpentOnLastCP > 240;
 	}
 
 	actions
 	{
 		Wait(0.250, Abort When False);
-		Big Message(Event Player, Custom String("Spent more than 3 min on point. Melee + Interact to skip to next checkpoint."));
+		Big Message(Event Player, Custom String("Spent more than 4 min on point. Melee + Interact to skip to next checkpoint."));
 	}
 }
 
@@ -1287,7 +1292,7 @@ rule("Skip Level Option Implementation - Only available if you spent 3 min on a 
 		Event Player.CurrentCP > 0;
 		"Make sure next point exists"
 		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
-		Event Player.TotalTimeSpentOnLastCP > 180;
+		Event Player.TotalTimeSpentOnLastCP > 240;
 		Is Button Held(Event Player, Melee) == True;
 		Is Button Held(Event Player, Interact) == True;
 	}
