@@ -294,6 +294,7 @@ rule("Initialize Player Variables and HUD")
 
 	actions
 	{
+		Enable Death Spectate Target HUD(Event Player);
 		Event Player.CurrentCP = 0;
 		Event Player.CurrentLevel = 0;
 		If(Event Player == Host Player);
@@ -1072,7 +1073,7 @@ rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
 	}
 }
 
-rule("Pioneer Leaves Match")
+disabled rule("Pioneer Leaves Match")
 {
 	event
 	{
@@ -1083,7 +1084,44 @@ rule("Pioneer Leaves Match")
 
 	actions
 	{
-		disabled Big Message(All Players(All Teams), Custom String("PLAYER LEFT MATCH {0}", Event Player));
+		For Player Variable(Event Player, Y, 0, Count Of(Global.CPLocations), 1);
+			If(Count Of(Global.CurrentPioneer[Event Player.Y]) == Count Of(Global.CPLocations[Event Player.Y]) && Count Of(
+				Global.CPLocations[Event Player.Y]) > 1 && Event Player == Last Of(Global.CurrentPioneer[Event Player.Y]));
+				"Remove player as pioneer"
+				Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Remove From Array By Index, Count Of(
+					Global.CPLocations[Event Player.Y]) - 1);
+				"get all other players on the same point"
+				Event Player.I = Filtered Array(All Players(All Teams), Count Of(Global.CPLocations[Event Player.Y])
+					- 1 == Current Array Element.CurrentCP && Event Player.Y == Current Array Element.CurrentCP && True && True);
+				"If there is a player to pass pioneer to"
+				If(Count Of(Event Player.I) > 0);
+					Event Player.I.TotalTimeSpentOnLastCP = 0;
+					Event Player.TotalTimeSpentOnLastCP = 0;
+					Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Append To Array, Random Value In Array(Event Player.I));
+					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
+						Global.CurrentPioneer[Event Player.CurrentLevel])));
+				End;
+			End;
+		End;
+	}
+}
+
+rule("Pioneer Leaves Match")
+{
+	event
+	{
+		Player Left Match;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Index Of Array Value(All Players(All Teams), Event Player) == -1;
+	}
+
+	actions
+	{
 		For Global Variable(TempPlayerLeftIterator, 0, Count Of(Global.CPLocations), 1);
 			If(Count Of(Global.CurrentPioneer[Global.TempPlayerLeftIterator]) == Count Of(Global.CPLocations[Global.TempPlayerLeftIterator])
 				&& Count Of(Global.CPLocations[Global.TempPlayerLeftIterator]) > 1 && Event Player == Last Of(
@@ -1096,9 +1134,9 @@ rule("Pioneer Leaves Match")
 					Global.CPLocations[Global.TempPlayerLeftIterator]) - 1);
 				"If there is a player to pass pioneer to"
 				If(Count Of(Event Player.I) > 0);
+					Event Player.I.TotalTimeSpentOnLastCP = 0;
+					Event Player.TotalTimeSpentOnLastCP = 0;
 					Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
-					disabled Else;
-					disabled Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
 					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
 						Global.CurrentPioneer[Event Player.CurrentLevel])));
 				End;
