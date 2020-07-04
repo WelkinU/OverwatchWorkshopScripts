@@ -146,6 +146,7 @@ variables
 		18: SinglePlayerModeEnabled
 		19: TextLevelCreateMenu
 		20: IndexLevelCreateMenu
+		22: TempPlayerLeftIterator
 		23: LeaderboardString
 		24: TempLeaderboardIterator
 
@@ -206,7 +207,7 @@ rule("Initialize Global Variables")
 		"The amount of time a pioneer has to make a point"
 		Global.PioneerTimeLimitConstant = 150;
 		"Minimum distance between checkpoints that pioneer can make - don't make this less than 4m"
-		Global.MinPioneerDistanceConstant = 6;
+		Global.MinPioneerDistanceConstant = 8;
 		Disable Inspector Recording;
 		Enable Death Spectate All Players(All Players(All Teams));
 		Disable Built-In Game Mode Completion;
@@ -269,7 +270,7 @@ rule("Initialize Global HUD")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Quick Reset: Reload\r\nGo back a CP: Jump + Interact\r\n{0}\r\n{1}\r\n{2}", Custom String(
 			"Change Level: Return to CP 0\r\nTeleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Ultimate Status"),
-			Custom String("Skip Level (after 4 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouch"), Custom String(
+			Custom String("Skip Level (after 5 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouch"), Custom String(
 			"Switch Hero (Multi-Hero Level Only): Emote")), Left, 1, White, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, 0, White, White, White, Visible To and String,
 			Default Visibility);
@@ -1071,7 +1072,42 @@ rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
 	}
 }
 
-disabled rule("Pioneer Leaves Match")
+rule("Pioneer Leaves Match")
+{
+	event
+	{
+		Player Left Match;
+		All;
+		All;
+	}
+
+	actions
+	{
+		disabled Big Message(All Players(All Teams), Custom String("PLAYER LEFT MATCH {0}", Event Player));
+		For Global Variable(TempPlayerLeftIterator, 0, Count Of(Global.CPLocations), 1);
+			If(Count Of(Global.CurrentPioneer[Global.TempPlayerLeftIterator]) == Count Of(Global.CPLocations[Global.TempPlayerLeftIterator])
+				&& Count Of(Global.CPLocations[Global.TempPlayerLeftIterator]) > 1 && Event Player == Last Of(
+				Global.CurrentPioneer[Global.TempPlayerLeftIterator]));
+				"get all other players on the same point"
+				Event Player.I = Filtered Array(All Players(All Teams), Count Of(Global.CPLocations[Global.TempPlayerLeftIterator])
+					- 1 == Current Array Element.CurrentCP && Global.TempPlayerLeftIterator == Current Array Element.CurrentCP && True && True);
+				"Remove player as pioneer"
+				Modify Global Variable At Index(CurrentPioneer, Global.TempPlayerLeftIterator, Remove From Array By Index, Count Of(
+					Global.CPLocations[Global.TempPlayerLeftIterator]) - 1);
+				"If there is a player to pass pioneer to"
+				If(Count Of(Event Player.I) > 0);
+					Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
+					disabled Else;
+					disabled Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
+						Global.CurrentPioneer[Event Player.CurrentLevel])));
+				End;
+			End;
+		End;
+	}
+}
+
+disabled rule("Pioneer Leaves Match [OLD]")
 {
 	event
 	{
@@ -1254,7 +1290,7 @@ rule("Need Healing Voiceline: Spectate Other Players")
 	}
 }
 
-rule("Skip Level Option Message - Only available if you spent 3 min on a point")
+rule("Skip Level Option Message - Only available if you spent 5 min on a point")
 {
 	event
 	{
@@ -1268,17 +1304,17 @@ rule("Skip Level Option Message - Only available if you spent 3 min on a point")
 		Event Player.CurrentCP > 0;
 		"Make sure next point exists"
 		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
-		Event Player.TotalTimeSpentOnLastCP > 240;
+		Event Player.TotalTimeSpentOnLastCP > 300;
 	}
 
 	actions
 	{
 		Wait(0.250, Abort When False);
-		Big Message(Event Player, Custom String("Spent more than 4 min on point. Melee + Interact to skip to next checkpoint."));
+		Big Message(Event Player, Custom String("Spent more than 5 min on point. Melee + Interact to skip to next checkpoint."));
 	}
 }
 
-rule("Skip Level Option Implementation - Only available if you spent 3 min on a point")
+rule("Skip Level Option Implementation - Only available if you spent 5 min on a point")
 {
 	event
 	{
@@ -1292,7 +1328,7 @@ rule("Skip Level Option Implementation - Only available if you spent 3 min on a 
 		Event Player.CurrentCP > 0;
 		"Make sure next point exists"
 		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
-		Event Player.TotalTimeSpentOnLastCP > 240;
+		Event Player.TotalTimeSpentOnLastCP > 300;
 		Is Button Held(Event Player, Melee) == True;
 		Is Button Held(Event Player, Interact) == True;
 	}
@@ -1372,6 +1408,7 @@ rule("Sub0: RespawnPlayer")
 	actions
 	{
 		Stop Holding Button(Event Player, Secondary Fire);
+		Stop Holding Button(Event Player, Ability 1);
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
 		Set Facing(Event Player, Direction Towards(Position Of(Event Player),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1]), To World);
