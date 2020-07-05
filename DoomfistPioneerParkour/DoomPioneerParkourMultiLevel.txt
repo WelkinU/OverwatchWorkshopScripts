@@ -29,7 +29,7 @@ settings
 		{
 			disabled maps
 			{
-				Blizzard World Winter
+				Blizzard World
 				Hanamura Winter
 				Hollywood Halloween
 				King's Row
@@ -162,6 +162,7 @@ variables
 		9: SpectateMode
 		10: ForceRespawn
 		11: LevelCreationEnabled
+		12: JumpInteractTimer
 		15: IsPioneer
 		16: AnaSleepDartTeleLocation
 		17: WinstonWallClimbEnabled
@@ -1073,39 +1074,6 @@ rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
 	}
 }
 
-disabled rule("Pioneer Leaves Match")
-{
-	event
-	{
-		Player Left Match;
-		All;
-		All;
-	}
-
-	actions
-	{
-		For Player Variable(Event Player, Y, 0, Count Of(Global.CPLocations), 1);
-			If(Count Of(Global.CurrentPioneer[Event Player.Y]) == Count Of(Global.CPLocations[Event Player.Y]) && Count Of(
-				Global.CPLocations[Event Player.Y]) > 1 && Event Player == Last Of(Global.CurrentPioneer[Event Player.Y]));
-				"Remove player as pioneer"
-				Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Remove From Array By Index, Count Of(
-					Global.CPLocations[Event Player.Y]) - 1);
-				"get all other players on the same point"
-				Event Player.I = Filtered Array(All Players(All Teams), Count Of(Global.CPLocations[Event Player.Y])
-					- 1 == Current Array Element.CurrentCP && Event Player.Y == Current Array Element.CurrentCP && True && True);
-				"If there is a player to pass pioneer to"
-				If(Count Of(Event Player.I) > 0);
-					Event Player.I.TotalTimeSpentOnLastCP = 0;
-					Event Player.TotalTimeSpentOnLastCP = 0;
-					Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Append To Array, Random Value In Array(Event Player.I));
-					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
-						Global.CurrentPioneer[Event Player.CurrentLevel])));
-				End;
-			End;
-		End;
-	}
-}
-
 rule("Pioneer Leaves Match")
 {
 	event
@@ -1145,7 +1113,7 @@ rule("Pioneer Leaves Match")
 	}
 }
 
-disabled rule("Pioneer Leaves Match [OLD]")
+disabled rule("Pioneer Leaves Match")
 {
 	event
 	{
@@ -1154,25 +1122,26 @@ disabled rule("Pioneer Leaves Match [OLD]")
 		All;
 	}
 
-	conditions
-	{
-		Event Player.IsPioneer == True;
-	}
-
 	actions
 	{
-		Small Message(All Players(All Teams), Custom String("Pioneer {0} Left Match", Event Player));
-		"get all other players on the same point"
-		Event Player.I = Filtered Array(All Players(All Teams),
-			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player != Current Array Element && True);
-		"If there is a player to pass pioneer to"
-		If(Count Of(Event Player.I) > 0);
-			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
-			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
-			Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
-				Global.CurrentPioneer[Event Player.CurrentLevel])));
-		Else;
-			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
+		For Player Variable(Event Player, Y, 0, Count Of(Global.CPLocations), 1);
+			If(Count Of(Global.CurrentPioneer[Event Player.Y]) == Count Of(Global.CPLocations[Event Player.Y]) && Count Of(
+				Global.CPLocations[Event Player.Y]) > 1 && Event Player == Last Of(Global.CurrentPioneer[Event Player.Y]));
+				"Remove player as pioneer"
+				Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Remove From Array By Index, Count Of(
+					Global.CPLocations[Event Player.Y]) - 1);
+				"get all other players on the same point"
+				Event Player.I = Filtered Array(All Players(All Teams), Count Of(Global.CPLocations[Event Player.Y])
+					- 1 == Current Array Element.CurrentCP && Event Player.Y == Current Array Element.CurrentCP && True && True);
+				"If there is a player to pass pioneer to"
+				If(Count Of(Event Player.I) > 0);
+					Event Player.I.TotalTimeSpentOnLastCP = 0;
+					Event Player.TotalTimeSpentOnLastCP = 0;
+					Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Append To Array, Random Value In Array(Event Player.I));
+					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
+						Global.CurrentPioneer[Event Player.CurrentLevel])));
+				End;
+			End;
 		End;
 	}
 }
@@ -1185,64 +1154,7 @@ disabled rule("Additional Features (and Key Bindings)")
 	}
 }
 
-rule("Melee + Left Click = Teleport")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Primary Fire) == True;
-		Is Button Held(Event Player, Melee) == True;
-		Event Player.TeleportEnabled == True;
-	}
-
-	actions
-	{
-		Teleport(Event Player, Ray Cast Hit Position(Position Of(Event Player), Position Of(Event Player) + Facing Direction Of(
-			Event Player) * 60, All Players(All Teams), Event Player, True));
-		Event Player.CountUltimateTeleportPrimary += Up;
-	}
-}
-
-rule("Move Back A Checkpoint with Jump + Interact")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Jump) == True;
-		Is Button Held(Event Player, Interact) == True;
-		"This condition is so this rule doesn't get executed at same time as a player is using the level cancel"
-		Event Player.CancelPointTimer == 0;
-	}
-
-	actions
-	{
-		If(Event Player.CurrentCP > 0);
-			Event Player.CurrentCP += -1;
-		Else;
-			"If on Checkpoint 0, go to greatest unlocked checkpoint on level"
-			Event Player.CurrentCP = Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel];
-		End;
-		"Reset time spent on checkpoint"
-		Event Player.TotalTimeSpentOnLastCP = 0;
-		Call Subroutine(RespawnPlayer);
-		Stop Holding Button(Event Player, Jump);
-		Stop Holding Button(Event Player, Interact);
-	}
-}
-
-rule("R is Respawn Player")
+rule("Quick Reset - Reload")
 {
 	event
 	{
@@ -1266,6 +1178,52 @@ rule("R is Respawn Player")
 	actions
 	{
 		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Move Back A Checkpoint Or Hold for 3 Sec to Go To Checkpoint 0 - Jump + Interact")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Jump) == True;
+		Is Button Held(Event Player, Interact) == True;
+		"This condition is so this rule doesn't get executed at same time as a player is using the level cancel"
+		Event Player.CancelPointTimer == 0;
+	}
+
+	actions
+	{
+		Event Player.JumpInteractTimer = 3;
+		Chase Player Variable At Rate(Event Player, JumpInteractTimer, 0, 1, Destination and Rate);
+		"Loop while jump + interact are held, timer < 3 sec, player is not pioneering a point"
+		While(Event Player.JumpInteractTimer > 0 && Is Button Held(Event Player, Interact) && Is Button Held(Event Player, Jump)
+			&& Event Player.CancelPointTimer == 0);
+			Wait(0.016, Ignore Condition);
+		End;
+		"Move back 1 checkpoint"
+		If(Event Player.JumpInteractTimer > 0);
+			If(Event Player.CurrentCP > 0);
+				Event Player.CurrentCP += -1;
+			Else;
+				"If on Checkpoint 0, go to greatest unlocked checkpoint on level"
+				Event Player.CurrentCP = Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel];
+			End;
+		Else;
+			"Move back to Origin Point"
+			Event Player.CurrentCP = 0;
+		End;
+		"Reset time spent on checkpoint"
+		Event Player.TotalTimeSpentOnLastCP = 0;
+		Call Subroutine(RespawnPlayer);
+		Stop Holding Button(Event Player, Jump);
+		Stop Holding Button(Event Player, Interact);
 	}
 }
 
@@ -1325,6 +1283,30 @@ rule("Need Healing Voiceline: Spectate Other Players")
 			Kill(Event Player, Null);
 		End;
 		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+rule("Melee + Left Click = Teleport")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Primary Fire) == True;
+		Is Button Held(Event Player, Melee) == True;
+		Event Player.TeleportEnabled == True;
+	}
+
+	actions
+	{
+		Teleport(Event Player, Ray Cast Hit Position(Position Of(Event Player), Position Of(Event Player) + Facing Direction Of(
+			Event Player) * 60, All Players(All Teams), Event Player, True));
+		Event Player.CountUltimateTeleportPrimary += Up;
 	}
 }
 
