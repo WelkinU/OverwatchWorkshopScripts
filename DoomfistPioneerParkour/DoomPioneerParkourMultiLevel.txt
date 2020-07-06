@@ -1040,6 +1040,10 @@ rule("Used Ultimate")
 	actions
 	{
 		Event Player.CountUltimateTeleportPrimary += Left;
+		"Add 4 sec to timer if using meteor strike on LVL 1"
+		If(Event Player.CheckpointTimer > 0);
+			Event Player.CheckpointTimer += 4;
+		End;
 	}
 }
 
