@@ -214,8 +214,7 @@ rule("Initialize Global Variables")
 		Disable Built-In Game Mode Completion;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
 		Global.LevelDescriptions = Array(Custom String("Free Roam"), Custom String("Level 1: Easy"), Custom String("Level 2: Medium"),
-			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Ana Parkour"), Custom String(
-			"Level 6: Sigma Parkour"));
+			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Sigma Parkour"));
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		"Global constant for checkpoint circle radius"
 		Global.CPRadius = 2;
@@ -270,7 +269,7 @@ rule("Initialize Global HUD")
 		"Controls HUD"
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Quick Reset: Reload\r\nGo back a CP: Jump + Interact\r\n{0}\r\n{1}\r\n{2}", Custom String(
-			"Change Level: Return to CP 0\r\nTeleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Ultimate Status"),
+			"Change Level: Hold Jump + Interact 2 Sec\r\nTeleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Ultimate Status"),
 			Custom String("Skip Level (after 5 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouch"), Custom String(
 			"Switch Hero (Multi-Hero Level Only): Emote")), Left, 1, White, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, 0, White, White, White, Visible To and String,
@@ -1200,7 +1199,7 @@ rule("Move Back A Checkpoint Or Hold for 3 Sec to Go To Checkpoint 0 - Jump + In
 
 	actions
 	{
-		Event Player.JumpInteractTimer = 3;
+		Event Player.JumpInteractTimer = 2;
 		Chase Player Variable At Rate(Event Player, JumpInteractTimer, 0, 1, Destination and Rate);
 		"Loop while jump + interact are held, timer < 3 sec, player is not pioneering a point"
 		While(Event Player.JumpInteractTimer > 0 && Is Button Held(Event Player, Interact) && Is Button Held(Event Player, Jump)
@@ -1219,11 +1218,11 @@ rule("Move Back A Checkpoint Or Hold for 3 Sec to Go To Checkpoint 0 - Jump + In
 			"Move back to Origin Point"
 			Event Player.CurrentCP = 0;
 		End;
+		Stop Holding Button(Event Player, Jump);
+		Stop Holding Button(Event Player, Interact);
 		"Reset time spent on checkpoint"
 		Event Player.TotalTimeSpentOnLastCP = 0;
 		Call Subroutine(RespawnPlayer);
-		Stop Holding Button(Event Player, Jump);
-		Stop Holding Button(Event Player, Interact);
 	}
 }
 
@@ -1651,7 +1650,7 @@ rule("Level 4 Reminder to See Hero Modifiers on Left HUD")
 	}
 }
 
-rule("Level 5: Ana Parkour Modifier")
+rule("Level 5: Sigma Parkour Modifier")
 {
 	event
 	{
@@ -1663,27 +1662,6 @@ rule("Level 5: Ana Parkour Modifier")
 	conditions
 	{
 		Event Player.CurrentLevel == 5;
-		Event Player.CurrentCP > 0;
-	}
-
-	actions
-	{
-		Start Forcing Player To Be Hero(Event Player, Hero(Ana));
-	}
-}
-
-rule("Level 6: Sigma Parkour Modifier")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Event Player.CurrentLevel == 6;
 		Event Player.CurrentCP > 0;
 	}
 
