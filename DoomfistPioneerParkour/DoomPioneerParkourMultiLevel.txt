@@ -343,10 +343,19 @@ rule("Initialize Player Variables and HUD")
 			Global.CurrentPioneer[Event Player.CurrentLevel]), Last Of(Global.CurrentPioneer[Event Player.CurrentLevel])
 			.TotalTimeSpentOnLastCP, Global.PioneerTimeLimitConstant), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
 			Default Visibility);
+		"Level 3 HUD: Ability Limits "
+		Create HUD Text(Filtered Array(Event Player, Current Array Element.CurrentLevel == 3), Custom String(
+			"Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(
+			Secondary Fire)), X Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP])
+			- X Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(
+			Ability 1)), Y Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
+			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
+			Z Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
+			Event Player.PunchUpperSlamUsed))), Null, Null, Right, 9, Blue, White, White, Visible To and String, Default Visibility);
 	}
 }
 
-rule("Player Leaderboard Computation & String Generation")
+rule("Player Leaderboard Computation & String Generation [POSSIBLE TO REMOVE LOOP HERE USING EVENT DRIVEN ARCHITECTURE]")
 {
 	event
 	{
@@ -419,6 +428,8 @@ disabled rule("Debug HUD")
 			Doomfist), Button(Ability 1)), Y Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(
 			Hero(Doomfist), Button(Ability 2)), Z Component Of(Event Player.PunchUpperSlamUsed))), Null, Null, Left, 2, White, White,
 			White, Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, Custom String("is using abilty {0} {1}", Is Firing Secondary(Event Player), Is Using Ability 2(
+			Event Player)), Null, Null, Left, 0, White, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -1506,6 +1517,9 @@ rule("Sub0: RespawnPlayer")
 		"Should Fix Phased Out Status issue"
 		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
+		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 	}
 }
 
@@ -1598,6 +1612,49 @@ rule("Level 1 Modifer - Only Have 5 Seconds To Make Point")
 		Abort If(Event Player.CancelPointTimer > 0);
 		Small Message(Event Player, Custom String("Level 1 Restriction: Complete Point In 5 Seconds!"));
 		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Level 3 Modifier: Ability Counts")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentLevel == 3;
+		(Is Using Ability 1(Event Player) || Is Using Ability 2(Event Player) || Is Firing Secondary(Event Player)) == True;
+		"Inside a level, not in multilevel portion"
+		Event Player.CurrentCP > 0;
+		"Is NOT on last checkpoint of the level"
+		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
+	}
+
+	actions
+	{
+		Wait(0.016, Ignore Condition);
+		Loop If Condition Is True;
+		If(Y Component Of(Event Player.PunchUpperSlamUsed) >= Y Component Of(
+			Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]));
+			Set Ability 1 Enabled(Event Player, False);
+		End;
+		If(Z Component Of(Event Player.PunchUpperSlamUsed) >= Z Component Of(
+			Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]));
+			Set Ability 2 Enabled(Event Player, False);
+		End;
+		If(X Component Of(Event Player.PunchUpperSlamUsed) >= X Component Of(
+			Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]));
+			"Have to wait to disable punch because otherwise it would disable immediately after using preventing punch from working properly."
+			Wait(0.400, Ignore Condition);
+			"This is to fix interaction with the Quick Reset (R) right after using punch, so this doesn't disable punch after you respawn. Can have slight bug where player is punching through the start location, and doesn't set cooldown properly."
+			Abort If(True && Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP])
+				< Global.CPRadius);
+			Set Secondary Fire Enabled(Event Player, False);
+		End;
 	}
 }
 
