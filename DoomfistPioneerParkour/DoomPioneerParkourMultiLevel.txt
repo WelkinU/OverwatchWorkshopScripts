@@ -206,7 +206,7 @@ rule("Initialize Global Variables")
 		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
 		Global.SinglePlayerModeEnabled = False;
 		"The amount of time a pioneer has to make a point"
-		Global.PioneerTimeLimitConstant = 150;
+		Global.PioneerTimeLimitConstant = 180;
 		"Minimum distance between checkpoints that pioneer can make - don't make this less than 4m"
 		Global.MinPioneerDistanceConstant = 8;
 		Disable Inspector Recording;
@@ -773,12 +773,10 @@ rule("Pioneered less than distance threshold")
 		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		"Give Doomfist ability to get a jump after using Seismic Slam"
 		disabled (Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
-		"Player can't pioneer if they were the last pioneer on that level and Single Player Mode isn't engaged"
-		(Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1])
-			== True;
 		"Baptiste doesn't die when in Immortality Field "
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
+		Event Player.IsPioneer == True;
 	}
 
 	actions
@@ -916,6 +914,8 @@ rule("Pioneer Runs Out of Time On Making Point")
 			Event Player.CurrentCP == Current Array Element.CurrentCP && Event Player.CurrentLevel == Current Array Element.CurrentLevel && Event Player != Current Array Element && True);
 		"If there is a player to pass pioneer to"
 		If(Count Of(Event Player.I) > 0);
+			"Force players to respawn"
+			Event Player.I.ForceRespawn = True;
 			Big Message(Event Player, Custom String("ran out of time on pioneer"));
 			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
 			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
@@ -1042,7 +1042,7 @@ rule("Used Ultimate")
 		Event Player.CountUltimateTeleportPrimary += Left;
 		"Add 4 sec to timer if using meteor strike on LVL 1"
 		If(Event Player.CheckpointTimer > 0);
-			Event Player.CheckpointTimer += 4;
+			Event Player.CheckpointTimer += 5;
 		End;
 	}
 }
