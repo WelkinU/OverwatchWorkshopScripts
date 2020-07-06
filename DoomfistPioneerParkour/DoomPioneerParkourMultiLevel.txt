@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - MultiLevel Edition! Have multiple Pioneer Parkour Levels running, each with different rules. Supports multi-hero levels, with Sigma (by ReZero), Ana, Winston, Roadhog, and more! Version 0.9. Made by WelkinTern. Source Control:   https://github.com/WelkinU/OverwatchWorkshopScripts"
+		Description: "Doomfist Pioneering Parkour - MultiLevel Edition v1.0! Have multiple Pioneer Parkour Levels running, each with different rules. Supports multi-hero levels, with Sigma (by ReZero), Ana, Winston, Roadhog, and more! Made by WelkinTern.   Level 1: Pioneer Timer  Level 2: No Restriction  Level 3: Ability Restrictions  Source Control: https://github.com/WelkinU/OverwatchWorkshopScripts"
 	}
 
 	modes
@@ -232,8 +232,8 @@ rule("Initialize Global Variables")
 		Global.HeroList = Array(Hero(Doomfist), Hero(Sigma), Hero(Ana), Hero(Winston), Hero(Roadhog), Hero(Lúcio), Hero(Genji), Hero(
 			Baptiste));
 		"Set a custom \"player help string\" for each hero. Make sure the help text order is same as hero order above."
-		Global.HeroHelp = Array(Custom String("Doomfist\r\nYou can jump after Seismic Slam"), Custom String(
-			"Barrier - Functions as bouncepad\r\nKinetic Grasp - Sets gravity to 0 for ability duration\r\nRock - Launches you in opposite direct"),
+		Global.HeroHelp = Array(Custom String("Doomfist\r\nUltimate Move Speed Slowed"), Custom String(
+			"Sigma\r\nBarrier - Functions as bouncepad\r\nKinetic Grasp - Sets gravity to 0 for ability duration\r\nRock - Launches you in opporect"),
 			Custom String(
 			"Ana\r\nPrimary Fire - Impulse in Direction\r\nSleep Dart - Teleport\r\nBiotic Nade - Impulse in Direction\r\nNano - Doesn't Do Anything "),
 			Custom String("Winston\r\nUse Bubble Shield creates sphere that you can bounce on\r\nNew passive ability: Wall Climb"),
@@ -344,14 +344,15 @@ rule("Initialize Player Variables and HUD")
 			.TotalTimeSpentOnLastCP, Global.PioneerTimeLimitConstant), Null, Null, Top, -1.500, Green, White, White, Visible To and String,
 			Default Visibility);
 		"Level 3 HUD: Ability Limits "
-		Create HUD Text(Filtered Array(Event Player, Current Array Element.CurrentLevel == 3), Custom String(
-			"Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(
-			Secondary Fire)), X Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP])
-			- X Component Of(Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(
-			Ability 1)), Y Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
+		Create HUD Text(Filtered Array(Event Player, Event Player.CurrentLevel == 3 && Event Player.CurrentCP + 1 < Count Of(
+			Global.CPLocations[Event Player.CurrentLevel])), Custom String("Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String(
+			"{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Secondary Fire)), X Component Of(
+			Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - X Component Of(
+			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 1)),
+			Y Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
 			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
 			Z Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
-			Event Player.PunchUpperSlamUsed))), Null, Null, Right, 9, Blue, White, White, Visible To and String, Default Visibility);
+			Event Player.PunchUpperSlamUsed))), Null, Null, Top, -1.400, Blue, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -638,7 +639,7 @@ disabled rule("Doom Parkour Pioneer Architecture - Individual Level")
 	}
 }
 
-rule("Set IsPioneer, Set Pioneer Invisible")
+rule("Touch Ground = Respawn")
 {
 	event
 	{
@@ -649,46 +650,34 @@ rule("Set IsPioneer, Set Pioneer Invisible")
 
 	conditions
 	{
-		"Inside a level, not in multilevel portion"
+		Is On Ground(Event Player) == True;
+		"Is not Pioneer"
+		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
+		"Is not at the current checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
+			> Global.CPRadius;
+		"Is not at the next checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
+			> Global.CPRadius;
+		"Origin Point Exists"
+		Global.GameStarted == True;
+		"Give Doomfist ability to get a jump after using Seismic Slam"
+		disabled (Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
+		"Baptiste doesn't die when in Immortality Field "
+		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
+			== False;
+		"Ignore This On CP 0"
 		Event Player.CurrentCP > 0;
-		"Redundant, but putting this here just to be safe"
-		Event Player.CurrentLevel > 0;
-		"event player = pioneer for this level / CP"
-		Event Player == Last Of(Global.CurrentPioneer[Event Player.CurrentLevel]);
-		"Is on last checkpoint of the level"
-		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
-		Count Of(Global.CPLocations[Event Player.CurrentLevel]) == Count Of(Global.CurrentPioneer[Event Player.CurrentLevel]);
 	}
 
 	actions
 	{
-		Set Invisible(Event Player, All);
-		Event Player.IsPioneer = True;
-	}
-}
-
-rule("Non-Pioneer Is Visible (not invisible)")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		"Inside a level, not in multilevel portion"
-		(Event Player.CurrentCP > 0 && Count Of(Global.CPLocations[Event Player.CurrentLevel]) == Count Of(
-			Global.CurrentPioneer[Event Player.CurrentLevel]) && True && Event Player == Last Of(
-			Global.CurrentPioneer[Event Player.CurrentLevel]) && Event Player.CurrentCP + 1 == Count Of(
-			Global.CPLocations[Event Player.CurrentLevel])) == False;
-	}
-
-	actions
-	{
-		Set Invisible(Event Player, None);
-		Event Player.IsPioneer = False;
+		"Added this if statement to stop this rule from conflicting with the \"Create New Level\" rule."
+		disabled If(Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled);
+		disabled Wait(0.100, Ignore Condition);
+		disabled Abort If(Event Player.CancelPointTimer > 0);
+		disabled End;
+		Call Subroutine(RespawnPlayer);
 	}
 }
 
@@ -716,16 +705,13 @@ rule("Pioneer - Create New Point")
 		Event Player == Last Of(Global.CurrentPioneer[Event Player.CurrentLevel]);
 		"Is on last checkpoint of the level"
 		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
-		"Give Doomfist ability to get a jump after using Seismic Slam"
-		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
-		"Player can't pioneer if they were the last pioneer on that level and Single Player Mode isn't engaged"
-		disabled (Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1])
-			== True;
 		"Baptiste doesn't die when in Immortality Field "
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
 		Has Spawned(Event Player) == True;
 		Event Player.IsPioneer == True;
+		"Give Doomfist ability to get a jump after using Seismic Slam"
+		disabled (Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
 	}
 
 	actions
@@ -786,7 +772,7 @@ rule("Pioneered less than distance threshold")
 		"Is on last checkpoint of the level"
 		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		"Give Doomfist ability to get a jump after using Seismic Slam"
-		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
+		disabled (Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
 		"Player can't pioneer if they were the last pioneer on that level and Single Player Mode isn't engaged"
 		(Global.SinglePlayerModeEnabled || Event Player != Global.CurrentPioneer[Event Player.CurrentLevel][Event Player.CurrentCP - 1])
 			== True;
@@ -821,7 +807,7 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
 			< Global.CPRadius;
 		"Give Doomfist ability to get a jump after using Seismic Slam"
-		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
+		disabled (Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
 		"Baptiste doesn't die when in Immortality Field "
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
@@ -844,6 +830,60 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 		End;
 		Call Subroutine(RespawnPlayer);
 		Event Player.TotalTimeSpentOnLastCP = 0;
+	}
+}
+
+rule("Set IsPioneer, Set Pioneer Invisible")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		"Inside a level, not in multilevel portion"
+		Event Player.CurrentCP > 0;
+		"Redundant, but putting this here just to be safe"
+		Event Player.CurrentLevel > 0;
+		"event player = pioneer for this level / CP"
+		Event Player == Last Of(Global.CurrentPioneer[Event Player.CurrentLevel]);
+		"Is on last checkpoint of the level"
+		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
+		Count Of(Global.CPLocations[Event Player.CurrentLevel]) == Count Of(Global.CurrentPioneer[Event Player.CurrentLevel]);
+	}
+
+	actions
+	{
+		Set Invisible(Event Player, All);
+		Event Player.IsPioneer = True;
+	}
+}
+
+rule("Non-Pioneer Is Visible (not invisible)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		"Inside a level, not in multilevel portion"
+		(Event Player.CurrentCP > 0 && Count Of(Global.CPLocations[Event Player.CurrentLevel]) == Count Of(
+			Global.CurrentPioneer[Event Player.CurrentLevel]) && True && Event Player == Last Of(
+			Global.CurrentPioneer[Event Player.CurrentLevel]) && Event Player.CurrentCP + 1 == Count Of(
+			Global.CPLocations[Event Player.CurrentLevel])) == False;
+	}
+
+	actions
+	{
+		Set Invisible(Event Player, None);
+		Event Player.IsPioneer = False;
 	}
 }
 
@@ -941,48 +981,6 @@ rule("Handle Player Death")
 	}
 }
 
-rule("Touch Ground = Respawn")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is On Ground(Event Player) == True;
-		"Is not Pioneer"
-		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
-		"Is not at the current checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
-			> Global.CPRadius;
-		"Is not at the next checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
-			> Global.CPRadius;
-		"Origin Point Exists"
-		Global.GameStarted == True;
-		"Give Doomfist ability to get a jump after using Seismic Slam"
-		(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player)) == False;
-		"Baptiste doesn't die when in Immortality Field "
-		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
-			== False;
-		"Ignore This On CP 0"
-		Event Player.CurrentCP > 0;
-	}
-
-	actions
-	{
-		"Added this if statement to stop this rule from conflicting with the \"Create New Level\" rule."
-		disabled If(Event Player.CurrentCP == 0 && Event Player.LevelCreationEnabled);
-		disabled Wait(0.100, Ignore Condition);
-		disabled Abort If(Event Player.CancelPointTimer > 0);
-		disabled End;
-		Call Subroutine(RespawnPlayer);
-	}
-}
-
 rule("Used Ability 1 (Uppercut)")
 {
 	event
@@ -1019,6 +1017,8 @@ rule("Used Ability 2 (Seismic Slam)")
 
 	actions
 	{
+		"Fix issue where slam counter can incorrectly count when you slam but are not facing valid direction to slam in"
+		Wait(0.250, Abort When False);
 		Event Player.PunchUpperSlamUsed += Forward;
 	}
 }
