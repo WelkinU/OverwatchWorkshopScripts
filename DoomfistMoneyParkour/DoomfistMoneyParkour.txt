@@ -1,0 +1,397 @@
+settings
+{
+	modes
+	{
+		Assault
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Control
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Escort
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Hybrid
+		{
+			enabled maps
+			{
+				Hollywood
+			}
+		}
+
+		General
+		{
+			Hero Limit: Off
+			Kill Cam: Off
+			Kill Feed: Off
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Doomfist
+			{
+				No Ammunition Requirement: On
+			}
+
+			enabled heroes
+			{
+				Doomfist
+			}
+		}
+	}
+}
+
+variables
+{
+	global:
+		0: OriginPoint
+		1: MoneyLocations
+		2: OriginRadius
+		5: Ability1UnlockMoney
+		6: SecondaryUnlockMoney
+
+	player:
+		0: Money
+		1: MoneyObtainedArray
+		3: CheckpointTimer
+}
+
+subroutines
+{
+	0: RespawnPlayer
+	1: CancelMomentum
+}
+
+disabled rule("Initialization")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Initialize Global Variables")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.OriginPoint = Vector(7.400, 12.900, -53);
+		"No Ability And Uppercut Points"
+		Global.MoneyLocations = Array(Vector(-4.015, 10.009, -54.062), Vector(-5.563, 2.501, -46.303), Vector(11.943, 6.004, -69.719),
+			Vector(11.978, 6.574, -54.065), Vector(0.361, 6.574, -51.180), Vector(6.904, 12.837, -58.772), Vector(23.043, 8.913, -74.723),
+			Vector(14.073, 3.367, -77.886), Vector(1.336, 14.675, -68.307), Vector(28.875, 1.623, -40.019), Vector(-11.747, 1.848,
+			-34.611), Vector(-14.400, 5.938, -67.551), Vector(-4.841, 4, -62.626), Vector(3.259, 5.999, -66.270));
+		Global.OriginRadius = 3.500;
+		Global.Ability1UnlockMoney = 600;
+		Global.SecondaryUnlockMoney = 1400;
+	}
+}
+
+rule("Create Ring and Money Effects On Map")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Wait(0.100, Ignore Condition);
+		"Create Origin Point Ring"
+		Create Effect(All Players(All Teams), Ring, Purple, Global.OriginPoint, Global.OriginRadius, Visible To);
+		For Global Variable(Z, 0, Count Of(Global.MoneyLocations), 1);
+			"Can't do filtered array, because OW Workshop doesn't play nice with making effects in a loop"
+			Create Effect(All Players(All Teams), Sparkles, Yellow, Global.MoneyLocations[Global.Z], 0.700, Visible To);
+		End;
+	}
+}
+
+rule("Initialize Player Variables")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.Money = 0;
+		Set Secondary Fire Enabled(Event Player, False);
+		Set Ability 1 Enabled(Event Player, False);
+		Set Ability 2 Enabled(Event Player, False);
+		Set Ultimate Charge(Event Player, 100);
+		Set Ultimate Ability Enabled(Event Player, False);
+		Event Player.CheckpointTimer = 0;
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Initialize Player HUD")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Create HUD Text(Event Player, Custom String("Money: ${0}", Event Player.Money), Null, Null, Left, 0, Green, White, White,
+			Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(Event Player, Event Player.Money < Global.Ability1UnlockMoney), Custom String(
+			"Unlock Uppercut: ${0}", Global.Ability1UnlockMoney), Null, Null, Left, 1, White, White, White, Visible To and String,
+			Default Visibility);
+		Create HUD Text(Filtered Array(Event Player, Event Player.Money >= Global.Ability1UnlockMoney), Custom String("Uppercut Unlocked"),
+			Null, Null, Left, 1, White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(Event Player, Event Player.Money < Global.SecondaryUnlockMoney), Custom String(
+			"Unlock Rocket Punch: ${0}", Global.SecondaryUnlockMoney), Null, Null, Left, 2, White, White, White, Visible To and String,
+			Default Visibility);
+		Create HUD Text(Filtered Array(Event Player, Event Player.Money >= Global.SecondaryUnlockMoney), Custom String(
+			"Rocket Punch Unlocked"), Null, Null, Left, 1, White, White, White, Visible To and String, Default Visibility);
+	}
+}
+
+disabled rule("Game Architecture")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Respawn Player If They Touch Ground")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Is On Ground(Event Player) == True;
+		Distance Between(Position Of(Event Player), Global.OriginPoint) > Global.OriginRadius;
+	}
+
+	actions
+	{
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Pick Up Money")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		For Player Variable(Event Player, Z, 0, Count Of(Global.MoneyLocations), 1);
+			"Player within radius limit of money, and has not picked up that money yet"
+			If(Distance Between(Position Of(Event Player), Global.MoneyLocations[Event Player.Z])
+				< 1.500 && !Event Player.MoneyObtainedArray[Event Player.Z]);
+				Event Player.MoneyObtainedArray[Event Player.Z] = True;
+				Event Player.Money += 100;
+				Play Effect(Event Player, Buff Explosion Sound, White, Event Player, 50);
+			End;
+		End;
+		Wait(0.100, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Unlock Uppercut")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Event Player.Money >= Global.Ability1UnlockMoney;
+	}
+
+	actions
+	{
+		Set Ability 1 Enabled(Event Player, True);
+		Big Message(Event Player, Custom String("Uppercut Unlocked"));
+	}
+}
+
+rule("Unlock Rocket Punch")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Event Player.Money >= Global.SecondaryUnlockMoney;
+	}
+
+	actions
+	{
+		Set Secondary Fire Enabled(Event Player, True);
+		Big Message(Event Player, Custom String("Rocket Punch Unlocked"));
+	}
+}
+
+rule("Reload = Respawn Player")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Reload) == True;
+	}
+
+	actions
+	{
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+disabled rule("Map Editing Stuff")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Debug HUD")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Create HUD Text(Event Player, Custom String("Position {0}", Position Of(Event Player)), Null, Null, Right, 0, White, White, White,
+			Visible To and String, Default Visibility);
+	}
+}
+
+rule("Map Creation - Melee to Append Money Location to Array")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Melee) == True;
+	}
+
+	actions
+	{
+		Small Message(Event Player, Custom String("Adding {0} to money locations", Position Of(Event Player)));
+		Modify Global Variable(MoneyLocations, Append To Array, Position Of(Event Player));
+	}
+}
+
+disabled rule("Subroutines")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Sub0: Respawn Player")
+{
+	event
+	{
+		Subroutine;
+		RespawnPlayer;
+	}
+
+	actions
+	{
+		Respawn(Event Player);
+		Wait(0.070, Ignore Condition);
+		Teleport(Event Player, Global.OriginPoint);
+		Call Subroutine(CancelMomentum);
+	}
+}
+
+rule("Sub1: Cancel Momentum")
+{
+	event
+	{
+		Subroutine;
+		CancelMomentum;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Left, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Right, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Forward, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Backward, 0.001, To World, Cancel Contrary Motion);
+	}
+}
