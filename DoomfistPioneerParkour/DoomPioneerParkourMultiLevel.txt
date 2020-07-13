@@ -270,8 +270,10 @@ rule("Initialize Global HUD")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Quick Reset: Reload\r\nGo back a CP: Jump + Interact\r\n{0}\r\n{1}\r\n{2}", Custom String(
 			"Change Level: Hold Jump + Interact 2 Sec\r\nTeleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Ultimate Status"),
-			Custom String("Skip Level (after 5 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouch"), Custom String(
-			"Switch Hero (Multi-Hero Level Only): Emote")), Left, 1, White, White, White, Visible To and String, Default Visibility);
+			Custom String(
+			"Spectate Mode: Need Healing Voiceline\r\nSkip Level (after 5 min): Interact + Melee\r\nEnable Level Creation: Interact + Crouchch"),
+			Custom String("Switch Hero (Multi-Hero Level Only): Emote")), Left, 1, White, White, White, Visible To and String,
+			Default Visibility);
 		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, 0, White, White, White, Visible To and String,
 			Default Visibility);
 		"Player level/CP leaderboard HUD"
@@ -916,6 +918,7 @@ rule("Pioneer Runs Out of Time On Making Point")
 		If(Count Of(Event Player.I) > 0);
 			"Force players to respawn"
 			Event Player.I.ForceRespawn = True;
+			Wait(0.250, Ignore Condition);
 			Big Message(Event Player, Custom String("ran out of time on pioneer"));
 			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Remove From Array By Index, Event Player.CurrentCP);
 			Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
@@ -1119,39 +1122,6 @@ rule("Pioneer Leaves Match")
 					Event Player.I.TotalTimeSpentOnLastCP = 0;
 					Event Player.TotalTimeSpentOnLastCP = 0;
 					Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
-					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
-						Global.CurrentPioneer[Event Player.CurrentLevel])));
-				End;
-			End;
-		End;
-	}
-}
-
-disabled rule("Pioneer Leaves Match")
-{
-	event
-	{
-		Player Left Match;
-		All;
-		All;
-	}
-
-	actions
-	{
-		For Player Variable(Event Player, Y, 0, Count Of(Global.CPLocations), 1);
-			If(Count Of(Global.CurrentPioneer[Event Player.Y]) == Count Of(Global.CPLocations[Event Player.Y]) && Count Of(
-				Global.CPLocations[Event Player.Y]) > 1 && Event Player == Last Of(Global.CurrentPioneer[Event Player.Y]));
-				"Remove player as pioneer"
-				Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Remove From Array By Index, Count Of(
-					Global.CPLocations[Event Player.Y]) - 1);
-				"get all other players on the same point"
-				Event Player.I = Filtered Array(All Players(All Teams), Count Of(Global.CPLocations[Event Player.Y])
-					- 1 == Current Array Element.CurrentCP && Event Player.Y == Current Array Element.CurrentCP && True && True);
-				"If there is a player to pass pioneer to"
-				If(Count Of(Event Player.I) > 0);
-					Event Player.I.TotalTimeSpentOnLastCP = 0;
-					Event Player.TotalTimeSpentOnLastCP = 0;
-					Modify Global Variable At Index(CurrentPioneer, Event Player.Y, Append To Array, Random Value In Array(Event Player.I));
 					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
 						Global.CurrentPioneer[Event Player.CurrentLevel])));
 				End;
@@ -1385,7 +1355,7 @@ rule("Skip Level Option Implementation - Only available if you spent 5 min on a 
 	}
 }
 
-disabled rule("Single Player Mode Engaged If Only 1 Player in Game")
+rule("Single Player Mode Engaged If Only 1 Player in Game")
 {
 	event
 	{
@@ -1400,11 +1370,11 @@ disabled rule("Single Player Mode Engaged If Only 1 Player in Game")
 	actions
 	{
 		Global.SinglePlayerModeEnabled = True;
-		Small Message(All Players(All Teams), Custom String("Single Player Mode Engaged"));
+		Small Message(Host Player, Custom String("Single Player Mode Engaged"));
 	}
 }
 
-disabled rule("Single Player Mode Disengaged If Multiple Players in Game")
+rule("Single Player Mode Disengaged If Multiple Players in Game")
 {
 	event
 	{
@@ -1419,7 +1389,7 @@ disabled rule("Single Player Mode Disengaged If Multiple Players in Game")
 	actions
 	{
 		Global.SinglePlayerModeEnabled = False;
-		Small Message(All Players(All Teams), Custom String("Single Player Mode Disengaged"));
+		Small Message(Host Player, Custom String("Single Player Mode Disengaged"));
 	}
 }
 
