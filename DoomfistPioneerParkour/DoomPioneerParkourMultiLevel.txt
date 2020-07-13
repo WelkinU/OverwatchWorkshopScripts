@@ -32,8 +32,11 @@ settings
 				Blizzard World
 				Hanamura Winter
 				Hollywood Halloween
+				Horizon Lunar Colony
 				King's Row
 				Lijiang Tower Lunar New Year
+				Temple of Anubis
+				Watchpoint: Gibraltar
 				Workshop Chamber
 				Workshop Expanse
 				Workshop Expanse Night
@@ -137,6 +140,7 @@ variables
 		7: HeroUseArrayofArrays
 		8: CountPunchUpperSlam
 		9: CountMeteorTeleportPrimary
+		10: Count360
 		11: MinPioneerDistanceConstant
 		12: PioneerTimeLimitConstant
 		13: HeroList
@@ -177,6 +181,9 @@ variables
 		29: sigma_barrier_init_position
 		30: sigma_barrier_chase
 		31: sigma_barrier_position
+		32: Array360
+		33: Timer360
+		34: Count360
 }
 
 subroutines
@@ -226,6 +233,7 @@ rule("Initialize Global Variables")
 			Global.CurrentPioneer[Global.Z] = Array(Host Player);
 			Global.CountPunchUpperSlam[Global.Z] = Array(Vector(9, 9, 9));
 			Global.CountMeteorTeleportPrimary[Global.Z] = Array(Vector(9, 9, 9));
+			Global.Count360[Global.Z] = Array(Vector(0, 0, 0));
 			Global.HeroUseArrayofArrays[Global.Z] = Array(Hero(Doomfist));
 		End;
 		"Set the hero rotation for multi-hero level"
@@ -299,6 +307,8 @@ rule("Initialize Player Variables and HUD")
 		Enable Death Spectate Target HUD(Event Player);
 		Event Player.CurrentCP = 0;
 		Event Player.CurrentLevel = 0;
+		Event Player.Array360 = Array(False, False, False, False);
+		Event Player.Timer360 = 0;
 		If(Event Player == Host Player);
 			Event Player.LevelCreationEnabled = True;
 		End;
@@ -352,9 +362,11 @@ rule("Initialize Player Variables and HUD")
 			Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - X Component Of(
 			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 1)),
 			Y Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
-			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
+			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1} {2}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
 			Z Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
-			Event Player.PunchUpperSlamUsed))), Null, Null, Top, -1.400, Blue, White, White, Visible To and String, Default Visibility);
+			Event Player.PunchUpperSlamUsed), Custom String("360 {0}", X Component Of(
+			Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0))), Null, Null, Top, -1.400, Blue, White, White,
+			Visible To and String, Default Visibility);
 	}
 }
 
@@ -741,6 +753,7 @@ rule("Pioneer - Create New Point")
 		Modify Global Variable At Index(CountPunchUpperSlam, Event Player.CurrentLevel, Append To Array, Event Player.PunchUpperSlamUsed);
 		Modify Global Variable At Index(CountMeteorTeleportPrimary, Event Player.CurrentLevel, Append To Array,
 			Event Player.CountUltimateTeleportPrimary);
+		Modify Global Variable At Index(Count360, Event Player.CurrentLevel, Append To Array, Event Player.Count360);
 		Modify Global Variable At Index(HeroUseArrayofArrays, Event Player.CurrentLevel, Append To Array, Hero Of(Event Player));
 		Modify Global Variable At Index(CPLocations, Event Player.CurrentLevel, Append To Array, Event Player.W);
 		Event Player.TotalTimeSpentOnLastCP = 0;
@@ -812,11 +825,22 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 		(Hero Of(Event Player) == Hero(Baptiste) && (Has Status(Event Player, Knocked Down) || Has Status(Event Player, Unkillable)))
 			== False;
 		Has Spawned(Event Player) == True;
+		Event Player.TotalTimeSpentOnLastCP > 0.250;
 	}
 
 	actions
 	{
-		Wait(0.200, Abort When False);
+		"So pioneer doesn't IMMEDIATELY complete point right after making it, because respawn takes 0.1 sec"
+		disabled Wait(0.200, Abort When False);
+		"Is on level 3 (expert), and didn't do required number of 360's"
+		If(Index Of Array Value(Array(3), Event Player.CurrentLevel) != -1 && 0 < X Component Of(
+			Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]));
+			If(X Component Of(Event Player.Count360) == 0);
+				Small Message(Event Player, Custom String("Checkpoint requires 360! Spin around!"));
+				Call Subroutine(RespawnPlayer);
+				Abort;
+			End;
+		End;
 		Small Message(Event Player, Custom String("Arrived!"));
 		Event Player.CurrentCP += 1;
 		Event Player.LevelMaxUnlockedCPArray[Event Player.CurrentLevel] = Max(
@@ -1016,12 +1040,14 @@ rule("Used Ability 2 (Seismic Slam)")
 	conditions
 	{
 		Is Using Ability 2(Event Player) == True;
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
 	{
+		Wait(0.250, Ignore Condition);
 		"Fix issue where slam counter can incorrectly count when you slam but are not facing valid direction to slam in"
-		Wait(0.250, Abort When False);
+		Abort If(!Is Using Ability 2(Event Player) && !Is On Ground(Event Player));
 		Event Player.PunchUpperSlamUsed += Forward;
 	}
 }
@@ -1127,6 +1153,93 @@ rule("Pioneer Leaves Match")
 				End;
 			End;
 		End;
+	}
+}
+
+disabled rule("360 Code :D")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+}
+
+rule("Update 360 Array")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90, Down)] == False;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		disabled Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / (360 / Count Of(Event Player.Array360)),
+			Down)] = True;
+		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90, Down)] = True;
+		"Start timer if player has started 360"
+		If(Count Of(Filtered Array(Event Player.Array360, Current Array Element)) == 2);
+			Event Player.Timer360 = 0;
+			Chase Player Variable At Rate(Event Player, Timer360, 1, 1, Destination and Rate);
+		End;
+	}
+}
+
+rule("Reset 360 Array after 1 sec")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.Timer360 >= 1;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.Array360 = Array(False, False, False, False);
+		Event Player.Timer360 = 0;
+		Stop Chasing Player Variable(Event Player, Timer360);
+	}
+}
+
+rule("Successful 360")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentLevel == 3;
+		Is True For All(Event Player.Array360, Current Array Element) == True;
+		Has Spawned(Event Player) == True;
+		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player))
+			> Global.CPRadius;
+	}
+
+	actions
+	{
+		Small Message(Event Player, Custom String("360"));
+		Event Player.Count360 += Left;
+		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
 	}
 }
 
@@ -1494,6 +1607,7 @@ rule("Sub0: RespawnPlayer")
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+		Event Player.Count360 = Vector(0, 0, 0);
 	}
 }
 
