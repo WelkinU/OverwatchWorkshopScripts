@@ -364,9 +364,9 @@ rule("Initialize Player Variables and HUD")
 			Y Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
 			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1} {2}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
 			Z Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
-			Event Player.PunchUpperSlamUsed), Custom String("360 {0}", X Component Of(
-			Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0))), Null, Null, Top, -1.400, Blue, White, White,
-			Visible To and String, Default Visibility);
+			Event Player.PunchUpperSlamUsed), Custom String("360's {0}", X Component Of(
+			Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]) - X Component Of(Event Player.Count360)))), Null, Null,
+			Top, -1.400, Blue, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -835,7 +835,7 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 		"Is on level 3 (expert), and didn't do required number of 360's"
 		If(Index Of Array Value(Array(3), Event Player.CurrentLevel) != -1 && 0 < X Component Of(
 			Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]));
-			If(X Component Of(Event Player.Count360) == 0);
+			If(X Component Of(Event Player.Count360) < X Component Of(Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]));
 				Small Message(Event Player, Custom String("Checkpoint requires 360! Spin around!"));
 				Call Subroutine(RespawnPlayer);
 				Abort;
@@ -1177,7 +1177,7 @@ rule("Update 360 Array")
 
 	conditions
 	{
-		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90, Down)] == False;
+		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90, Down)] != True;
 		Has Spawned(Event Player) == True;
 	}
 
@@ -1187,7 +1187,7 @@ rule("Update 360 Array")
 			Down)] = True;
 		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90, Down)] = True;
 		"Start timer if player has started 360"
-		If(Count Of(Filtered Array(Event Player.Array360, Current Array Element)) == 2);
+		If(Count Of(Filtered Array(Event Player.Array360, Current Array Element == True)) == 2);
 			Event Player.Timer360 = 0;
 			Chase Player Variable At Rate(Event Player, Timer360, 1, 1, Destination and Rate);
 		End;
@@ -1211,7 +1211,10 @@ rule("Reset 360 Array after 1 sec")
 
 	actions
 	{
-		Event Player.Array360 = Array(False, False, False, False);
+		For Player Variable(Event Player, I, 0, Count Of(Event Player.Array360), 1);
+			Event Player.Array360[Event Player.I] = False;
+		End;
+		disabled Event Player.Array360 = Array(False, False, False, False);
 		Event Player.Timer360 = 0;
 		Stop Chasing Player Variable(Event Player, Timer360);
 	}
@@ -1233,6 +1236,10 @@ rule("Successful 360")
 		Has Spawned(Event Player) == True;
 		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player))
 			> Global.CPRadius;
+		"So most stalls dont let you 360 for free"
+		Altitude Of(Event Player) > 0.500;
+		"So pioneer cant do a 360 while in 3 sec before point is canceled"
+		disabled Event Player.CancelPointTimer <= 0;
 	}
 
 	actions
@@ -1240,6 +1247,10 @@ rule("Successful 360")
 		Small Message(Event Player, Custom String("360"));
 		Event Player.Count360 += Left;
 		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
+		disabled Event Player.Array360 = Array(False, False, False, False);
+		disabled For Player Variable(Event Player, I, 0, Count Of(Event Player.Count360), 1);
+		disabled Event Player.Array360[Event Player.I] = False;
+		disabled End;
 	}
 }
 
@@ -1343,8 +1354,9 @@ rule("Ultimate Status Voiceline: Camera To See Next Point")
 	actions
 	{
 		Event Player.I = Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
-		Start Camera(Event Player, Ray Cast Hit Position(Event Player.I, Event Player.I + Vector(10, 10, 0), All Players(All Teams),
-			Event Player, True), Event Player.I + Facing Direction Of(Event Player) * 10, 30);
+		Set Facing(Event Player, Vector(10, 10, 0), To World);
+		Start Camera(Event Player, Ray Cast Hit Position(Event Player.I, Event Player.I + Facing Direction Of(Event Player) * 15,
+			All Players(All Teams), Event Player, True), Event Player.I, 30);
 		Wait(3, Ignore Condition);
 		Stop Camera(Event Player);
 	}
