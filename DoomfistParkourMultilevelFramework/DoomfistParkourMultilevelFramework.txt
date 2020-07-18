@@ -117,16 +117,16 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		Global.CPLocations = Array(Array(Vector(-48.400, 9.800, -21.400)));
 		"Set the starting position abilities when the player loads into the game"
 		Global.CPPunchUpperSlamCounts = Array(Array(Vector(1, 1, 0)));
-		"--------------Set Level 1 Parameters. Set CPLocations Index to level number--------------"
-		Global.CPLocations[1] = Array(Vector(-49.996, 17.888, -34.854), Vector(-49.499, 20.473, -51.380), Vector(-32.470, 22.530, -51.041),
-			Vector(-33.992, 20.454, -13.367), Vector(-187.388, -90.726, -71.649), Vector(-185.611, -81.306, -40.293));
-		Global.CPPunchUpperSlamCounts[1] = Array(Vector(1, 1, 1), Vector(0, 1, 1), Vector(0, 0, 0), Vector(1, 1, 1), Vector(1, 1, 1),
+		"--------------Set Level 1 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[1] = Array(Null, Vector(-49.996, 17.888, -34.854), Vector(-49.499, 20.473, -51.380), Vector(-32.470, 22.530,
+			-51.041), Vector(-33.992, 20.454, -13.367), Vector(-187.388, -90.726, -71.649), Vector(-185.611, -81.306, -40.293));
+		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(1, 1, 1), Vector(0, 1, 1), Vector(0, 0, 0), Vector(1, 1, 1), Vector(1, 1, 1),
 			Vector(1, 1, 1));
-		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------"
-		Global.CPLocations[2] = Array(Vector(-37.078, 14.583, -8.837), Vector(-33.992, 20.453, 23.297), Vector(-35.471, 22.495, 53.428),
-			Vector(-39, 35, -90), Vector(-27.811, 37.938, -53.011), Vector(-18.069, 4.308, -82.686), Vector(-27.811, 37.938, -53.011),
-			Vector(-72.856, 20.837, -0.563));
-		Global.CPPunchUpperSlamCounts[2] = Array(Vector(1, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(3, 3, 1), Vector(0, 2, 1),
+		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[2] = Array(Null, Vector(-37.078, 14.583, -8.837), Vector(-33.992, 20.453, 23.297), Vector(-35.471, 22.495,
+			53.428), Vector(-39, 35, -90), Vector(-27.811, 37.938, -53.011), Vector(-18.069, 4.308, -82.686), Vector(-27.811, 37.938,
+			-53.011), Vector(-72.856, 20.837, -0.563));
+		Global.CPPunchUpperSlamCounts[2] = Array(Null, Vector(1, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(3, 3, 1), Vector(0, 2, 1),
 			Vector(4, 4, 1), Vector(1, 2, 1), Vector(1, 1, 1));
 		"Autogenerate checkpoint facing, radii, and other variables based on CPLocations"
 		Call Subroutine(AutogenerateMapVariables);
@@ -163,7 +163,6 @@ rule("UPDATE MAP CONSTANTS HERE -  SET TELEPORTS, ULTIMATE ENABLE, OVERRIDE CP R
 		End;
 		"------------------Use this code block to set Level 2 modifiers------------------"
 		If(Global.LevelIterator == 2);
-			"Example: Use this code to override CP 3 to enable Ultimate"
 			Global.TempTeleport[3] = True;
 		End;
 	}
@@ -222,6 +221,8 @@ rule("Initialize Global HUD and Effects")
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
 			"-------------Top Scores-------------\r\n{0}\r\n-------------------------------------------------", Global.TopScoreString),
 			Left, 0, White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: 7RDMK"), Null, Null, Right, -9, Green, White, White,
+			Visible To, Default Visibility);
 	}
 }
 
@@ -259,7 +260,8 @@ rule("Initialize Player HUD and Effects")
 	actions
 	{
 		Create HUD Text(Event Player, Null, Null, Custom String("Level {0} Checkpoint {1} - Time {2}", Event Player.CurrentLevel,
-			Event Player.CurrentCP - 0, Event Player.LevelTimer), Top, -2, White, White, White, Visible To and String, Default Visibility);
+			Custom String("{0}/{1}", Event Player.CurrentCP, Count Of(Global.CPLocations[Event Player.CurrentLevel]) - 1),
+			Event Player.LevelTimer), Top, -2, White, White, White, Visible To and String, Default Visibility);
 		"Create Current Checkpoint Ring"
 		Create Effect(Filtered Array(Event Player, Current Array Element.CurrentCP > 0), Ring, Purple,
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP],
@@ -354,6 +356,10 @@ rule("Subroutine 0: RespawnPlayer")
 		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
 		Cancel Primary Action(Event Player);
+		"Safety check in case rules execute out of order, ie Reset to Origin (Q + Interact) pressed same time and get next level"
+		If(Event Player.CurrentCP > 0 && Event Player.CurrentLevel == 0);
+			Event Player.CurrentCP = 0;
+		End;
 		"Set location and facing direction of player"
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
 		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
@@ -415,13 +421,13 @@ rule("Subroutine 1: AutogenerateMapVariables")
 			Global.TopScoreTimes[Global.LevelIterator] = 10000;
 		End;
 		"Add origin point to beginning of each level's CP locations so we can index conveniently into CPLocations"
-		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
-			Global.CPLocations[Global.LevelIterator] = Append To Array(Array(Global.CPLocations[0][0]),
-				Global.CPLocations[Global.LevelIterator]);
-			Global.CPPunchUpperSlamCounts[Global.LevelIterator] = Append To Array(Array(Global.CPPunchUpperSlamCounts[0][0]),
-				Global.CPPunchUpperSlamCounts[Global.LevelIterator]);
-		End;
-		"Add origin point to beginning of each level's CP locations so we can index conveniently into CPLocations"
+		disabled For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
+		disabled Global.CPLocations[Global.LevelIterator] = Append To Array(Array(Global.CPLocations[0][0]),
+			Global.CPLocations[Global.LevelIterator]);
+		disabled Global.CPPunchUpperSlamCounts[Global.LevelIterator] = Append To Array(Array(Global.CPPunchUpperSlamCounts[0][0]),
+			Global.CPPunchUpperSlamCounts[Global.LevelIterator]);
+		disabled End;
+		"Autogenerate variable arrays"
 		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
 			"Set CPFacing array to all NULL. NULL means orient player towards direction of next point."
 			Global.CPFacing[Global.LevelIterator] = Null;
@@ -696,8 +702,23 @@ rule("Finished Level")
 			Global.TopScorePlayer[Event Player.CurrentLevel] = Event Player;
 		End;
 		Call Subroutine(UpdateTopScoreboard);
-		Set Ultimate Ability Enabled(Event Player, True);
-		Set Ultimate Charge(Event Player, 100);
+	}
+}
+
+rule("Respawn Player If They Die")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Respawn(Event Player);
+		Wait(0.100, Ignore Condition);
+		Call Subroutine(RespawnPlayer);
 	}
 }
 
@@ -768,6 +789,7 @@ rule("Jump + Interact -> Skip Level")
 		Is Button Held(Event Player, Jump) == True;
 		Is Button Held(Event Player, Interact) == True;
 		Event Player.CurrentLevel > 0;
+		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 	}
 
 	actions
@@ -776,6 +798,28 @@ rule("Jump + Interact -> Skip Level")
 		Event Player.LevelTimer = 0;
 		Event Player.CurrentCP += 1;
 		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Can Melee Cancel Slam")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+		Is Button Held(Event Player, Melee) == True;
+	}
+
+	actions
+	{
+		Cancel Primary Action(Event Player);
+		Small Message(Event Player, Custom String("Testing melee slam cancel"));
 	}
 }
 
