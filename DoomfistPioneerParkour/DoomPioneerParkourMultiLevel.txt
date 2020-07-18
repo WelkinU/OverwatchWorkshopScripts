@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - MultiLevel Edition v1.0! Have multiple Pioneer Parkour Levels running, each with different rules. Supports multi-hero levels, with Sigma (by ReZero), Ana, Winston, Roadhog, and more! Made by WelkinTern.   Level 1: Pioneer Timer  Level 2: No Restriction  Level 3: Ability Restrictions  Source Control: https://github.com/WelkinU/OverwatchWorkshopScripts"
+		Description: "Doomfist Pioneering Parkour - MultiLevel Edition v1.0! Have multiple Pioneer Parkour Levels running, each with different rules. Supports multi-hero levels, with Sigma (by ReZero), Ana, Winston, Roadhog, and more! Made by WelkinTern.   Level 1: Pioneer Timer  Level 2: No Restriction  Level 3: Ability Restrictions, 360 detector, and 125 Slam detector  Source Control: https://github.com/WelkinU/OverwatchWorkshopScripts"
 	}
 
 	modes
@@ -140,7 +140,7 @@ variables
 		7: HeroUseArrayofArrays
 		8: CountPunchUpperSlam
 		9: CountMeteorTeleportPrimary
-		10: Count360
+		10: Count360Slam125
 		11: MinPioneerDistanceConstant
 		12: PioneerTimeLimitConstant
 		13: HeroList
@@ -167,6 +167,7 @@ variables
 		10: ForceRespawn
 		11: LevelCreationEnabled
 		12: JumpInteractTimer
+		14: SlamTimer
 		15: IsPioneer
 		16: AnaSleepDartTeleLocation
 		17: WinstonWallClimbEnabled
@@ -183,7 +184,8 @@ variables
 		31: sigma_barrier_position
 		32: Array360
 		33: Timer360
-		34: Count360
+		34: Count360Slam125
+		35: TempViewNextPointPosition
 }
 
 subroutines
@@ -210,13 +212,13 @@ rule("Initialize Global Variables")
 
 	actions
 	{
+		Disable Inspector Recording;
 		"Set this variable to TRUE if you want to enable a player to be pioneer multiple checkpoints in a row"
 		Global.SinglePlayerModeEnabled = False;
 		"The amount of time a pioneer has to make a point"
 		Global.PioneerTimeLimitConstant = 180;
 		"Minimum distance between checkpoints that pioneer can make - don't make this less than 4m"
 		Global.MinPioneerDistanceConstant = 8;
-		Disable Inspector Recording;
 		Enable Death Spectate All Players(All Players(All Teams));
 		Disable Built-In Game Mode Completion;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
@@ -233,7 +235,7 @@ rule("Initialize Global Variables")
 			Global.CurrentPioneer[Global.Z] = Array(Host Player);
 			Global.CountPunchUpperSlam[Global.Z] = Array(Vector(9, 9, 9));
 			Global.CountMeteorTeleportPrimary[Global.Z] = Array(Vector(9, 9, 9));
-			Global.Count360[Global.Z] = Array(Vector(0, 0, 0));
+			Global.Count360Slam125[Global.Z] = Array(Vector(0, 0, 0));
 			Global.HeroUseArrayofArrays[Global.Z] = Array(Hero(Doomfist));
 		End;
 		"Set the hero rotation for multi-hero level"
@@ -309,6 +311,8 @@ rule("Initialize Player Variables and HUD")
 		Event Player.CurrentLevel = 0;
 		Event Player.Array360 = Array(False, False, False, False);
 		Event Player.Timer360 = 0;
+		Event Player.Count360Slam125 = Vector(0, 0, 0);
+		"Start with Host as only one with level creation enabled"
 		If(Event Player == Host Player);
 			Event Player.LevelCreationEnabled = True;
 		End;
@@ -364,9 +368,10 @@ rule("Initialize Player Variables and HUD")
 			Y Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
 			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1} {2}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
 			Z Component Of(Global.CountPunchUpperSlam[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
-			Event Player.PunchUpperSlamUsed), Custom String("360's {0}", X Component Of(
-			Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]) - X Component Of(Event Player.Count360)))), Null, Null,
-			Top, -1.400, Blue, White, White, Visible To and String, Default Visibility);
+			Event Player.PunchUpperSlamUsed), Custom String("360's {0} MaxSlam {1}", X Component Of(
+			Global.Count360Slam125[Event Player.CurrentLevel][Event Player.CurrentCP]) - X Component Of(Event Player.Count360Slam125),
+			Y Component Of(Global.Count360Slam125[Event Player.CurrentLevel][Event Player.CurrentCP])))), Null, Null, Top, -1.400, Blue,
+			White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -665,8 +670,6 @@ rule("Touch Ground = Respawn")
 	conditions
 	{
 		Is On Ground(Event Player) == True;
-		"Is not Pioneer"
-		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		"Is not at the current checkpoint"
 		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
 			> Global.CPRadius;
@@ -682,6 +685,8 @@ rule("Touch Ground = Respawn")
 			== False;
 		"Ignore This On CP 0"
 		Event Player.CurrentCP > 0;
+		Event Player.IsPioneer != True;
+		Is In Spawn Room(Event Player) != True;
 	}
 
 	actions
@@ -753,7 +758,7 @@ rule("Pioneer - Create New Point")
 		Modify Global Variable At Index(CountPunchUpperSlam, Event Player.CurrentLevel, Append To Array, Event Player.PunchUpperSlamUsed);
 		Modify Global Variable At Index(CountMeteorTeleportPrimary, Event Player.CurrentLevel, Append To Array,
 			Event Player.CountUltimateTeleportPrimary);
-		Modify Global Variable At Index(Count360, Event Player.CurrentLevel, Append To Array, Event Player.Count360);
+		Modify Global Variable At Index(Count360Slam125, Event Player.CurrentLevel, Append To Array, Event Player.Count360Slam125);
 		Modify Global Variable At Index(HeroUseArrayofArrays, Event Player.CurrentLevel, Append To Array, Hero Of(Event Player));
 		Modify Global Variable At Index(CPLocations, Event Player.CurrentLevel, Append To Array, Event Player.W);
 		Event Player.TotalTimeSpentOnLastCP = 0;
@@ -832,14 +837,25 @@ rule("Non-Pioneer Player Arrive At Point (Set Them As Next Pioneer If Applicable
 	{
 		"So pioneer doesn't IMMEDIATELY complete point right after making it, because respawn takes 0.1 sec"
 		disabled Wait(0.200, Abort When False);
+		disabled Wait(0.016, Ignore Condition);
+		disabled Loop If(Is Using Ability 2(Event Player));
+		disabled Wait(0.050, Ignore Condition);
 		"Is on level 3 (expert), and didn't do required number of 360's"
 		If(Index Of Array Value(Array(3), Event Player.CurrentLevel) != -1 && 0 < X Component Of(
-			Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]));
-			If(X Component Of(Event Player.Count360) < X Component Of(Global.Count360[Event Player.CurrentLevel][Event Player.CurrentCP]));
+			Global.Count360Slam125[Event Player.CurrentLevel][Event Player.CurrentCP]));
+			If(X Component Of(Event Player.Count360Slam125) < X Component Of(
+				Global.Count360Slam125[Event Player.CurrentLevel][Event Player.CurrentCP]));
 				Small Message(Event Player, Custom String("Checkpoint requires 360! Spin around!"));
 				Call Subroutine(RespawnPlayer);
 				Abort;
 			End;
+		End;
+		"Is on level 3 (expert), and didn't do required number of 125 Slams"
+		If(Index Of Array Value(Array(3), Event Player.CurrentLevel) != -1 && Y Component Of(
+			Global.Count360Slam125[Event Player.CurrentLevel][Event Player.CurrentCP]) > Y Component Of(Event Player.Count360Slam125));
+			Small Message(Event Player, Custom String("Checkpoint requires 125 Slam! {0}", Y Component Of(Event Player.Count360Slam125)));
+			Call Subroutine(RespawnPlayer);
+			Abort;
 		End;
 		Small Message(Event Player, Custom String("Arrived!"));
 		Event Player.CurrentCP += 1;
@@ -886,7 +902,7 @@ rule("Set IsPioneer, Set Pioneer Invisible")
 	}
 }
 
-rule("Non-Pioneer Is Visible (not invisible)")
+rule("Set IsPioneer, Non-Pioneer Is Visible (not invisible)")
 {
 	event
 	{
@@ -1008,27 +1024,46 @@ rule("Handle Player Death")
 	}
 }
 
-rule("Used Ability 1 (Uppercut)")
+rule("Pioneer Leaves Match")
 {
 	event
 	{
-		Ongoing - Each Player;
+		Player Left Match;
 		All;
 		All;
 	}
 
 	conditions
 	{
-		Is Using Ability 1(Event Player) == True;
+		Index Of Array Value(All Players(All Teams), Event Player) == -1;
 	}
 
 	actions
 	{
-		Event Player.PunchUpperSlamUsed += Up;
+		For Global Variable(TempPlayerLeftIterator, 0, Count Of(Global.CPLocations), 1);
+			If(Count Of(Global.CurrentPioneer[Global.TempPlayerLeftIterator]) == Count Of(Global.CPLocations[Global.TempPlayerLeftIterator])
+				&& Count Of(Global.CPLocations[Global.TempPlayerLeftIterator]) > 1 && Event Player == Last Of(
+				Global.CurrentPioneer[Global.TempPlayerLeftIterator]));
+				"get all other players on the same point"
+				Event Player.I = Filtered Array(All Players(All Teams), Count Of(Global.CPLocations[Global.TempPlayerLeftIterator])
+					- 1 == Current Array Element.CurrentCP && Global.TempPlayerLeftIterator == Current Array Element.CurrentCP && True && True);
+				"Remove player as pioneer"
+				Modify Global Variable At Index(CurrentPioneer, Global.TempPlayerLeftIterator, Remove From Array By Index, Count Of(
+					Global.CPLocations[Global.TempPlayerLeftIterator]) - 1);
+				"If there is a player to pass pioneer to"
+				If(Count Of(Event Player.I) > 0);
+					Event Player.I.TotalTimeSpentOnLastCP = 0;
+					Event Player.TotalTimeSpentOnLastCP = 0;
+					Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
+					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
+						Global.CurrentPioneer[Event Player.CurrentLevel])));
+				End;
+			End;
+		End;
 	}
 }
 
-rule("Used Ability 2 (Seismic Slam)")
+rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
 {
 	event
 	{
@@ -1039,16 +1074,13 @@ rule("Used Ability 2 (Seismic Slam)")
 
 	conditions
 	{
-		Is Using Ability 2(Event Player) == True;
-		Event Player.CancelPointTimer == 0;
+		Is Firing Primary(Event Player) == True;
+		Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) >= 0;
 	}
 
 	actions
 	{
-		Wait(0.250, Ignore Condition);
-		"Fix issue where slam counter can incorrectly count when you slam but are not facing valid direction to slam in"
-		Abort If(!Is Using Ability 2(Event Player) && !Is On Ground(Event Player));
-		Event Player.PunchUpperSlamUsed += Forward;
+		Event Player.CountUltimateTeleportPrimary += Forward;
 	}
 }
 
@@ -1096,7 +1128,7 @@ rule("Used Secondary (Rocket Punch)")
 	}
 }
 
-rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
+rule("Used Ability 1 (Uppercut)")
 {
 	event
 	{
@@ -1107,52 +1139,145 @@ rule("Used Primary Fire On Hero Where Primary Is Relevant (Ana, etc.)")
 
 	conditions
 	{
-		Is Firing Primary(Event Player) == True;
-		Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) >= 0;
+		Is Using Ability 1(Event Player) == True;
 	}
 
 	actions
 	{
-		Event Player.CountUltimateTeleportPrimary += Forward;
+		Event Player.PunchUpperSlamUsed += Up;
 	}
 }
 
-rule("Pioneer Leaves Match")
+rule("Used Ability 2 - NON DOOMFIST")
 {
 	event
 	{
-		Player Left Match;
+		Ongoing - Each Player;
 		All;
 		All;
 	}
 
 	conditions
 	{
-		Index Of Array Value(All Players(All Teams), Event Player) == -1;
+		Is Using Ability 2(Event Player) == True;
+		Event Player.CancelPointTimer == 0;
+		Hero Of(Event Player) != Hero(Doomfist);
 	}
 
 	actions
 	{
-		For Global Variable(TempPlayerLeftIterator, 0, Count Of(Global.CPLocations), 1);
-			If(Count Of(Global.CurrentPioneer[Global.TempPlayerLeftIterator]) == Count Of(Global.CPLocations[Global.TempPlayerLeftIterator])
-				&& Count Of(Global.CPLocations[Global.TempPlayerLeftIterator]) > 1 && Event Player == Last Of(
-				Global.CurrentPioneer[Global.TempPlayerLeftIterator]));
-				"get all other players on the same point"
-				Event Player.I = Filtered Array(All Players(All Teams), Count Of(Global.CPLocations[Global.TempPlayerLeftIterator])
-					- 1 == Current Array Element.CurrentCP && Global.TempPlayerLeftIterator == Current Array Element.CurrentCP && True && True);
-				"Remove player as pioneer"
-				Modify Global Variable At Index(CurrentPioneer, Global.TempPlayerLeftIterator, Remove From Array By Index, Count Of(
-					Global.CPLocations[Global.TempPlayerLeftIterator]) - 1);
-				"If there is a player to pass pioneer to"
-				If(Count Of(Event Player.I) > 0);
-					Event Player.I.TotalTimeSpentOnLastCP = 0;
-					Event Player.TotalTimeSpentOnLastCP = 0;
-					Modify Global Variable At Index(CurrentPioneer, Event Player.CurrentLevel, Append To Array, Random Value In Array(Event Player.I));
-					Big Message(Event Player.I, Custom String("Level {0} Pioneer passed to {1}!", Event Player.CurrentLevel, Last Of(
-						Global.CurrentPioneer[Event Player.CurrentLevel])));
-				End;
-			End;
+		Event Player.PunchUpperSlamUsed += Forward;
+	}
+}
+
+rule("Used Ability 2 - Start Slam Timer")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.SlamTimer = 0;
+		Chase Player Variable At Rate(Event Player, SlamTimer, 99, 1, Destination and Rate);
+	}
+}
+
+rule("Used Ability 2 + 125 Slam Detector")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == False;
+		Has Spawned(Event Player) == True;
+		"To stop this rule from double triggering"
+		Event Player.SlamTimer > 0;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, SlamTimer);
+		"Prevent invalid slam (where press slam button but you are not allowed to slam) from counting as a slam. Matters for ability count limits."
+		disabled If(Is On Ground(Event Player) || Event Player.SlamTimer >= 0.250);
+		disabled Event Player.PunchUpperSlamUsed += Forward;
+		disabled End;
+		"Detect 125 slam. Formula is Slam Damage = 100 * (Slam Time) - 28, so 125 slam requires at least 1.53 sec of slam time."
+		disabled If(Event Player.SlamTimer >= 1.520);
+		disabled Event Player.Count360Slam125 += Up;
+		disabled Small Message(Event Player, Custom String("125 Slam"));
+		disabled Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
+		disabled End;
+		Event Player.SlamTimer = 0;
+	}
+}
+
+rule("Increment Slam Counter")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		"Prevents invalid slam (where player presses slam button but can't slam) from being counted"
+		((Is On Ground(Event Player) && Event Player.SlamTimer > 0.040 && Event Player.SlamTimer < 0.250) || (
+			Event Player.SlamTimer > 0.250)) == True;
+		Has Spawned(Event Player) == True;
+		Is Using Ability 2(Event Player) == True;
+		disabled Event Player.SlamTimer > 0.250;
+	}
+
+	actions
+	{
+		Event Player.PunchUpperSlamUsed += Forward;
+		If(Is On Ground(Event Player));
+			Stop Chasing Player Variable(Event Player, SlamTimer);
+			Event Player.SlamTimer = 0;
 		End;
+	}
+}
+
+rule("125 Slam Detection")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		"Actual time is 1.53 for 125 slam + cancel, but removing cancel ~.3 sec"
+		Event Player.SlamTimer >= 1.220;
+		Is Using Ability 2(Event Player) == True;
+		"To prevent player from just holding down slam at invalid slam angle to get a 125 slam"
+		Is Button Held(Event Player, Ability 2) == False;
+	}
+
+	actions
+	{
+		Event Player.Count360Slam125 += Up;
+		Small Message(Event Player, Custom String("125 Slam"));
+		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
 	}
 }
 
@@ -1177,7 +1302,7 @@ rule("Update 360 Array")
 
 	conditions
 	{
-		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90, Down)] != True;
+		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90.010, Down)] != True;
 		Has Spawned(Event Player) == True;
 	}
 
@@ -1185,7 +1310,7 @@ rule("Update 360 Array")
 	{
 		disabled Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / (360 / Count Of(Event Player.Array360)),
 			Down)] = True;
-		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90, Down)] = True;
+		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90.010, Down)] = True;
 		"Start timer if player has started 360"
 		If(Count Of(Filtered Array(Event Player.Array360, Current Array Element == True)) == 2);
 			Event Player.Timer360 = 0;
@@ -1231,9 +1356,10 @@ rule("Successful 360")
 
 	conditions
 	{
-		Event Player.CurrentLevel == 3;
+		disabled Event Player.CurrentLevel == 3;
 		Is True For All(Event Player.Array360, Current Array Element) == True;
 		Has Spawned(Event Player) == True;
+		"Can't do 360 in starting checkpoint circle"
 		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player))
 			> Global.CPRadius;
 		"So most stalls dont let you 360 for free"
@@ -1245,10 +1371,10 @@ rule("Successful 360")
 	actions
 	{
 		Small Message(Event Player, Custom String("360"));
-		Event Player.Count360 += Left;
+		Event Player.Count360Slam125 += Left;
 		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
 		disabled Event Player.Array360 = Array(False, False, False, False);
-		disabled For Player Variable(Event Player, I, 0, Count Of(Event Player.Count360), 1);
+		disabled For Player Variable(Event Player, I, 0, Count Of(Event Player.Count360Slam125), 1);
 		disabled Event Player.Array360[Event Player.I] = False;
 		disabled End;
 	}
@@ -1353,10 +1479,11 @@ rule("Ultimate Status Voiceline: Camera To See Next Point")
 
 	actions
 	{
-		Event Player.I = Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
-		Set Facing(Event Player, Vector(10, 10, 0), To World);
-		Start Camera(Event Player, Ray Cast Hit Position(Event Player.I, Event Player.I + Facing Direction Of(Event Player) * 15,
-			All Players(All Teams), Event Player, True), Event Player.I, 30);
+		Event Player.TempViewNextPointPosition = Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
+		Set Facing(Event Player, Vector(-10, -10, 0), To World);
+		Start Camera(Event Player, Ray Cast Hit Position(Event Player.TempViewNextPointPosition,
+			Event Player.TempViewNextPointPosition + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
+			Event Player.TempViewNextPointPosition, 30);
 		Wait(3, Ignore Condition);
 		Stop Camera(Event Player);
 	}
@@ -1555,6 +1682,8 @@ rule("Sub0: RespawnPlayer")
 		Call Subroutine(CancelMomentum);
 		"Added this to fix issue where if you pressed R while using slam, the slam cooldown wasn't reset"
 		Wait(0.100, Ignore Condition);
+		Stop Chasing Player Variable(Event Player, SlamTimer);
+		Event Player.SlamTimer = 0;
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
@@ -1611,7 +1740,6 @@ rule("Sub0: RespawnPlayer")
 		Event Player.WinstonBouncyBubbleCooldown = 0;
 		Destroy Effect(Event Player.WinstonBubbleEffect);
 		Event Player.WinstonBubbleLocation = Null;
-		disabled Cancel Primary Action(Event Player);
 		Start Forcing Player To Be Hero(Event Player, Global.HeroUseArrayofArrays[Event Player.CurrentLevel][Event Player.CurrentCP]);
 		"Should Fix Phased Out Status issue"
 		Clear Status(Event Player, Phased Out);
@@ -1619,7 +1747,9 @@ rule("Sub0: RespawnPlayer")
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
-		Event Player.Count360 = Vector(0, 0, 0);
+		"Set to (0,0,0) without creating new object"
+		Event Player.Count360Slam125 -= Event Player.Count360Slam125;
+		disabled Event Player.Count360Slam125 = Vector(0, 0, 0);
 	}
 }
 
