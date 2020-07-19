@@ -1,5 +1,10 @@
 settings
 {
+	main
+	{
+		Description: "Doomfist Parkour MultiLevel Framework. Source control here: https://github.com/WelkinU/OverwatchWorkshopScripts/tree/master/DoomfistParkourMultilevelFramework"
+	}
+
 	modes
 	{
 		Assault
@@ -69,7 +74,7 @@ variables
 		11: TopScoreString
 		17: CPRadius
 		19: TempTeleport
-		20: TempUltimate
+		20: TempUltimate360MaxSlam
 		21: TempRadii
 		22: TempFacing
 		24: CPIterator
@@ -80,10 +85,14 @@ variables
 		1: CurrentLevel
 		3: LevelTimer
 		4: PunchUpperSlamUsed
+		9: SpectateMode
 		14: SlamTimer
 		22: ScoreboardString
-		23: ScoreboardIterator
+		23: CancelPointTimer
+		32: Array360
+		33: Timer360
 		34: Count360Slam125
+		35: TempViewNextPointPosition
 }
 
 subroutines
@@ -119,9 +128,10 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		Global.CPPunchUpperSlamCounts = Array(Array(Vector(1, 1, 0)));
 		"--------------Set Level 1 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[1] = Array(Null, Vector(-49.996, 17.888, -34.854), Vector(-49.499, 20.473, -51.380), Vector(-32.470, 22.530,
-			-51.041), Vector(-33.992, 20.454, -13.367), Vector(-187.388, -90.726, -71.649), Vector(-185.611, -81.306, -40.293));
+			-51.041), Vector(-33.992, 20.454, -13.367), Vector(-187.388, -90.726, -71.649), Vector(-185.611, -81.306, -40.293), Vector(
+			-166.054, -88.593, -43.479));
 		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(1, 1, 1), Vector(0, 1, 1), Vector(0, 0, 0), Vector(1, 1, 1), Vector(1, 1, 1),
-			Vector(1, 1, 1));
+			Vector(0, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[2] = Array(Null, Vector(-37.078, 14.583, -8.837), Vector(-33.992, 20.453, 23.297), Vector(-35.471, 22.495,
 			53.428), Vector(-39, 35, -90), Vector(-27.811, 37.938, -53.011), Vector(-18.069, 4.308, -82.686), Vector(-27.811, 37.938,
@@ -135,7 +145,7 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 	}
 }
 
-rule("UPDATE MAP CONSTANTS HERE -  SET TELEPORTS, ULTIMATE ENABLE, OVERRIDE CP RADII / FACING HERE")
+rule("OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULTIMATE ENABLE")
 {
 	event
 	{
@@ -157,9 +167,11 @@ rule("UPDATE MAP CONSTANTS HERE -  SET TELEPORTS, ULTIMATE ENABLE, OVERRIDE CP R
 		"------------------Use this code block to set Level 1 modifiers------------------"
 		If(Global.LevelIterator == 1);
 			"Example: Use this code to override CP 3 to enable Ultimate"
-			Global.TempUltimate[3] = Vector(1, 0, 0);
+			Global.TempUltimate360MaxSlam[3] = Vector(1, 0, 0);
 			"Example: Use this code to override CP 4 to set it to teleport to the next checkpoint"
 			Global.TempTeleport[4] = True;
+			"Example: Use this code to override CP 6 to enable require a 360 to complete the point"
+			Global.TempUltimate360MaxSlam[6] = Vector(0, 1, 0);
 		End;
 		"------------------Use this code block to set Level 2 modifiers------------------"
 		If(Global.LevelIterator == 2);
@@ -186,6 +198,7 @@ rule("Initialize Other Global Constants")
 	actions
 	{
 		Global.TopScoreString = Custom String("");
+		Enable Death Spectate Target HUD(All Players(All Teams));
 	}
 }
 
@@ -217,10 +230,19 @@ rule("Initialize Global HUD and Effects")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"),
 			Top, 0, White, White, White, Visible To and String, Default Visibility);
-		"Top Scores HUD"
-		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
-			"-------------Top Scores-------------\r\n{0}\r\n-------------------------------------------------", Global.TopScoreString),
+		"Controls HUD"
+		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, -2, White, White, White,
+			Visible To and String, Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Quick Reset - R\r\nSkip Checkpoint - Jump + Interact\r\n{0}",
+			Custom String(
+			"Choose New Level - Ultimate + Interact\r\nView Next Checkpoint - Ultimate Status Voiceline\r\nSpectate - Need Healing Voiceline")),
 			Left, 0, White, White, White, Visible To and String, Default Visibility);
+		"Top Scores HUD"
+		Create HUD Text(All Players(All Teams), Custom String("Top Scores"), Null, Null, Left, 1, White, White, Purple,
+			Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
+			"{0}", Global.TopScoreString), Left, 2, White, White, Purple, Visible To and String, Default Visibility);
+		"Workshop Code HUD"
 		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: 7RDMK"), Null, Null, Right, -9, Green, White, White,
 			Visible To, Default Visibility);
 	}
@@ -263,16 +285,23 @@ rule("Initialize Player HUD and Effects")
 			Custom String("{0}/{1}", Event Player.CurrentCP, Count Of(Global.CPLocations[Event Player.CurrentLevel]) - 1),
 			Event Player.LevelTimer), Top, -2, White, White, White, Visible To and String, Default Visibility);
 		"Create Current Checkpoint Ring"
-		Create Effect(Filtered Array(Event Player, Current Array Element.CurrentCP > 0), Ring, Purple,
+		Create Effect(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
+			Global.CPLocations[Event Player.CurrentLevel])), Ring, Purple,
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP],
 			Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP], Visible To Position and Radius);
-		"Create Current Checkpoint Ring"
+		"Next Checkpoint Ring"
 		Create Effect(Filtered Array(Event Player, Current Array Element.CurrentCP > 0), Ring, Purple,
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1],
 			Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1], Visible To Position and Radius);
-		"Create Current Checkpoint Ring"
-		Create Icon(Filtered Array(Event Player, Current Array Element.CurrentCP > 0),
-			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1], Flag, Visible To and Position, Yellow, True);
+		"Create Next Checkpoint Text"
+		Create In-World Text(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
+			Global.CPLocations[Event Player.CurrentLevel])), Custom String("Come Here!"),
+			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1], 2, Do Not Clip, Visible To Position and String,
+			Purple, Default Visibility);
+		"Create Next Checkpoint Icon"
+		Create Icon(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
+			Global.CPLocations[Event Player.CurrentLevel])), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1],
+			Flag, Visible To and Position, Yellow, True);
 		"Level 3 HUD: Ability Limits "
 		Create HUD Text(Filtered Array(Event Player, Index Of Array Value(Global.LevelsWithLimitedAbilityCounts, Event Player.CurrentLevel)
 			>= 0 && Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel])), Custom String(
@@ -283,6 +312,11 @@ rule("Initialize Player HUD and Effects")
 			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
 			Z Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
 			Event Player.PunchUpperSlamUsed))), Null, Null, Top, -1.400, Blue, White, White, Visible To and String, Default Visibility);
+		"360 Required HUD"
+		Create HUD Text(Filtered Array(Event Player, Y Component Of(
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0), Custom String(
+			"360's Required: {0}", Y Component Of(Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])),
+			Null, Null, Top, -1, Red, White, White, Visible To and String, Default Visibility);
 	}
 }
 
@@ -352,6 +386,10 @@ rule("Subroutine 0: RespawnPlayer")
 
 	actions
 	{
+		Stop Holding Button(Event Player, Ability 1);
+		Stop Holding Button(Event Player, Ability 2);
+		Stop Holding Button(Event Player, Secondary Fire);
+		Stop Holding Button(Event Player, Ultimate);
 		Call Subroutine(CancelMomentum);
 		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
@@ -396,6 +434,7 @@ rule("Subroutine 0: RespawnPlayer")
 		End;
 		"Redundant, but just in case"
 		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
+		Event Player.Count360Slam125 = Vector(0, 0, 0);
 	}
 }
 
@@ -466,13 +505,13 @@ rule("Subroutine 2: OverrideAutogenVariables")
 		"Need this whole structure because Workshop Editor doesn't let you index into array's of arrays"
 		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
 			Global.TempTeleport = Global.CPTeleport[Global.LevelIterator];
-			Global.TempUltimate = Global.CPUltimate360MaxSlamCounts[Global.LevelIterator];
+			Global.TempUltimate360MaxSlam = Global.CPUltimate360MaxSlamCounts[Global.LevelIterator];
 			Global.TempRadii = Global.CPRadii[Global.LevelIterator];
 			Global.TempFacing = Global.CPFacing[Global.LevelIterator];
 			Call Subroutine(OverrideVariablesUserInput);
 			Global.CPFacing[Global.LevelIterator] = Global.TempFacing;
 			Global.CPRadii[Global.LevelIterator] = Global.TempRadii;
-			Global.CPUltimate360MaxSlamCounts[Global.LevelIterator] = Global.TempUltimate;
+			Global.CPUltimate360MaxSlamCounts[Global.LevelIterator] = Global.TempUltimate360MaxSlam;
 			Global.CPTeleport[Global.LevelIterator] = Global.TempTeleport;
 		End;
 	}
@@ -508,15 +547,15 @@ rule("Subroutine 5: UpdateTopScoreboard")
 	actions
 	{
 		Event Player.ScoreboardString = Custom String("");
-		For Player Variable(Event Player, ScoreboardIterator, Count Of(Global.TopScoreTimes) - 1, -1, -1);
-			If(Global.TopScoreTimes[Event Player.ScoreboardIterator] < 10000);
+		For Player Variable(Event Player, CancelPointTimer, Count Of(Global.TopScoreTimes) - 1, -1, -1);
+			If(Global.TopScoreTimes[Event Player.CancelPointTimer] < 10000);
 				If(Event Player.ScoreboardString == Custom String(""));
-					Event Player.ScoreboardString = Custom String("Level {0} - {1} {2}", Event Player.ScoreboardIterator + 0,
-						Global.TopScorePlayer[Event Player.ScoreboardIterator + 0], Global.TopScoreTimes[Event Player.ScoreboardIterator + 0]);
+					Event Player.ScoreboardString = Custom String("Level {0} - {1} {2}", Event Player.CancelPointTimer + 0,
+						Global.TopScorePlayer[Event Player.CancelPointTimer + 0], Global.TopScoreTimes[Event Player.CancelPointTimer + 0]);
 				Else;
 					Event Player.ScoreboardString = Custom String("{0}\r\n{1}", Event Player.ScoreboardString, Custom String("Level {0} - {1} {2}",
-						Event Player.ScoreboardIterator + 0, Global.TopScorePlayer[Event Player.ScoreboardIterator + 0],
-						Global.TopScoreTimes[Event Player.ScoreboardIterator + 0]));
+						Event Player.CancelPointTimer + 0, Global.TopScorePlayer[Event Player.CancelPointTimer + 0],
+						Global.TopScoreTimes[Event Player.CancelPointTimer + 0]));
 				End;
 			End;
 		End;
@@ -634,6 +673,13 @@ rule("Arrived At Next Checkpoint")
 
 	actions
 	{
+		If(X Component Of(Event Player.Count360Slam125) < Y Component Of(
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]));
+			Small Message(Event Player, Custom String("Checkpoint Requires {0} 360's. Spin Around!", Y Component Of(
+				Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])));
+			Call Subroutine(RespawnPlayer);
+			Abort;
+		End;
 		Event Player.CurrentCP += 1;
 		Play Effect(Event Player, Buff Explosion Sound, White, Event Player, 60);
 		If(Global.CPTeleport[Event Player.CurrentLevel][Event Player.CurrentCP] != Null);
@@ -702,6 +748,7 @@ rule("Finished Level")
 			Global.TopScorePlayer[Event Player.CurrentLevel] = Event Player;
 		End;
 		Call Subroutine(UpdateTopScoreboard);
+		Small Message(Event Player, Custom String("Use Ultimate + Interact To Restart"));
 	}
 }
 
@@ -712,6 +759,11 @@ rule("Respawn Player If They Die")
 		Player Died;
 		All;
 		All;
+	}
+
+	conditions
+	{
+		Event Player.SpectateMode == False;
 	}
 
 	actions
@@ -820,6 +872,159 @@ rule("Can Melee Cancel Slam")
 	{
 		Cancel Primary Action(Event Player);
 		Small Message(Event Player, Custom String("Testing melee slam cancel"));
+	}
+}
+
+rule("Ultimate Status Voiceline: Camera To See Next Point")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Communicating(Event Player, Ultimate Status) == True;
+		"Make sure next point exists"
+		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
+	}
+
+	actions
+	{
+		Event Player.TempViewNextPointPosition = Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
+		Set Facing(Event Player, Vector(-10, -10, 0), To World);
+		Start Camera(Event Player, Ray Cast Hit Position(Event Player.TempViewNextPointPosition,
+			Event Player.TempViewNextPointPosition + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
+			Event Player.TempViewNextPointPosition, 30);
+		Wait(3, Ignore Condition);
+		Stop Camera(Event Player);
+	}
+}
+
+rule("Need Healing Voiceline: Spectate Other Players")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Communicating(Event Player, Need Healing) == True;
+	}
+
+	actions
+	{
+		Enable Death Spectate All Players(All Players(All Teams));
+		If(Is Dead(Event Player));
+			Enable Built-In Game Mode Respawning(Event Player);
+			Resurrect(Event Player);
+			Wait(0.100, Ignore Condition);
+			Call Subroutine(RespawnPlayer);
+			Event Player.SpectateMode = False;
+		Else;
+			Big Message(Event Player, Custom String("Use \"Need Healing\" voiceline to exit Spectate Mode!"));
+			Event Player.SpectateMode = True;
+			Disable Built-In Game Mode Respawning(Event Player);
+			Kill(Event Player, Null);
+		End;
+		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+disabled rule("360 Code :D")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+}
+
+rule("Update 360 Array")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90.010, Down)] != True;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		disabled Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / (360 / Count Of(Event Player.Array360)),
+			Down)] = True;
+		Event Player.Array360[Round To Integer((Horizontal Facing Angle Of(Event Player) + 180) / 90.010, Down)] = True;
+		"Start timer if player has started 360"
+		If(Count Of(Filtered Array(Event Player.Array360, Current Array Element == True)) == 2);
+			Event Player.Timer360 = 0;
+			Chase Player Variable At Rate(Event Player, Timer360, 1, 1, Destination and Rate);
+		End;
+	}
+}
+
+rule("Reset 360 Array after 1 sec")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.Timer360 >= 1;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		For Player Variable(Event Player, I, 0, Count Of(Event Player.Array360), 1);
+			Event Player.Array360[Event Player.I] = False;
+		End;
+		disabled Event Player.Array360 = Array(False, False, False, False);
+		Event Player.Timer360 = 0;
+		Stop Chasing Player Variable(Event Player, Timer360);
+	}
+}
+
+rule("Successful 360")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is True For All(Event Player.Array360, Current Array Element) == True;
+		Has Spawned(Event Player) == True;
+		"Can't do 360 in starting checkpoint circle"
+		Distance Between(Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP], Position Of(Event Player))
+			> Global.CPRadius;
+		"So most stalls dont let you 360 for free"
+		Altitude Of(Event Player) > 0.500;
+	}
+
+	actions
+	{
+		Small Message(Event Player, Custom String("360"));
+		Event Player.Count360Slam125 += Left;
+		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
 	}
 }
 
