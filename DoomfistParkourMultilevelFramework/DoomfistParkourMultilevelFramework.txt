@@ -87,6 +87,7 @@ variables
 		4: PunchUpperSlamUsed
 		9: SpectateMode
 		14: SlamTimer
+		15: BlockArriveAtNextPoint
 		22: ScoreboardString
 		23: CancelPointTimer
 		32: Array360
@@ -119,10 +120,10 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		"Default Checkpoint Radius"
 		Global.CPRadius = 2;
 		"Add to this array the level numbers of levels you want to have ability limits on"
-		Global.LevelsWithLimitedAbilityCounts = Array(2);
+		Global.LevelsWithLimitedAbilityCounts = Array();
 		"Set level descriptions here, make sure the level number matches the index (ie. make sure Level 1 is on index 1)"
-		Global.LevelDescriptions = Array(Null, Custom String("Level 1 (Easy)"), Custom String("Level 2 (Easy)"), Custom String(
-			"Level 3 (Medium)"));
+		Global.LevelDescriptions = Array(Null, Custom String("Level 1 (Easy)"), Custom String("Level 2 (Medium Easy)"), Custom String(
+			"Level 3 (Medium)"), Custom String("Level 4 (Hard)"), Custom String("Level 5 (Slam Only)"));
 		"Set the starting position when the player loads into the game"
 		Global.CPLocations = Array(Array(Vector(300, 4, -28.200)));
 		"Set the starting position abilities when the player loads into the game"
@@ -136,18 +137,31 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 			Vector(1, 1, 1), Vector(0, 0, 1), Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 1, 1), Vector(0, 1, 1), Vector(
 			1, 1, 1));
 		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[2] = Array(Null, Vector(-37.078, 14.583, -8.837), Vector(-33.992, 20.453, 23.297), Vector(-35.471, 22.495,
-			53.428), Vector(-39, 35, -90), Vector(-27.811, 37.938, -53.011), Vector(-18.069, 4.308, -82.686), Vector(-27.811, 37.938,
-			-53.011), Vector(-72.856, 20.837, -0.563));
-		Global.CPPunchUpperSlamCounts[2] = Array(Null, Vector(1, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(3, 3, 1), Vector(0, 2, 1),
-			Vector(4, 4, 1), Vector(1, 2, 1), Vector(1, 1, 0), Vector(1, 1, 1));
+		Global.CPLocations[2] = Array(Null, Vector(-37.078, 14.583, -8.837));
+		Global.CPPunchUpperSlamCounts[2] = Array(Null, Vector(1, 1, 0));
 		"--------------Set Level 3 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[3] = Array(Null, Vector(306.392, -16.486, -56.065), Vector(298.880, -23.139, -71.135), Vector(300.889, -13.361,
+		Global.CPLocations[3] = Array(Null, Vector(-37.078, 14.583, -8.837));
+		Global.CPPunchUpperSlamCounts[3] = Array(Null, Vector(1, 1, 0));
+		"--------------Set Level 4 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[4] = Array(Null, Vector(306.392, -16.486, -56.065), Vector(298.461, -23.139, -71.977), Vector(300.889, -13.361,
 			-47.271), Vector(285.959, -23.181, -67.560), Vector(307.709, -15.369, 21.944), Vector(314.646, -23.364, 28.089), Vector(
 			308.101, -15.371, 22.075), Vector(352.889, -23.277, 14.902), Vector(-253.258, 3.732, 31.956), Vector(-232.771, 4.596, 1.684),
-			Vector(-284.524, 1.291, 17.438), Vector(-247.105, 1.001, -7.805));
-		Global.CPPunchUpperSlamCounts[3] = Array(Null, Vector(0, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 0, 1),
-			Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1), Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 1, 1), Vector(1, 1, 1));
+			Vector(-284.524, 1.291, 17.438), Vector(-254.510, -1.344, -1.441));
+		Global.CPPunchUpperSlamCounts[4] = Array(Null, Vector(0, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 0, 1),
+			Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1), Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1));
+		"--------------Set Level 5 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[5] = Array(Null, Vector(331.981, -16.876, -53.910), Vector(-67.062, 62.025, -185.971), Vector(-50.359, 64.089,
+			-184.973), Vector(-42.550, 64.964, -169.314), Vector(-33.997, 65.806, -173.412), Vector(-42.519, 68.096, -181.078), Vector(
+			-26.152, 69.123, -179.399), Vector(-15.802, 70.017, -163.041), Vector(0.103, 64.535, -138.187), Vector(-15.243, 66.152,
+			-148.459), Vector(-8.359, 66.679, -166.110), Vector(1.556, 70.382, -172.798), Vector(-2.800, 63.343, -170.604), Vector(
+			-243.991, 6.241, 27.766), Vector(-236.797, 6.530, 5.539), Vector(-237.958, 6.498, -9.132), Vector(-230.537, 7.136, -30.163),
+			Vector(-212.782, 7.819, -40.789), Vector(-194.725, 3.516, -24.870), Vector(-190.065, 6.509, -20.782), Vector(-197.918, 11.396,
+			-12.766), Vector(-217.666, 11.511, -21.803), Vector(-223.211, 8.814, -3.046), Vector(-205.949, 6.730, 5.501), Vector(-205.094,
+			11.396, -5.764));
+		Global.CPPunchUpperSlamCounts[5] = Array(Null, Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1),
+			Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(
+			0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0,
+			1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1, 1));
 		"Autogenerate checkpoint facing, radii, and other variables based on CPLocations"
 		Call Subroutine(AutogenerateMapVariables);
 		"Override autogenerated variables based on rule right below this one"
@@ -188,13 +202,18 @@ rule("OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULTIMATE ENABLE"
 			"Example: Use this code to override CP 3 to enable Ultimate"
 			disabled Global.TempUltimate360MaxSlam[3] = Vector(1, 0, 0);
 		End;
-		"------------------Use this code block to set Level 2 modifiers------------------"
-		If(Global.LevelIterator == 2);
-			Global.TempTeleport[3] = True;
-		End;
-		"------------------Use this code block to set Level 2 modifiers------------------"
-		If(Global.LevelIterator == 3);
+		"------------------Use this code block to set Level 4 modifiers------------------"
+		If(Global.LevelIterator == 4);
 			Global.TempTeleport[8] = True;
+		End;
+		"------------------Use this code block to set Level 5 modifiers------------------"
+		If(Global.LevelIterator == 5);
+			Global.TempTeleport[1] = True;
+			Global.TempRadii[11] = 3.500;
+			Global.TempTeleport[13] = True;
+			Global.TempRadii[13] = 1;
+			"Example: Code block to override Level 0 CP 0 facing direction (1,0,0)"
+			Global.TempFacing[24] = Vector(-0.700, -0.040, -0.710);
 		End;
 	}
 }
@@ -257,8 +276,8 @@ rule("Initialize Global HUD and Effects")
 			"Choose New Level - Ultimate + Interact\r\nView Next Checkpoint - Ultimate Status Voiceline\r\nSpectate - Need Healing Voiceline")),
 			Left, 0, White, White, White, Visible To and String, Default Visibility);
 		"Top Scores HUD"
-		Create HUD Text(All Players(All Teams), Custom String("Top Scores"), Null, Null, Left, 1, White, White, Purple,
-			Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.CPLocations != Custom String("")), Custom String("Top Scores"), Null,
+			Null, Left, 1, White, White, Purple, Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
 			"{0}", Global.TopScoreString), Left, 2, White, White, Purple, Visible To and String, Default Visibility);
 		"Workshop Code HUD"
@@ -286,6 +305,7 @@ rule("Initialize Player")
 		Event Player.CurrentCP = 0;
 		Event Player.CurrentLevel = 0;
 		Call Subroutine(RespawnPlayer);
+		Event Player.BlockArriveAtNextPoint = False;
 	}
 }
 
@@ -345,7 +365,7 @@ rule("Initialize Player HUD and Effects")
 	}
 }
 
-disabled rule("Map Building Convenience Features - UNCOMMENT THESE WHEN BUILDING MAP")
+disabled rule("Map Building Convenience Features - COMMENT THESE WHEN DEPLOYING MAP")
 {
 	event
 	{
@@ -411,10 +431,10 @@ rule("Subroutine 0: RespawnPlayer")
 
 	actions
 	{
-		Stop Holding Button(Event Player, Ability 1);
-		Stop Holding Button(Event Player, Ability 2);
-		Stop Holding Button(Event Player, Secondary Fire);
-		Stop Holding Button(Event Player, Ultimate);
+		Disallow Button(Event Player, Secondary Fire);
+		Disallow Button(Event Player, Ultimate);
+		Disallow Button(Event Player, Ability 1);
+		Disallow Button(Event Player, Ability 2);
 		Call Subroutine(CancelMomentum);
 		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
@@ -460,6 +480,10 @@ rule("Subroutine 0: RespawnPlayer")
 		"Redundant, but just in case"
 		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
 		Event Player.Count360Slam125 = Vector(0, 0, 0);
+		Allow Button(Event Player, Secondary Fire);
+		Allow Button(Event Player, Ability 1);
+		Allow Button(Event Player, Ability 2);
+		Allow Button(Event Player, Ultimate);
 	}
 }
 
@@ -612,6 +636,9 @@ rule("Enter Into Level")
 		Event Player.CurrentCP = 1;
 		Event Player.CurrentLevel = Index Of Array Value(Global.LevelOrigins, First Of(Filtered Array(Global.LevelOrigins,
 			Distance Between(Position Of(Event Player), Current Array Element) < 2))) + 1;
+		If(Global.CPTeleport[Event Player.CurrentLevel][Event Player.CurrentCP] != Null);
+			Event Player.CurrentCP += 1;
+		End;
 		Call Subroutine(RespawnPlayer);
 	}
 }
@@ -687,6 +714,7 @@ rule("Arrived At Next Checkpoint")
 		"Is not on last checkpoint in level"
 		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		Event Player.CurrentLevel > 0;
+		Event Player.BlockArriveAtNextPoint != True;
 	}
 
 	actions
@@ -897,8 +925,11 @@ rule("Crouch + Interact -> Go Back A Level")
 
 	actions
 	{
+		"To stop you from going back a checkpoint, and the \"Arrive At Next Checkpoint Rule\" from triggering while you are respawning"
+		Event Player.BlockArriveAtNextPoint = True;
 		Event Player.CurrentCP -= 1;
 		Call Subroutine(RespawnPlayer);
+		Event Player.BlockArriveAtNextPoint = False;
 	}
 }
 
