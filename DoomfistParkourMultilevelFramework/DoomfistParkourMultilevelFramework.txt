@@ -125,7 +125,8 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		Global.LevelsWithLimitedAbilityCounts = Array();
 		"Set level descriptions here, make sure the level number matches the index (ie. make sure Level 1 is on index 1)"
 		Global.LevelDescriptions = Array(Null, Custom String("Level 1 (Easy)"), Custom String("Level 2 (Medium Easy)"), Custom String(
-			"Level 3 (Medium)"), Custom String("Level 4 (Hard)"), Custom String("Level 5 (Slam Only)"), Custom String("Level 6 (Harder)"));
+			"Level 3 (Medium)"), Custom String("Level 4 (Hard)"), Custom String("Level 5 (Slam Only)"), Custom String(
+			"Level 6 (Probably should be 7 or 8)"));
 		"Set the starting position when the player loads into the game"
 		Global.CPLocations = Array(Array(Vector(300, 4, -28.200)));
 		"Set the starting position abilities when the player loads into the game"
@@ -437,7 +438,7 @@ disabled rule("Map Building HUD")
 	}
 }
 
-rule("Teleport Enabled with Melee + Left Click")
+rule("Teleport Enabled with Melee + Left Click if done with level")
 {
 	event
 	{
@@ -450,6 +451,8 @@ rule("Teleport Enabled with Melee + Left Click")
 	{
 		Is Button Held(Event Player, Primary Fire) == True;
 		Is Button Held(Event Player, Melee) == True;
+		Event Player.CurrentLevel > 0;
+		Event Player.CurrentCP + 1 >= Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 	}
 
 	actions
@@ -654,13 +657,15 @@ rule("Subroutine 5: UpdateTopScoreboard")
 		For Player Variable(Event Player, X, Count Of(Global.TopScoreTimes) - 1, -1, -1);
 			For Player Variable(Event Player, Y, 0, Count Of(All Players(All Teams)), 1);
 				If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] < 9999);
-					If(Event Player.AllScoreboardString == Custom String(""));
-						Event Player.AllScoreboardString = Custom String("Level {0} - {1} {2}", Event Player.X, All Players(All Teams)[Event Player.Y],
-							All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X]);
-					Else;
-						Event Player.AllScoreboardString = Custom String("{0}\r\n{1}", Event Player.AllScoreboardString, Custom String(
-							"Level {0} - {1} {2}", Event Player.X, All Players(All Teams)[Event Player.Y], All Players(All Teams)
-							[Event Player.Y].TopPersonalScores[Event Player.X]));
+					If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] > 0);
+						If(Event Player.AllScoreboardString == Custom String(""));
+							Event Player.AllScoreboardString = Custom String("Level {0} - {1} {2}", Event Player.X, All Players(All Teams)[Event Player.Y],
+								All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X]);
+						Else;
+							Event Player.AllScoreboardString = Custom String("{0}\r\n{1}", Event Player.AllScoreboardString, Custom String(
+								"Level {0} - {1} {2}", Event Player.X, All Players(All Teams)[Event Player.Y], All Players(All Teams)
+								[Event Player.Y].TopPersonalScores[Event Player.X]));
+						End;
 					End;
 				End;
 			End;
