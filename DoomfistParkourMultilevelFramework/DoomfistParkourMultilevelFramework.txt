@@ -125,10 +125,10 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		"Set level descriptions here, make sure the level number matches the index (ie. make sure Level 1 is on index 1)"
 		Global.LevelNames = Array(Null, Custom String("Level 1"), Custom String("Level 2"), Custom String("Level 2.5"), Custom String(
 			"Level 3"), Custom String("Level 3.5"), Custom String("Level 4"), Custom String("Level 5"), Custom String("Level 6"),
-			Custom String("Level 7"), Custom String("Slam Only"), Custom String("Level 8"));
+			Custom String("Level 7"), Custom String("Slam Only"), Custom String("Slam Only XL"));
 		Global.LevelDescriptions = Array(Null, Custom String("Easy"), Custom String("Easy"), Custom String("Gimmicky"), Custom String(
 			"Medium"), Custom String("Hard"), Custom String("Harder"), Custom String("Very Hard"), Custom String("Very Hard"),
-			Custom String("Extreme"), Custom String("Increasing Difficulty"));
+			Custom String("Extreme"), Custom String("Increasing Difficulty"), Custom String("Professional"));
 		"Add to this array the level numbers of levels you want to have ability limits on"
 		Global.LevelsWithLimitedAbilityCounts = Array(7);
 		"Set the starting position when the player loads into the game"
@@ -137,8 +137,8 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		Global.CPPunchUpperSlamCounts = Array(Array(Vector(0, 1, 1)));
 		"--------------Set Level 1 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[1] = Array(Null, Vector(330.406, -13.468, -59.449), Vector(320.344, -19.130, -67.381), Vector(340.852, -17.142,
-			-31.094), Vector(374.400, -25.456, -0.206), Vector(349.785, -24.119, 22.751), Vector(332.640, -19.241, 11.032), Vector(324.679,
-			-23.163, -6.344));
+			-31.094), Vector(374.400, -25.456, -0.206), Vector(349.785, -24.119, 22.751), Vector(332.640, -19.241, 11.032), Vector(325.261,
+			-23.196, -4.375));
 		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 1, 0), Vector(1, 0, 1),
 			Vector(0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
@@ -204,11 +204,11 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 			Vector(0, 0, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(
 			1, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 9 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[9] = Array(Null, Vector(294.875, -15.407, -76.176), Vector(272.168, -15.709, -70.310), Vector(359.251, -11.945,
-			4.686), Vector(306.878, -15.257, 27.713), Vector(-170.564, 6.772, -21.254), Vector(-223.864, 0.667, -39.254), Vector(-217.213,
-			14.483, -22.713), Vector(-230.224, 6.746, 23.753), Vector(-269.437, 1.939, 45.408));
-		Global.CPPunchUpperSlamCounts[9] = Array(Null, Vector(0, 1, 1), Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1), Vector(0, 1, 0),
-			Vector(1, 1, 0), Vector(0, 1, 0), Vector(0, 1, 0), Vector(1, 1, 1));
+		Global.CPLocations[9] = Array(Null, Vector(273.496, -15.318, -69.191), Vector(359.251, -11.945, 4.686), Vector(306.878, -15.257,
+			27.713), Vector(-170.564, 6.772, -21.254), Vector(-223.864, 0.667, -39.254), Vector(-217.213, 14.483, -22.713), Vector(
+			-230.224, 6.746, 23.753), Vector(-269.437, 1.939, 45.408));
+		Global.CPPunchUpperSlamCounts[9] = Array(Null, Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1), Vector(0, 1, 0), Vector(1, 1, 0),
+			Vector(0, 1, 0), Vector(0, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 10 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[10] = Array(Null, Vector(353.919, -16.350, -46.602), Vector(-67.062, 62.025, -185.971), Vector(-50.359, 64.089,
 			-184.973), Vector(-42.550, 64.964, -169.314), Vector(-33.997, 65.806, -173.412), Vector(-42.519, 68.096, -181.078), Vector(
@@ -223,6 +223,12 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 			Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(
 			0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1,
 			1));
+		"--------------Set Level 11 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[11] = Array(Null, Vector(299.553, -14.662, -79.697), Vector(321.381, -14.027, -71.815), Vector(353.301, -16.272,
+			-45.255), Vector(345.334, -15.669, -33.485), Vector(337.592, -14.762, 6.170), Vector(323.747, -16.156, -28.352), Vector(
+			330.308, -13.373, -22.886), Vector(324.120, -14.159, 11.015), Vector(346.194, -16.493, 25.449));
+		Global.CPPunchUpperSlamCounts[11] = Array(Null, Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0,
+			1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1, 1));
 		"Autogenerate checkpoint facing, radii, and other variables based on CPLocations"
 		Call Subroutine(AutogenerateMapVariables);
 		"Override autogenerated variables based on rule right below this one"
@@ -318,8 +324,8 @@ rule("OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULTIMATE ENABLE"
 		End;
 		"------------------Use this code block to set Level 9 modifiers------------------"
 		If(Global.LevelIterator == 9);
-			Global.TempUltimate360MaxSlam[1] = Vector(0, 0, 1);
-			Global.TempTeleport[4] = True;
+			disabled Global.TempUltimate360MaxSlam[1] = Vector(0, 0, 1);
+			Global.TempTeleport[3] = True;
 		End;
 		"------------------Use this code block to set Level 10 modifiers------------------"
 		If(Global.LevelIterator == 10);
@@ -354,6 +360,8 @@ rule("Initialize Other Global Constants")
 	{
 		Global.TopScoreString = Custom String("");
 		Enable Death Spectate Target HUD(All Players(All Teams));
+		Set Match Time(3599);
+		Pause Match Time;
 	}
 }
 
