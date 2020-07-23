@@ -305,6 +305,7 @@ rule("OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULTIMATE ENABLE"
 			Global.TempFacing[9] = Vector(-0.440, -0.040, -0.900);
 			Global.TempTeleport[11] = True;
 			Global.TempUltimate360MaxSlam[12] = Vector(1, 0, 0);
+			Global.TempUltimate360MaxSlam[13] = Vector(0, 0, 1);
 			Global.TempRadii[15] = 3.500;
 		End;
 		"------------------Use this code block to set Level 8 modifiers------------------"
