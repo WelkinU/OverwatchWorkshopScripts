@@ -403,7 +403,7 @@ rule("Initialize Global HUD and Effects")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Quick Reset - R\r\nSkip Checkpoint - Jump + Interact\r\n{0}\r\n{1}", Custom String(
 			"Previous Checkpoint - Crouch + Interact\r\nChoose New Level - Ultimate + Interact"), Custom String(
-			"View Next Checkpoint - Ultimate Status Voiceline\r\nSpectate - Need Healing Voiceline")), Left, 0, White, White, White,
+			"View Next Checkpoint - Left Click + Interact\r\nSpectate - Need Healing Voiceline")), Left, 0, White, White, White,
 			Visible To and String, Default Visibility);
 		"Top Scores HUD"
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Custom String("Top Scores"),
@@ -421,7 +421,7 @@ rule("Initialize Global HUD and Effects")
 	}
 }
 
-rule("Initialize Player")
+rule("Initialize Player Variables")
 {
 	event
 	{
@@ -1110,7 +1110,7 @@ rule("Crouch + Interact -> Go Back A Level")
 	}
 }
 
-rule("Ultimate Status Voiceline: Camera To See Next Point")
+rule("Left Click + Interact: Camera To See Next Point")
 {
 	event
 	{
@@ -1121,20 +1121,25 @@ rule("Ultimate Status Voiceline: Camera To See Next Point")
 
 	conditions
 	{
-		Is Communicating(Event Player, Ultimate Status) == True;
 		"Make sure next point exists"
 		Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
+		Is Button Held(Event Player, Primary Fire) == True;
+		Is Button Held(Event Player, Interact) == True;
 	}
 
 	actions
 	{
+		Set Primary Fire Enabled(Event Player, False);
 		Event Player.TempViewNextPointPosition = Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		Set Facing(Event Player, Vector(-10, -10, 0), To World);
 		Start Camera(Event Player, Ray Cast Hit Position(Event Player.TempViewNextPointPosition,
 			Event Player.TempViewNextPointPosition + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
 			Event Player.TempViewNextPointPosition, 30);
-		Wait(3, Ignore Condition);
+		While(Is Button Held(Event Player, Primary Fire) && Is Button Held(Event Player, Interact));
+			Wait(0.033, Ignore Condition);
+		End;
 		Stop Camera(Event Player);
+		Set Primary Fire Enabled(Event Player, True);
 	}
 }
 
