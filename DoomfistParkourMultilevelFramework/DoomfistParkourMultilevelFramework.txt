@@ -155,7 +155,7 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			108.809, 65.914, -157.408), Vector(55.674, 65.983, -177.915), Vector(36.449, 61.963, -180.084), Vector(50.750, 64.552,
 			-180.257), Vector(64.893, 62.456, -174.049), Vector(90.732, 65.802, -173.650), Vector(90.560, 62.199, -148.144), Vector(87.982,
 			70.017, -150.597));
-		Global.CPPunchUpperSlamCounts[2] = Array(Null, Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 0, 0), Vector(1, 0, 1),
+		Global.CPPunchUpperSlamCounts[2] = Array(Null, Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 0, 0), Vector(1, 1, 1),
 			Vector(1, 1, 1), Vector(1, 1, 1), Vector(0, 0, 1), Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 1, 1), Vector(
 			0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 3 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
@@ -196,7 +196,7 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		"--------------Set Level 7 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[7] = Array(Null, Vector(327.809, -21.159, -82.919), Vector(319.522, -11.903, -91.279), Vector(344.082, -13.467,
 			-26.242), Vector(358.103, -26.040, -11.642), Vector(359.245, -12.046, 4.478), Vector(323.884, -14.113, 10.843), Vector(312.983,
-			-20.854, 20.273), Vector(301.402, -24.120, -97.703), Vector(285.771, -23.181, -67.996), Vector(-189.520, 8.476, -8.393),
+			-20.854, 20.273), Vector(301.402, -24.120, -97.703), Vector(270.136, -18.168, -72.727), Vector(-189.520, 8.476, -8.393),
 			Vector(-203.836, 8.476, 0.057), Vector(-148.571, 6.208, -76.420), Vector(-186.057, -3.551, -68.908), Vector(-278.290, 1.570,
 			14.807), Vector(-213.687, 11.514, -25.612));
 		Global.CPPunchUpperSlamCounts[7] = Array(Null, Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 0), Vector(0, 1, 0),
@@ -394,6 +394,8 @@ rule("Initialize Other Global Constants")
 		Enable Death Spectate Target HUD(All Players(All Teams));
 		Set Match Time(3599);
 		Pause Match Time;
+		Disable Built-In Game Mode Completion;
+		Disable Built-In Game Mode Scoring;
 	}
 }
 
