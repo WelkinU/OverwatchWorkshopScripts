@@ -74,6 +74,7 @@ variables
 		11: TopScoreString
 		12: AllScoreString
 		14: LevelDescriptions
+		15: DevModeEngaged
 		17: CPRadius
 		19: TempTeleport
 		20: TempUltimate360MaxSlam
@@ -139,7 +140,7 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		Global.CPLocations[1] = Array(Null, Vector(330.406, -13.468, -59.449), Vector(320.344, -19.130, -67.381), Vector(340.852, -17.142,
 			-31.094), Vector(374.400, -25.456, -0.206), Vector(349.785, -24.119, 22.751), Vector(332.640, -19.241, 11.032), Vector(325.261,
 			-23.196, -4.375));
-		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 1, 0), Vector(1, 0, 1),
+		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 0), Vector(1, 0, 1),
 			Vector(0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[2] = Array(Null, Vector(327.667, -13.280, -44.683), Vector(300.220, -16.160, -44.800), Vector(331.404, -17.101,
@@ -188,21 +189,21 @@ rule("UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES")
 		"--------------Set Level 7 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[7] = Array(Null, Vector(336.064, -17.101, -19.398), Vector(-226.141, 2.480, 5.311), Vector(-204.924, 11.394,
 			-5.697), Vector(-190.440, 8.475, -9.372), Vector(-212.322, 2.073, -20.388), Vector(-214.544, 14.486, -25.074), Vector(-221.773,
-			0.499, -35.841), Vector(-149.654, 6.208, -74.717), Vector(-175.934, 1.287, -87.246), Vector(-150.761, 1.501, -61.405), Vector(
+			0.499, -35.841), Vector(-149.654, 6.208, -74.717), Vector(-178.640, 1.020, -92.485), Vector(-150.761, 1.501, -61.405), Vector(
 			-212.938, 7.817, -40.903), Vector(121.914, 66.887, -180.446), Vector(-66.488, 67.144, -181.960), Vector(-20.098, 62.178,
 			-145.664), Vector(40.727, 60.469, -178.147), Vector(17.651, 60.478, -178.577), Vector(99.017, 67.062, -156.598));
 		Global.CPPunchUpperSlamCounts[7] = Array(Null, Vector(1, 1, 1), Vector(2, 0, 0), Vector(0, 0, 0), Vector(0, 2, 0), Vector(0, 2, 0),
-			Vector(0, 2, 0), Vector(9, 9, 1), Vector(0, 1, 1), Vector(3, 0, 0), Vector(2, 0, 1), Vector(1, 1, 1), Vector(9, 9, 1), Vector(
+			Vector(0, 2, 0), Vector(4, 4, 1), Vector(0, 1, 1), Vector(3, 0, 0), Vector(2, 0, 1), Vector(1, 1, 1), Vector(4, 4, 1), Vector(
 			1, 2, 1), Vector(2, 0, 1), Vector(1, 0, 0), Vector(3, 2, 0), Vector(1, 1, 1));
 		"--------------Set Level 8 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[8] = Array(Null, Vector(327.809, -21.159, -82.919), Vector(319.522, -11.903, -91.279), Vector(344.082, -13.467,
 			-26.242), Vector(358.103, -26.040, -11.642), Vector(359.245, -12.046, 4.478), Vector(323.884, -14.113, 10.843), Vector(312.983,
 			-20.854, 20.273), Vector(301.402, -24.120, -97.703), Vector(285.771, -23.181, -67.996), Vector(-189.520, 8.476, -8.393),
-			Vector(-203.836, 8.476, 0.057), Vector(-147.060, 6.208, -77.454), Vector(-186.057, -3.551, -68.908), Vector(-284.142, 1.023,
-			17.566));
+			Vector(-203.836, 8.476, 0.057), Vector(-147.060, 6.208, -77.454), Vector(-186.057, -3.551, -68.908), Vector(-278.290, 1.570,
+			14.807), Vector(-213.687, 11.514, -25.612));
 		Global.CPPunchUpperSlamCounts[8] = Array(Null, Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 0), Vector(0, 1, 0),
 			Vector(0, 0, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(
-			1, 1, 0), Vector(1, 1, 1));
+			1, 1, 0), Vector(1, 0, 0), Vector(1, 1, 1));
 		"--------------Set Level 9 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[9] = Array(Null, Vector(273.496, -15.318, -69.191), Vector(359.251, -11.945, 4.686), Vector(306.878, -15.257,
 			27.713), Vector(-170.564, 6.772, -21.254), Vector(-223.864, 0.667, -39.254), Vector(-217.213, 14.483, -22.713), Vector(
@@ -307,8 +308,8 @@ rule("OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULTIMATE ENABLE"
 		If(Global.LevelIterator == 7);
 			Global.TempTeleport[1] = True;
 			Global.TempFacing[2] = Vector(-0.730, 0, -0.690);
-			Global.TempFacing[5] = Vector(-0.720, 0, -0.700);
-			Global.TempFacing[9] = Vector(-0.440, -0.040, -0.900);
+			Global.TempFacing[5] = Vector(-0.710, 0, -0.700);
+			Global.TempFacing[9] = Vector(-0.300, 0, -0.950);
 			Global.TempTeleport[11] = True;
 			Global.TempUltimate360MaxSlam[12] = Vector(1, 0, 0);
 			Global.TempUltimate360MaxSlam[13] = Vector(0, 0, 1);
@@ -362,6 +363,7 @@ rule("Initialize Other Global Constants")
 		Enable Death Spectate Target HUD(All Players(All Teams));
 		Set Match Time(3599);
 		Pause Match Time;
+		Global.DevModeEngaged = False;
 	}
 }
 
@@ -500,6 +502,19 @@ rule("Initialize Player HUD and Effects")
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0), Custom String(
 			"125 Charge Slams Required: {0}", Z Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])), Null, Null, Top, -1, Red, White, White,
+			Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(Event Player, Global.DevModeEngaged), Null, Null, Custom String(
+			"--------------Player Variables------------------\r\n{0}\r\n--------------Checkpoint Variables--------------\r\n{1}\r\n{2}\r\n-------------",
+			Custom String("Position: {0}\r\nFacing: {1}", Position Of(Event Player), Facing Direction Of(Event Player)), Custom String(
+			"Checkpoint Position: {0}\r\nCheckpoint Abilities {1}\r\n{2}",
+			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP],
+			Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP], Custom String(
+			"Checkpoint Facing: {0}\r\nCheckpoint Radius: {1}", Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP],
+			Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP])), Custom String(
+			"Checkpoint Ultimate Enabled: {0}\r\nCheckpoint 360 Req'd: {1}\r\nCheckpoint 125 Slam Req'd: {2}", X Component Of(
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]), Y Component Of(
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]), Z Component Of(
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]))), Left, 9, White, White, White,
 			Visible To and String, Default Visibility);
 	}
 }
@@ -1110,7 +1125,7 @@ rule("Crouch + Interact -> Go Back A Level")
 	}
 }
 
-rule("Left Click + Interact: Camera To See Next Point")
+rule("Left Click + Interact -> Camera To See Next Point")
 {
 	event
 	{
@@ -1143,7 +1158,7 @@ rule("Left Click + Interact: Camera To See Next Point")
 	}
 }
 
-rule("Need Healing Voiceline: Spectate Other Players")
+rule("Need Healing Voiceline -> Spectate Other Players")
 {
 	event
 	{
@@ -1155,6 +1170,8 @@ rule("Need Healing Voiceline: Spectate Other Players")
 	conditions
 	{
 		Is Communicating(Event Player, Need Healing) == True;
+		disabled Is Button Held(Event Player, Melee) == True;
+		disabled Is Button Held(Event Player, Interact) == True;
 	}
 
 	actions
@@ -1174,6 +1191,28 @@ rule("Need Healing Voiceline: Spectate Other Players")
 			Kill(Event Player, Null);
 		End;
 		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+rule("Ultimate Status + Interact -> Dev Mode (Host Only)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Interact) == True;
+		Is Communicating(Event Player, Ultimate Status) == True;
+		Event Player == Host Player;
+	}
+
+	actions
+	{
+		Global.DevModeEngaged = !Global.DevModeEngaged;
 	}
 }
 
