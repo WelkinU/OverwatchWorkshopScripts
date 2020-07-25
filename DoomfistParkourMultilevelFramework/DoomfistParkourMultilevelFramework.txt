@@ -49,6 +49,11 @@ settings
 	{
 		General
 		{
+			Doomfist
+			{
+				Seismic Slam Cooldown Time: 66%
+			}
+
 			enabled heroes
 			{
 				Doomfist
@@ -126,10 +131,11 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		"Set level descriptions here, make sure the level number matches the index (ie. make sure Level 1 is on index 1)"
 		Global.LevelNames = Array(Null, Custom String("Level 1"), Custom String("Level 2"), Custom String("Level 2.5"), Custom String(
 			"Level 3"), Custom String("Level 3.5"), Custom String("Level 4"), Custom String("Level 5"), Custom String("Level 6"),
-			Custom String("Level 7"), Custom String("Slam Only"), Custom String("Slam Only XL"));
+			Custom String("Level 7"), Custom String("Slam Only Ruins"), Custom String("Slam Only Well"), Custom String(
+			"Slam Only Lighthouse"));
 		Global.LevelDescriptions = Array(Null, Custom String("Easy"), Custom String("Easy"), Custom String("Gimmicky"), Custom String(
 			"Medium"), Custom String("Hard"), Custom String("Harder"), Custom String("Very Hard"), Custom String("Very Hard"),
-			Custom String("Extreme"), Custom String("Increasing Difficulty"), Custom String("Professional"));
+			Custom String("Extreme"), Custom String("Speedrun"), Custom String("Hard"), Custom String("Professional"));
 		"Add to this array the level numbers of levels you want to have ability limits on"
 		Global.LevelsWithLimitedAbilityCounts = Array(8);
 		"Set the starting position when the player loads into the game"
@@ -190,13 +196,13 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPLocations[7] = Array(Null, Vector(327.809, -21.159, -82.919), Vector(319.522, -11.903, -91.279), Vector(344.082, -13.467,
 			-26.242), Vector(358.103, -26.040, -11.642), Vector(359.245, -12.046, 4.478), Vector(323.884, -14.113, 10.843), Vector(312.983,
 			-20.854, 20.273), Vector(301.402, -24.120, -97.703), Vector(285.771, -23.181, -67.996), Vector(-189.520, 8.476, -8.393),
-			Vector(-203.836, 8.476, 0.057), Vector(-147.060, 6.208, -77.454), Vector(-186.057, -3.551, -68.908), Vector(-278.290, 1.570,
+			Vector(-203.836, 8.476, 0.057), Vector(-148.571, 6.208, -76.420), Vector(-186.057, -3.551, -68.908), Vector(-278.290, 1.570,
 			14.807), Vector(-213.687, 11.514, -25.612));
 		Global.CPPunchUpperSlamCounts[7] = Array(Null, Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 0), Vector(0, 1, 0),
 			Vector(0, 0, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(
 			1, 1, 0), Vector(1, 0, 0), Vector(1, 1, 1));
 		"--------------Set Level 8 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[8] = Array(Null, Vector(336.064, -17.101, -19.398), Vector(-226.141, 2.480, 5.311), Vector(-204.924, 11.394,
+		Global.CPLocations[8] = Array(Null, Vector(359.109, -11.858, 4.688), Vector(-226.141, 2.480, 5.311), Vector(-204.924, 11.394,
 			-5.697), Vector(-190.440, 8.475, -9.372), Vector(-212.322, 2.073, -20.388), Vector(-214.544, 14.486, -25.074), Vector(-221.773,
 			0.499, -35.841), Vector(-149.654, 6.208, -74.717), Vector(-178.640, 1.020, -92.485), Vector(-150.761, 1.501, -61.405), Vector(
 			-212.938, 7.817, -40.903), Vector(121.914, 66.887, -180.446), Vector(-66.488, 67.144, -181.960), Vector(-20.098, 62.178,
@@ -211,24 +217,31 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts[9] = Array(Null, Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1), Vector(0, 1, 0), Vector(1, 1, 0),
 			Vector(0, 1, 0), Vector(0, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 10 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[10] = Array(Null, Vector(353.919, -16.350, -46.602), Vector(-67.062, 62.025, -185.971), Vector(-50.359, 64.089,
+		Global.CPLocations[10] = Array(Null, Vector(350.007, -15.190, -56.788), Vector(-67.062, 62.025, -185.971), Vector(-50.359, 64.089,
 			-184.973), Vector(-42.550, 64.964, -169.314), Vector(-33.997, 65.806, -173.412), Vector(-42.519, 68.096, -181.078), Vector(
-			-26.152, 69.123, -179.399), Vector(-15.802, 70.017, -163.041), Vector(0.103, 64.535, -138.187), Vector(-15.243, 66.152,
-			-148.459), Vector(-8.359, 66.679, -166.110), Vector(1.556, 70.382, -172.798), Vector(-2.800, 63.343, -170.604), Vector(
-			-243.991, 6.241, 27.766), Vector(-236.797, 6.530, 5.539), Vector(-237.958, 6.498, -9.132), Vector(-230.537, 7.136, -30.163),
-			Vector(-212.782, 7.819, -40.789), Vector(-194.725, 3.516, -24.870), Vector(-190.065, 6.509, -20.782), Vector(-197.918, 11.396,
-			-12.766), Vector(-217.666, 11.511, -21.803), Vector(-223.211, 8.814, -3.046), Vector(-205.288, 6.728, 6.108), Vector(-219.032,
-			8.554, -20.907), Vector(-207.322, 3.389, -34.487), Vector(-224.327, 0.498, -38.405));
+			-26.152, 69.123, -179.399), Vector(-15.802, 70.017, -163.041), Vector(-32.734, 70.017, -162.826), Vector(-18.018, 70.019,
+			-150.531), Vector(-8.197, 68.090, -169.869), Vector(1.291, 70.357, -172.895), Vector(15.585, 70.007, -163.378), Vector(28.760,
+			60.374, -143.931), Vector(40.470, 62.559, -145.617), Vector(48.633, 63.326, -147.097), Vector(41.555, 64.462, -150.701),
+			Vector(47.936, 65.062, -169.203), Vector(52.654, 67.016, -156.663), Vector(65.719, 68.338, -169.192), Vector(71.704, 68.367,
+			-180.510), Vector(56.758, 63.062, -179.046));
 		Global.CPPunchUpperSlamCounts[10] = Array(Null, Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0,
 			1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1),
 			Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(
-			0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1,
-			1));
+			0, 0, 1), Vector(0, 0, 1), Vector(1, 1, 1));
 		"--------------Set Level 11 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[11] = Array(Null, Vector(299.553, -14.662, -79.697), Vector(321.381, -14.027, -71.815), Vector(353.301, -16.272,
+		Global.CPLocations[11] = Array(Null, Vector(355.765, -15.611, -41.427), Vector(-243.991, 6.241, 27.766), Vector(-236.797, 6.530,
+			5.539), Vector(-237.958, 6.498, -9.132), Vector(-230.537, 7.136, -30.163), Vector(-212.782, 7.819, -40.789), Vector(-194.725,
+			3.516, -24.870), Vector(-190.065, 6.509, -20.782), Vector(-197.918, 11.396, -12.766), Vector(-217.666, 11.511, -21.803),
+			Vector(-223.211, 8.814, -3.046), Vector(-205.288, 6.728, 6.108), Vector(-219.032, 8.554, -20.907), Vector(-207.322, 3.389,
+			-34.487), Vector(-224.327, 0.498, -38.405));
+		Global.CPPunchUpperSlamCounts[11] = Array(Null, Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0,
+			1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1),
+			Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1, 1));
+		"--------------Set Level 12 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[12] = Array(Null, Vector(299.553, -14.662, -79.697), Vector(321.381, -14.027, -71.815), Vector(353.301, -16.272,
 			-45.255), Vector(345.334, -15.669, -33.485), Vector(337.592, -14.762, 6.170), Vector(323.747, -16.156, -28.352), Vector(
 			330.308, -13.373, -22.886), Vector(324.120, -14.159, 11.015), Vector(346.194, -16.493, 25.449));
-		Global.CPPunchUpperSlamCounts[11] = Array(Null, Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0,
+		Global.CPPunchUpperSlamCounts[12] = Array(Null, Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0,
 			1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1, 1));
 		"Autogenerate checkpoint facing, radii, and other variables based on CPLocations"
 		Call Subroutine(AutogenerateMapVariables);
@@ -331,13 +344,16 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 		"------------------Use this code block to set Level 10 modifiers------------------"
 		If(Global.LevelIterator == 10);
 			Global.TempTeleport[1] = True;
-			Global.TempRadii[11] = 3.500;
-			Global.TempTeleport[13] = True;
-			Global.TempRadii[13] = 1;
-			Global.TempRadii[17] = 2.700;
-			Global.TempFacing[24] = Vector(-0.700, -0.040, -0.710);
-			Global.TempRadii[24] = 1.500;
-			Global.TempFacing[26] = Vector(-0.710, -0.040, -0.700);
+			disabled Global.TempRadii[11] = 3.500;
+			disabled Global.TempRadii[13] = 1;
+		End;
+		"------------------Use this code block to set Level 11 modifiers------------------"
+		If(Global.LevelIterator == 11);
+			Global.TempTeleport[1] = True;
+			Global.TempRadii[5] = 2.700;
+			Global.TempFacing[12] = Vector(-0.700, -0.040, -0.710);
+			Global.TempRadii[12] = 1.500;
+			Global.TempFacing[14] = Vector(-0.710, -0.040, -0.700);
 		End;
 	}
 }
@@ -360,10 +376,11 @@ rule("Initialize Other Global Constants")
 	actions
 	{
 		Global.TopScoreString = Custom String("");
+		Global.AllScoreString = Custom String("");
+		Global.DevModeEngaged = False;
 		Enable Death Spectate Target HUD(All Players(All Teams));
 		Set Match Time(3599);
 		Pause Match Time;
-		Global.DevModeEngaged = False;
 	}
 }
 
@@ -547,218 +564,6 @@ disabled rule("Map Building HUD")
 			Ray Cast Hit Position(Position Of(Event Player) + Vector(0, 0.100, 0), Position Of(Event Player) + Vector(0, -10, 0),
 			All Players(All Teams), Event Player, True))), Null, Null, Right, 1, White, White, White, Visible To and String,
 			Default Visibility);
-	}
-}
-
-disabled rule("Subroutines")
-{
-	event
-	{
-		Ongoing - Global;
-	}
-}
-
-rule("Subroutine 0: RespawnPlayer")
-{
-	event
-	{
-		Subroutine;
-		RespawnPlayer;
-	}
-
-	actions
-	{
-		Disallow Button(Event Player, Secondary Fire);
-		Disallow Button(Event Player, Ultimate);
-		Disallow Button(Event Player, Ability 1);
-		Disallow Button(Event Player, Ability 2);
-		Call Subroutine(CancelMomentum);
-		Clear Status(Event Player, Phased Out);
-		Set Status(Event Player, Null, Phased Out, 9999);
-		Cancel Primary Action(Event Player);
-		"Safety check in case rules execute out of order, ie Reset to Origin (Q + Interact) pressed same time and get next level"
-		If(Event Player.CurrentCP > 0 && Event Player.CurrentLevel == 0);
-			Event Player.CurrentCP = 0;
-		End;
-		Wait(0.100, Ignore Condition);
-		"Set location and facing direction of player"
-		Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
-		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
-		"set player abilities"
-		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
-		If(X Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Secondary Fire Enabled(Event Player, False);
-		Else;
-			Set Secondary Fire Enabled(Event Player, True);
-		End;
-		If(Y Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Ability 1 Enabled(Event Player, False);
-		Else;
-			Set Ability 1 Enabled(Event Player, True);
-		End;
-		If(Z Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Ability 2 Enabled(Event Player, False);
-		Else;
-			Set Ability 2 Enabled(Event Player, True);
-		End;
-		If(X Component Of(Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Ultimate Ability Enabled(Event Player, False);
-		Else;
-			Set Ultimate Ability Enabled(Event Player, True);
-		End;
-		Set Ultimate Charge(Event Player, 100);
-		disabled Wait(0.100, Ignore Condition);
-		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
-		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
-		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
-		If(Event Player.CurrentCP == 0);
-			Stop Chasing Player Variable(Event Player, LevelTimer);
-			Event Player.LevelTimer = 0;
-		End;
-		"Redundant, but just in case"
-		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
-		Event Player.Count360Slam125 = Vector(0, 0, 0);
-		Allow Button(Event Player, Secondary Fire);
-		Allow Button(Event Player, Ability 1);
-		Allow Button(Event Player, Ability 2);
-		Allow Button(Event Player, Ultimate);
-	}
-}
-
-rule("Subroutine 1: AutogenerateMapVariables")
-{
-	event
-	{
-		Subroutine;
-		AutogenerateMapVariables;
-	}
-
-	actions
-	{
-		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + -1, 1);
-			Global.LevelOrigins[Global.LevelIterator] = Global.CPLocations[Global.LevelIterator + 1][1];
-		End;
-		"Set the checkpoint location to be the closest walkable position to the CPLocation position entered by player. This is so the map maker can use the Camera button to enter CP locations (which sets eye position instead of player position)"
-		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
-			Global.X = Global.CPLocations[Global.LevelIterator];
-			For Global Variable(CPIterator, 0, Count Of(Global.CPLocations[Global.LevelIterator]) - 0, 1);
-				Global.X[Global.CPIterator] = Ray Cast Hit Position(Global.X[Global.CPIterator] + Vector(0, 0.100, 0),
-					Global.X[Global.CPIterator] + 2 * Down, All Players(All Teams), Event Player, True);
-			End;
-			Global.CPLocations[Global.LevelIterator] = Global.X;
-			"Initialize TopScoreTimes using this For loop as well"
-			Global.TopScoreTimes[Global.LevelIterator] = 10000;
-		End;
-		"Autogenerate variable arrays"
-		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
-			"Set CPFacing array to all NULL. NULL means orient player towards direction of next point."
-			Global.CPFacing[Global.LevelIterator] = Null;
-			"Set CPFacing array to all NULL. NULL means orient player towards direction of next point."
-			Global.CPTeleport[Global.LevelIterator] = Null;
-			"Set CPRadii array to all DefaultCPRadius (set in \"Initialize Global Constants\" rule)"
-			Global.CPRadii[Global.LevelIterator] = Global.CPRadius;
-			"Set Ultimate and other special bindings array to all zeros, as most of the time, these will not be bound to a checkpoint."
-			Global.CPUltimate360MaxSlamCounts[Global.LevelIterator] = Vector(0, 0, 0);
-			For Global Variable(CPIterator, 1, Count Of(Global.CPLocations[Global.LevelIterator]) - 0, 1);
-				Modify Global Variable At Index(CPFacing, Global.LevelIterator, Append To Array, Direction Towards(
-					Global.CPLocations[Global.LevelIterator][Global.CPIterator], Global.CPLocations[Global.LevelIterator][Global.CPIterator + 1]));
-				Modify Global Variable At Index(CPTeleport, Global.LevelIterator, Append To Array, Null);
-				Modify Global Variable At Index(CPRadii, Global.LevelIterator, Append To Array, Global.CPRadius);
-				Modify Global Variable At Index(CPUltimate360MaxSlamCounts, Global.LevelIterator, Append To Array, Vector(0, 0, 0));
-			End;
-		End;
-	}
-}
-
-rule("Subroutine 2: OverrideAutogenVariables")
-{
-	event
-	{
-		Subroutine;
-		OverrideAutogenVariables;
-	}
-
-	actions
-	{
-		"OVERRIDING CHECKPOINT PARAMETERS INSTRUCTIONS\r\nStep 1: Copy/paste code block from \"If(Global.LevelIterator == 0)\" to next \"End\" statement\r\nStep 2: Change the 0 in If(Global.LevelIterator == 0) to the level\r\nStep 3: Add the modifiers for that level (see the"
-		disabled Wait(0.250, Ignore Condition);
-		"Need this whole structure because Workshop Editor doesn't let you index into array's of arrays"
-		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
-			Global.TempTeleport = Global.CPTeleport[Global.LevelIterator];
-			Global.TempUltimate360MaxSlam = Global.CPUltimate360MaxSlamCounts[Global.LevelIterator];
-			Global.TempRadii = Global.CPRadii[Global.LevelIterator];
-			Global.TempFacing = Global.CPFacing[Global.LevelIterator];
-			Call Subroutine(OverrideVariablesUserInput);
-			Global.CPFacing[Global.LevelIterator] = Global.TempFacing;
-			Global.CPRadii[Global.LevelIterator] = Global.TempRadii;
-			Global.CPUltimate360MaxSlamCounts[Global.LevelIterator] = Global.TempUltimate360MaxSlam;
-			Global.CPTeleport[Global.LevelIterator] = Global.TempTeleport;
-		End;
-	}
-}
-
-rule("Subroutine 3: Cancel Momentum")
-{
-	event
-	{
-		Subroutine;
-		CancelMomentum;
-	}
-
-	actions
-	{
-		Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
-		Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
-		Apply Impulse(Event Player, Left, 0.001, To World, Cancel Contrary Motion);
-		Apply Impulse(Event Player, Right, 0.001, To World, Cancel Contrary Motion);
-		Apply Impulse(Event Player, Forward, 0.001, To World, Cancel Contrary Motion);
-		Apply Impulse(Event Player, Backward, 0.001, To World, Cancel Contrary Motion);
-	}
-}
-
-rule("Subroutine 5: UpdateTopScoreboard")
-{
-	event
-	{
-		Subroutine;
-		UpdateTopScoreboard;
-	}
-
-	actions
-	{
-		"Create TOP Scoreboard String"
-		Event Player.TopScoreboardString = Custom String("");
-		For Player Variable(Event Player, X, Count Of(Global.TopScoreTimes) - 1, -1, -1);
-			If(Global.TopScoreTimes[Event Player.X] < 9999);
-				If(Event Player.TopScoreboardString == Custom String(""));
-					Event Player.TopScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X],
-						Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]);
-				Else;
-					Event Player.TopScoreboardString = Custom String("{0}\r\n{1}", Event Player.TopScoreboardString, Custom String("{0} - {1} {2}",
-						Global.LevelNames[Event Player.X], Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]));
-				End;
-			End;
-		End;
-		Global.TopScoreString = Event Player.TopScoreboardString;
-		"Create All Scoreboard String"
-		Event Player.AllScoreboardString = Custom String("");
-		For Player Variable(Event Player, X, Count Of(Global.TopScoreTimes) - 1, -1, -1);
-			For Player Variable(Event Player, Y, 0, Count Of(All Players(All Teams)), 1);
-				If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] < 9999);
-					If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] > 0);
-						If(Event Player.AllScoreboardString == Custom String(""));
-							Event Player.AllScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X], All Players(All Teams)
-								[Event Player.Y], All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X]);
-						Else;
-							Event Player.AllScoreboardString = Custom String("{0}\r\n{1}", Event Player.AllScoreboardString, Custom String("{0} - {1} {2}",
-								Global.LevelNames[Event Player.X], All Players(All Teams)[Event Player.Y], All Players(All Teams)
-								[Event Player.Y].TopPersonalScores[Event Player.X]));
-						End;
-					End;
-				End;
-			End;
-		End;
-		Global.AllScoreString = Event Player.AllScoreboardString;
 	}
 }
 
@@ -1061,6 +866,7 @@ rule("Ultimate + Interact -> Reset to Origin Point")
 	{
 		Is Button Held(Event Player, Ultimate) == True;
 		Is Button Held(Event Player, Interact) == True;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
@@ -1090,6 +896,7 @@ rule("Jump + Interact -> Skip Level")
 		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		"To mitigate conflict with other button combos"
 		Is Button Held(Event Player, Crouch) == False;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
@@ -1118,6 +925,7 @@ rule("Crouch + Interact -> Go Back A Level")
 		Event Player.CurrentCP + 0 > 1;
 		"To mitigate conflict with other button combos"
 		Is Button Held(Event Player, Jump) == False;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
@@ -1147,7 +955,7 @@ rule("Left Click + Interact -> Camera To See Next Point")
 		Is Button Held(Event Player, Primary Fire) == True;
 		Is Button Held(Event Player, Interact) == True;
 		"Make sure next point exists"
-		(Count Of(Global.CPLocations[Event Player.LevelTimer]) > Event Player.CurrentCP + 1 || Event Player.CurrentLevel == 0) == True;
+		(Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1 || Event Player.CurrentLevel == 0) == True;
 	}
 
 	actions
@@ -1221,6 +1029,7 @@ rule("Ultimate Status + Interact -> Dev Mode (Host Only)")
 		Is Button Held(Event Player, Interact) == True;
 		Is Communicating(Event Player, Ultimate Status) == True;
 		Event Player == Host Player;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
@@ -1275,6 +1084,219 @@ disabled rule("Can Melee Cancel Slam")
 	}
 }
 
+disabled rule("Subroutines")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Subroutine 0: RespawnPlayer")
+{
+	event
+	{
+		Subroutine;
+		RespawnPlayer;
+	}
+
+	actions
+	{
+		Disallow Button(Event Player, Secondary Fire);
+		Disallow Button(Event Player, Ultimate);
+		Disallow Button(Event Player, Ability 1);
+		Disallow Button(Event Player, Ability 2);
+		Call Subroutine(CancelMomentum);
+		Clear Status(Event Player, Phased Out);
+		Set Status(Event Player, Null, Phased Out, 9999);
+		Cancel Primary Action(Event Player);
+		"Safety check in case rules execute out of order, ie Reset to Origin (Q + Interact) pressed same time and get next level"
+		If(Event Player.CurrentCP > 0 && Event Player.CurrentLevel == 0);
+			Event Player.CurrentCP = 0;
+		End;
+		disabled Wait(0.100, Ignore Condition);
+		"Set location and facing direction of player"
+		Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
+		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
+		"set player abilities"
+		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
+		If(X Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+			Set Secondary Fire Enabled(Event Player, False);
+		Else;
+			Set Secondary Fire Enabled(Event Player, True);
+		End;
+		If(Y Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+			Set Ability 1 Enabled(Event Player, False);
+		Else;
+			Set Ability 1 Enabled(Event Player, True);
+		End;
+		If(Z Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+			Set Ability 2 Enabled(Event Player, False);
+		Else;
+			Set Ability 2 Enabled(Event Player, True);
+		End;
+		If(X Component Of(Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+			Set Ultimate Ability Enabled(Event Player, False);
+		Else;
+			Set Ultimate Ability Enabled(Event Player, True);
+		End;
+		Set Ultimate Charge(Event Player, 100);
+		Wait(0.100, Ignore Condition);
+		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+		If(Event Player.CurrentCP == 0);
+			Stop Chasing Player Variable(Event Player, LevelTimer);
+			Event Player.LevelTimer = 0;
+		End;
+		"Redundant, but just in case"
+		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
+		Event Player.Count360Slam125 = Vector(0, 0, 0);
+		Allow Button(Event Player, Secondary Fire);
+		Allow Button(Event Player, Ability 1);
+		Allow Button(Event Player, Ability 2);
+		Allow Button(Event Player, Ultimate);
+		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
+	}
+}
+
+rule("Subroutine 1: AutogenerateMapVariables")
+{
+	event
+	{
+		Subroutine;
+		AutogenerateMapVariables;
+	}
+
+	actions
+	{
+		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + -1, 1);
+			Global.LevelOrigins[Global.LevelIterator] = Global.CPLocations[Global.LevelIterator + 1][1];
+		End;
+		"Set the checkpoint location to be the closest walkable position to the CPLocation position entered by player. This is so the map maker can use the Camera button to enter CP locations (which sets eye position instead of player position)"
+		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
+			Global.X = Global.CPLocations[Global.LevelIterator];
+			For Global Variable(CPIterator, 0, Count Of(Global.CPLocations[Global.LevelIterator]) - 0, 1);
+				Global.X[Global.CPIterator] = Ray Cast Hit Position(Global.X[Global.CPIterator] + Vector(0, 0.100, 0),
+					Global.X[Global.CPIterator] + 2 * Down, All Players(All Teams), Event Player, True);
+			End;
+			Global.CPLocations[Global.LevelIterator] = Global.X;
+			"Initialize TopScoreTimes using this For loop as well"
+			Global.TopScoreTimes[Global.LevelIterator] = 10000;
+		End;
+		"Autogenerate variable arrays"
+		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
+			"Set CPFacing array to all NULL. NULL means orient player towards direction of next point."
+			Global.CPFacing[Global.LevelIterator] = Null;
+			"Set CPFacing array to all NULL. NULL means orient player towards direction of next point."
+			Global.CPTeleport[Global.LevelIterator] = Null;
+			"Set CPRadii array to all DefaultCPRadius (set in \"Initialize Global Constants\" rule)"
+			Global.CPRadii[Global.LevelIterator] = Global.CPRadius;
+			"Set Ultimate and other special bindings array to all zeros, as most of the time, these will not be bound to a checkpoint."
+			Global.CPUltimate360MaxSlamCounts[Global.LevelIterator] = Vector(0, 0, 0);
+			For Global Variable(CPIterator, 1, Count Of(Global.CPLocations[Global.LevelIterator]) - 0, 1);
+				Modify Global Variable At Index(CPFacing, Global.LevelIterator, Append To Array, Direction Towards(
+					Global.CPLocations[Global.LevelIterator][Global.CPIterator], Global.CPLocations[Global.LevelIterator][Global.CPIterator + 1]));
+				Modify Global Variable At Index(CPTeleport, Global.LevelIterator, Append To Array, Null);
+				Modify Global Variable At Index(CPRadii, Global.LevelIterator, Append To Array, Global.CPRadius);
+				Modify Global Variable At Index(CPUltimate360MaxSlamCounts, Global.LevelIterator, Append To Array, Vector(0, 0, 0));
+			End;
+		End;
+	}
+}
+
+rule("Subroutine 2: OverrideAutogenVariables")
+{
+	event
+	{
+		Subroutine;
+		OverrideAutogenVariables;
+	}
+
+	actions
+	{
+		"OVERRIDING CHECKPOINT PARAMETERS INSTRUCTIONS\r\nStep 1: Copy/paste code block from \"If(Global.LevelIterator == 0)\" to next \"End\" statement\r\nStep 2: Change the 0 in If(Global.LevelIterator == 0) to the level\r\nStep 3: Add the modifiers for that level (see the"
+		disabled Wait(0.250, Ignore Condition);
+		"Need this whole structure because Workshop Editor doesn't let you index into array's of arrays"
+		For Global Variable(LevelIterator, 0, Count Of(Global.CPLocations) + 0, 1);
+			Global.TempTeleport = Global.CPTeleport[Global.LevelIterator];
+			Global.TempUltimate360MaxSlam = Global.CPUltimate360MaxSlamCounts[Global.LevelIterator];
+			Global.TempRadii = Global.CPRadii[Global.LevelIterator];
+			Global.TempFacing = Global.CPFacing[Global.LevelIterator];
+			Call Subroutine(OverrideVariablesUserInput);
+			Global.CPFacing[Global.LevelIterator] = Global.TempFacing;
+			Global.CPRadii[Global.LevelIterator] = Global.TempRadii;
+			Global.CPUltimate360MaxSlamCounts[Global.LevelIterator] = Global.TempUltimate360MaxSlam;
+			Global.CPTeleport[Global.LevelIterator] = Global.TempTeleport;
+		End;
+	}
+}
+
+rule("Subroutine 3: Cancel Momentum")
+{
+	event
+	{
+		Subroutine;
+		CancelMomentum;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Left, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Right, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Forward, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Backward, 0.001, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("Subroutine 5: UpdateTopScoreboard")
+{
+	event
+	{
+		Subroutine;
+		UpdateTopScoreboard;
+	}
+
+	actions
+	{
+		"Create TOP Scoreboard String"
+		Event Player.TopScoreboardString = Custom String("");
+		For Player Variable(Event Player, X, Count Of(Global.TopScoreTimes) - 1, -1, -1);
+			If(Global.TopScoreTimes[Event Player.X] < 9999);
+				If(Event Player.TopScoreboardString == Custom String(""));
+					Event Player.TopScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X],
+						Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]);
+				Else;
+					Event Player.TopScoreboardString = Custom String("{0}\r\n{1}", Event Player.TopScoreboardString, Custom String("{0} - {1} {2}",
+						Global.LevelNames[Event Player.X], Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]));
+				End;
+			End;
+		End;
+		Global.TopScoreString = Event Player.TopScoreboardString;
+		"Create All Scoreboard String"
+		Event Player.AllScoreboardString = Custom String("");
+		For Player Variable(Event Player, X, Count Of(Global.TopScoreTimes) - 1, -1, -1);
+			For Player Variable(Event Player, Y, 0, Count Of(All Players(All Teams)), 1);
+				If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] < 9999);
+					If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] > 0);
+						If(Event Player.AllScoreboardString == Custom String(""));
+							Event Player.AllScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X], All Players(All Teams)
+								[Event Player.Y], All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X]);
+						Else;
+							Event Player.AllScoreboardString = Custom String("{0}\r\n{1}", Event Player.AllScoreboardString, Custom String("{0} - {1} {2}",
+								Global.LevelNames[Event Player.X], All Players(All Teams)[Event Player.Y], All Players(All Teams)
+								[Event Player.Y].TopPersonalScores[Event Player.X]));
+						End;
+					End;
+				End;
+			End;
+		End;
+		Global.AllScoreString = Event Player.AllScoreboardString;
+	}
+}
+
 disabled rule("360 Code :D")
 {
 	event
@@ -1306,6 +1328,7 @@ rule("Update 360 Array")
 			Event Player) + Down * 10, All Players(All Teams), Event Player, True)) > 0.500;
 		"So most stalls dont let you 360 for free"
 		Altitude Of(Event Player) > 0.500;
+		Has Spawned(Event Player) == True;
 	}
 
 	actions
