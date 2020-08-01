@@ -391,11 +391,11 @@ rule("Initialize Global HUD and Effects")
 			Default Visibility);
 		"Top Scores HUD"
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Custom String("Top Scores"),
-			Null, Null, Left, 20, White, White, Green, Visible To and String, Default Visibility);
+			Null, Null, Right, 0, White, White, Green, Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
-			"{0}", Global.TopScoreString), Left, 21, White, White, Green, Visible To and String, Default Visibility);
+			"{0}", Global.TopScoreString), Right, 1, White, White, Green, Visible To and String, Default Visibility);
 		"All Scores HUD"
-		disabled Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Custom String("All Scores"),
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Custom String("All Scores"),
 			Null, Null, Right, 4, White, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Null, Null, Custom String(
 			"{0}", Global.AllScoreString), Right, 5, White, White, White, Visible To and String, Default Visibility);
