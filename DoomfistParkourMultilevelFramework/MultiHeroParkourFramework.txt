@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Parkour: Multi-Hero Edition by WelkinTern. Sigma hero modifers from ReZero."
+		Description: "Doomfist Parkour: Multi-Hero Edition by WelkinTern. Workshop Code: PZ7ZQ. Sigma hero modifers from ReZero."
 	}
 
 	modes
@@ -208,16 +208,16 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts[9] = Array(Null, Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1,
 			1));
 		"--------------Set Level 10 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[10] = Array(Null, Vector(327.667, -13.280, -44.683), Vector(300.220, -16.160, -44.800), Vector(331.404, -17.101,
+		Global.CPLocations[10] = Array(Null, Vector(326.003, -17.139, -55.823), Vector(300.220, -16.160, -44.800), Vector(331.404, -17.101,
 			-17.060), Vector(355.572, -14.360, -50.583), Vector(371.751, -25.259, -42.809), Vector(324.158, -16.155, -29.186), Vector(
 			108.809, 65.914, -157.408), Vector(55.674, 65.983, -177.915), Vector(36.449, 61.963, -180.084), Vector(50.750, 64.552,
 			-180.257), Vector(64.893, 62.456, -174.049), Vector(90.732, 65.802, -173.650), Vector(90.560, 62.199, -148.144), Vector(87.982,
 			70.017, -150.597));
-		Global.CPPunchUpperSlamCounts[10] = Array(Null, Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 0, 0), Vector(1, 1,
+		Global.CPPunchUpperSlamCounts[10] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 0, 0), Vector(1, 1,
 			1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(0, 0, 1), Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 1, 1),
 			Vector(0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 11 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[11] = Array(Null, Vector(331.607, -13.287, -34.746), Vector(331.609, -26.142, -91.090), Vector(335.351, -17.040,
+		Global.CPLocations[11] = Array(Null, Vector(334.540, -17.143, -55.790), Vector(331.609, -26.142, -91.090), Vector(335.351, -17.040,
 			-66.158), Vector(345.633, -15.886, -33.301), Vector(336.399, -23.090, 22.588), Vector(83.242, 69.155, -179.695), Vector(41.308,
 			70.190, -163.804), Vector(45.372, 63.504, -138.720), Vector(82.911, 70.018, -150.488), Vector(51.009, 64.537, -179.986),
 			Vector(-23.132, 70.016, -162.907), Vector(-237.544, 6.502, -4.081), Vector(-205.048, 11.394, -5.569), Vector(-197.438, 11.394,
@@ -1283,6 +1283,7 @@ rule("Subroutine 0: RespawnPlayer")
 		Event Player.WinstonBouncyBubbleCooldown = 0;
 		Destroy Effect(Event Player.WinstonBubbleEffect);
 		Event Player.WinstonBubbleLocation = Null;
+		Set Move Speed(Event Player, 100);
 	}
 }
 
