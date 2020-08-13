@@ -302,7 +302,7 @@ rule("Get On Fire To Finish Scoring Challenge Level")
 
 	actions
 	{
-		Teleport(Event Player, Global.CPLocations[5][2]);
+		Teleport(Event Player, Global.CPLocations[7][2]);
 		Wait(0.250, Ignore Condition);
 		Loop If Condition Is True;
 	}
@@ -1030,12 +1030,12 @@ rule("Hello + Interact -> Free Roam")
 	actions
 	{
 		If(Event Player.FreeRoamEnabled);
+			Event Player.FreeRoamEnabled = False;
 			"Respawn the player so they can't free roam into next checkpoint, then turn off free roam"
 			Call Subroutine(RespawnPlayer);
 			If(Event Player.LevelTimer > 0);
 				Chase Player Variable At Rate(Event Player, LevelTimer, 9999, 1, Destination and Rate);
 			End;
-			Event Player.FreeRoamEnabled = False;
 			Small Message(Event Player, Custom String("Free Roam Disabled"));
 		Else;
 			Event Player.FreeRoamEnabled = True;
@@ -1121,28 +1121,6 @@ rule("Teleport Enabled with Melee + Left Click if done with level, free roam ena
 	}
 }
 
-disabled rule("Can Melee Cancel Slam")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Doomfist;
-	}
-
-	conditions
-	{
-		Is Using Ability 2(Event Player) == True;
-		Is Button Held(Event Player, Melee) == True;
-	}
-
-	actions
-	{
-		Cancel Primary Action(Event Player);
-		Small Message(Event Player, Custom String("Testing melee slam cancel"));
-	}
-}
-
 disabled rule("Subroutines")
 {
 	event
@@ -1161,8 +1139,15 @@ rule("Subroutine 0: RespawnPlayer")
 
 	actions
 	{
+		disabled If(Event Player.FreeRoamEnabled);
+		"Set location and facing direction of player"
+		disabled Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
+		disabled Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
+		disabled Abort;
+		disabled End;
 		Disallow Button(Event Player, Interact);
-		Disallow Button(Event Player, Secondary Fire);
+		"This is really annoying that it cancels you if you're holding punch, but could prevent workshop bug where it thinks you're using punch when you're not."
+		disabled Disallow Button(Event Player, Secondary Fire);
 		Disallow Button(Event Player, Ultimate);
 		Disallow Button(Event Player, Ability 1);
 		Disallow Button(Event Player, Ability 2);
@@ -1174,33 +1159,34 @@ rule("Subroutine 0: RespawnPlayer")
 		If(Event Player.CurrentCP > 0 && Event Player.CurrentLevel == 0);
 			Event Player.CurrentCP = 0;
 		End;
-		disabled Wait(0.100, Ignore Condition);
+		"set player abilities"
+		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
 		"Set location and facing direction of player"
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP]);
 		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
-		"set player abilities"
-		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
-		If(X Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Secondary Fire Enabled(Event Player, False);
-		Else;
-			Set Secondary Fire Enabled(Event Player, True);
+		If(!Event Player.FreeRoamEnabled);
+			If(X Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+				Set Secondary Fire Enabled(Event Player, False);
+			Else;
+				Set Secondary Fire Enabled(Event Player, True);
+			End;
+			If(Y Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+				Set Ability 1 Enabled(Event Player, False);
+			Else;
+				Set Ability 1 Enabled(Event Player, True);
+			End;
+			If(Z Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+				Set Ability 2 Enabled(Event Player, False);
+			Else;
+				Set Ability 2 Enabled(Event Player, True);
+			End;
+			If(X Component Of(Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
+				Set Ultimate Ability Enabled(Event Player, False);
+			Else;
+				Set Ultimate Ability Enabled(Event Player, True);
+			End;
+			Set Ultimate Charge(Event Player, 100);
 		End;
-		If(Y Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Ability 1 Enabled(Event Player, False);
-		Else;
-			Set Ability 1 Enabled(Event Player, True);
-		End;
-		If(Z Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Ability 2 Enabled(Event Player, False);
-		Else;
-			Set Ability 2 Enabled(Event Player, True);
-		End;
-		If(X Component Of(Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) == 0);
-			Set Ultimate Ability Enabled(Event Player, False);
-		Else;
-			Set Ultimate Ability Enabled(Event Player, True);
-		End;
-		Set Ultimate Charge(Event Player, 100);
 		Wait(0.100, Ignore Condition);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
@@ -1216,6 +1202,7 @@ rule("Subroutine 0: RespawnPlayer")
 		Allow Button(Event Player, Ability 1);
 		Allow Button(Event Player, Ability 2);
 		Allow Button(Event Player, Ultimate);
+		"2nd set facing command used because if you are slamming, it won't orient you properly until after slam is canceled."
 		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
 		Allow Button(Event Player, Interact);
 	}
