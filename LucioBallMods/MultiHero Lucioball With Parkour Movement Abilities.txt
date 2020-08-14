@@ -1,0 +1,388 @@
+settings
+{
+	lobby
+	{
+		Match Voice Chat: Enabled
+		Max Team 1 Players: 6
+		Max Team 2 Players: 6
+	}
+
+	modes
+	{
+		Lúcioball
+		{
+			Game Length Seconds: 900
+			Goals Needed To Win: 50
+			Reset Players After Goal Scored: Off
+			Score Lead Needed To Win: 100
+
+			enabled maps
+			{
+				Busan Stadium
+			}
+		}
+
+		General
+		{
+			Game Mode Start: Immediately
+			Hero Limit: 2 Per Team
+			Kill Feed: Off
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			D.Va
+			{
+				Boosters Cooldown Time: 0%
+				Defense Matrix Maximum Time: 500%
+				Defense Matrix Recharge Rate: 500%
+				Ultimate Generation - Combat Self-Destruct: 500%
+				Ultimate Generation - Passive Self-Destruct: 500%
+				Ultimate Generation Self-Destruct: 500%
+			}
+
+			Doomfist
+			{
+				Rising Uppercut Cooldown Time: 0%
+				Seismic Slam Cooldown Time: 0%
+				Ultimate Generation Meteor Strike: 500%
+			}
+
+			Genji
+			{
+				Deflect Cooldown Time: 0%
+				Swift Strike Cooldown Time: 0%
+				Ultimate Generation Dragonblade: 500%
+			}
+
+			Lúcio
+			{
+				Amp It Up Cooldown Time: 0%
+				Soundwave Cooldown Time: 0%
+				Ultimate Generation Sound Barrier: 500%
+			}
+
+			Mei
+			{
+				Cryo-Freeze Cooldown Time: 0%
+				Ice Wall Cooldown Time: 50%
+				Ultimate Generation Blizzard: 250%
+			}
+
+			Roadhog
+			{
+				Chain Hook Cooldown Time: 15%
+				Take a Breather Cooldown Time: 0%
+				Ultimate Generation Whole Hog: 500%
+			}
+
+			Tracer
+			{
+				Blink Cooldown Time: 0%
+				Recall Cooldown Time: 0%
+				Ultimate Generation Pulse Bomb: 500%
+			}
+
+			Winston
+			{
+				Barrier Projector Cooldown Time: 0%
+				Jump Pack Cooldown Time: 0%
+				Ultimate Generation Primal Rage: 500%
+			}
+
+			Wrecking Ball
+			{
+				Adaptive Shield Cooldown Time: 0%
+				Grappling Claw Cooldown Time: 0%
+				Piledriver Cooldown Time: 0%
+				Ultimate Generation Minefield: 500%
+			}
+		}
+	}
+}
+
+variables
+{
+	global:
+		7: HeroRoster
+
+	player:
+		22: MenuInWorldLocationTempStore
+		23: MenuTextIDTempStore
+		25: TempIterator
+		42: RoadhogHookPosition
+}
+
+rule("Initalize Globals")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.HeroRoster = Array(Hero(Doomfist), Hero(D.Va), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
+			Hero(Mei));
+		Pause Match Time;
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Interact) && True), Custom String(
+			"Release Interact Over The Hero You Want To Select"), Null, Null, Top, 0, Red, White, White, Visible To, Default Visibility);
+	}
+}
+
+rule("Initialize Player")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[0]);
+		Big Message(Event Player, Custom String("Use Interact Key To Switch Heros"));
+		Set Damage Received(Event Player, 0);
+	}
+}
+
+disabled rule("Switch Hero - Interact")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Interact) == True;
+	}
+
+	actions
+	{
+		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[(Index Of Array Value(Global.HeroRoster, Hero Of(Event Player))
+			+ 1) % Count Of(Global.HeroRoster)]);
+	}
+}
+
+rule("Hero Select Menu: Interact")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Interact) == True;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.MenuInWorldLocationTempStore = Empty Array;
+		Event Player.MenuTextIDTempStore = Empty Array;
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
+			disabled Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
+				+ 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (Event Player.TempIterator / Count Of(Global.HeroRoster))),
+				Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(Global.HeroRoster))), 3), Event Player, Rotation));
+			disabled Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
+				Eye Position(Event Player) + Facing Direction Of(Event Player) * 1 + World Vector Of(Vector(Sine From Degrees(360 * (
+				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
+				Global.HeroRoster))), 0), Event Player, Rotation) * 0.400, 3, Do Not Clip, Visible To, White, Default Visibility);
+			Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
+				+ Facing Direction Of(Event Player) * 1 + 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (
+				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
+				Global.HeroRoster))), 0), Event Player, Rotation));
+			Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
+				Event Player.MenuInWorldLocationTempStore[Event Player.TempIterator], 3, Do Not Clip, None, White, Default Visibility);
+			Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
+			Wait(0.016, Ignore Condition);
+		End;
+	}
+}
+
+rule("Close Hero Select Menu")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Interact) == False;
+		Has Spawned(Event Player) == True;
+		Count Of(Event Player.MenuTextIDTempStore) > 1;
+	}
+
+	actions
+	{
+		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
+			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
+			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
+		disabled Small Message(All Players(All Teams), Custom String("removing in world text"));
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
+			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+		End;
+	}
+}
+
+disabled rule("ROADHOG STUFF")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Change Hook to Grappling Hook")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		"Initial impulse to let you hook in midair without falling too far while hook is out"
+		Apply Impulse(Event Player, Up, 3, To World, Cancel Contrary Motion);
+		"Issue here is that we are using ray cast to determine hook impact, which isn't visually accurate, so the hook may impact a wall but not be deteted."
+		Event Player.RoadhogHookPosition = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ 120 * Facing Direction Of(Event Player), All Players(All Teams), Event Player, True);
+		"Abort if hook didn't connect with a wall within 25m. For reference, 20m is hook range for normal roadhog."
+		If(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) > 25);
+			Small Message(Event Player, Custom String("Out of hook range!"));
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+			Abort;
+		End;
+		"Wait for hook to \"hit\" something. Hook moves at 40m/s"
+		Wait(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) / 40, Ignore Condition);
+		"Impulse that increases with hook range. Hook impulse = Base Impulse + Hook Range x Range Multiplier."
+		Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.RoadhogHookPosition), 30 + Distance Between(
+			Event Player.RoadhogHookPosition, Position Of(Event Player)) * 0.800, To World, Cancel Contrary Motion);
+		"Large Linear Impulse. Disabled while testing impulse that increases with range."
+		disabled Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.RoadhogHookPosition), 40, To World,
+			Cancel Contrary Motion);
+		Set Gravity(Event Player, 0);
+		Wait(0.250, Ignore Condition);
+		Set Gravity(Event Player, 100);
+	}
+}
+
+rule("Change Take A Breather to Bouncy Ball Hog")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+		disabled Is On Ground(Event Player) == True;
+		Altitude Of(Event Player) <= 1.500;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, Speed Of(Event Player) * 1.200, To World, Cancel Contrary Motion);
+	}
+}
+
+disabled rule("Roadhog Ultimate")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ultimate(Event Player) == True;
+	}
+
+	actions
+	{
+		Small Message(Event Player, Custom String("Hold Melee to Cancel Ultimate"));
+		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Melee));
+			Wait(0.066, Ignore Condition);
+			"Cause knockback on player"
+			disabled Apply Impulse(Event Player, Facing Direction Of(Event Player), -10, To World, Cancel Contrary Motion);
+			"Player Knockback"
+			Apply Impulse(Event Player, Facing Direction Of(Event Player), -1.500, To World, Cancel Contrary Motion);
+			"\"Drill\" Through Walls, Skyboxes, etc."
+			Teleport(Event Player, Position Of(Event Player) + Facing Direction Of(Event Player) * -1.500);
+		End;
+		"For melee cancel on ult"
+		Cancel Primary Action(Event Player);
+	}
+}
+
+rule("Limit Roadhog Ultimate Duration")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ultimate(Event Player) == True;
+	}
+
+	actions
+	{
+		"Set Ult Duration to 3 sec, then cancel it"
+		Wait(3, Ignore Condition);
+		Cancel Primary Action(Event Player);
+	}
+}
+
+disabled rule("Add Knockback When Secondary Fire Used")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), -12, To World, Cancel Contrary Motion);
+	}
+}
