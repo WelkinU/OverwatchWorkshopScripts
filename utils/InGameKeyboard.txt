@@ -1,0 +1,194 @@
+settings
+{
+	modes
+	{
+		Assault
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+
+		Control
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+
+		Escort
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+
+		Hybrid
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+	}
+}
+
+variables
+{
+	global:
+		0: KeyboardLayout
+
+	player:
+		20: KeyboardKeyTempIndex
+		21: TempIterator
+		22: KeyboardWorldPositionSave
+		23: KeyboardTextIDSave
+		24: ColIterator
+		25: RowIterator
+}
+
+rule("Keyboard Setup")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.KeyboardLayout = Empty Array;
+		Global.KeyboardLayout[0] = Array(Custom String("Q"), Custom String("W"), Custom String("E"), Custom String("R"), Custom String(
+			"T"), Custom String("Y"), Custom String("U"), Custom String("I"), Custom String("O"), Custom String("P"));
+		Global.KeyboardLayout[1] = Array(Custom String("A"), Custom String("S"), Custom String("D"), Custom String("F"), Custom String(
+			"G"), Custom String("H"), Custom String("J"), Custom String("K"), Custom String("L"), Custom String("DONE"));
+		Global.KeyboardLayout[2] = Array(Custom String("Z"), Custom String("X"), Custom String("E"), Custom String("C"), Custom String(
+			"V"), Custom String("B"), Custom String("N"), Custom String("M"), Custom String("RESET"));
+	}
+}
+
+rule("Init Player")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Event Player.KeyboardTextIDSave = Empty Array;
+		Event Player.T = Custom String("");
+		Create HUD Text(Filtered Array(Event Player, Event Player.T != Custom String("")), Custom String("Entered: {0}", Event Player.T),
+			Null, Null, Top, 1, White, White, White, Visible To and String, Default Visibility);
+	}
+}
+
+rule("Interact to show keyboard")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Is Button Held(Event Player, Interact) == True;
+	}
+
+	actions
+	{
+		Event Player.KeyboardWorldPositionSave = Empty Array;
+		For Player Variable(Event Player, RowIterator, 0, Count Of(Global.KeyboardLayout), 1);
+			For Player Variable(Event Player, ColIterator, 0, Count Of(Global.KeyboardLayout[Event Player.RowIterator]), 1);
+				Modify Player Variable(Event Player, KeyboardWorldPositionSave, Append To Array, Eye Position(Event Player) + Vector(0, 0, 0)
+					+ World Vector Of(Vector((Event Player.ColIterator * 2 - Count Of(Global.KeyboardLayout[Event Player.RowIterator])) / -4, (
+					1 - Event Player.RowIterator) / 2, 3), Event Player, Rotation));
+			End;
+		End;
+		Event Player.TempIterator = 0;
+		For Player Variable(Event Player, RowIterator, 0, Count Of(Global.KeyboardLayout), 1);
+			For Player Variable(Event Player, ColIterator, 0, Count Of(Global.KeyboardLayout[Event Player.RowIterator]), 1);
+				Create In-World Text(Event Player, Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator],
+					Event Player.KeyboardWorldPositionSave[Event Player.TempIterator] + World Vector Of(Vector(0, -0.250, 0), Event Player,
+					Rotation), 2, Do Not Clip, Visible To, Purple, Default Visibility);
+				Modify Player Variable(Event Player, KeyboardTextIDSave, Append To Array, Last Text ID);
+				Wait(0.016, Ignore Condition);
+				Event Player.TempIterator += 1;
+			End;
+		End;
+	}
+}
+
+rule("R to remove keyboard")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Is Button Held(Event Player, Reload) == True;
+	}
+
+	actions
+	{
+		For Player Variable(Event Player, RowIterator, 0, Count Of(Event Player.KeyboardTextIDSave), 1);
+			Destroy In-World Text(Event Player.KeyboardTextIDSave[Event Player.RowIterator]);
+		End;
+		Event Player.KeyboardTextIDSave = Empty Array;
+	}
+}
+
+rule("Left Click To Click Letters")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Is Button Held(Event Player, Primary Fire) == True;
+		Count Of(Event Player.KeyboardTextIDSave) > 0;
+	}
+
+	actions
+	{
+		"Get the index of the position of the letter clicked on"
+		Event Player.KeyboardKeyTempIndex = Index Of Array Value(Event Player.KeyboardWorldPositionSave, First Of(Sorted Array(
+			Event Player.KeyboardWorldPositionSave, Angle Between Vectors(Direction Towards(Eye Position(Event Player),
+			Current Array Element), Facing Direction Of(Event Player)))));
+		Event Player.TempIterator = 0;
+		For Player Variable(Event Player, RowIterator, 0, Count Of(Global.KeyboardLayout), 1);
+			For Player Variable(Event Player, ColIterator, 0, Count Of(Global.KeyboardLayout[Event Player.RowIterator]), 1);
+				If(Event Player.TempIterator == Event Player.KeyboardKeyTempIndex);
+					Break;
+				End;
+				Event Player.TempIterator += 1;
+			End;
+			If(Event Player.TempIterator == Event Player.KeyboardKeyTempIndex);
+				Break;
+			End;
+		End;
+		If(Event Player.ColIterator >= Count Of(Global.KeyboardLayout[Event Player.RowIterator]));
+			Event Player.RowIterator += 1;
+			Event Player.ColIterator = 0;
+		End;
+		If(Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator] == Custom String("DONE"));
+			Small Message(Event Player, Custom String("Entered: {0}", Event Player.T));
+			For Player Variable(Event Player, RowIterator, 0, Count Of(Event Player.KeyboardTextIDSave), 1);
+				Destroy In-World Text(Event Player.KeyboardTextIDSave[Event Player.RowIterator]);
+			End;
+			Wait(0.100, Ignore Condition);
+			Event Player.T = Custom String("");
+			Event Player.KeyboardTextIDSave = Empty Array;
+		Else If(Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator] == Custom String("RESET"));
+			Event Player.T = Custom String("");
+		Else;
+			Event Player.T = Custom String("{0}{1}", Event Player.T,
+				Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator]);
+		End;
+	}
+}
