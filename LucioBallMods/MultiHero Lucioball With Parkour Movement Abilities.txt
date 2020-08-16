@@ -13,12 +13,14 @@ settings
 		{
 			Game Length Seconds: 900
 			Goals Needed To Win: 50
+			Initial Ball Count: 2
 			Reset Players After Goal Scored: Off
 			Score Lead Needed To Win: 100
 
-			enabled maps
+			disabled maps
 			{
-				Busan Stadium
+				Busan Stadium Classic
+				Sydney Harbour Arena Classic
 			}
 		}
 
@@ -34,19 +36,24 @@ settings
 	{
 		General
 		{
+			No Ammunition Requirement: On
+
 			D.Va
 			{
 				Boosters Cooldown Time: 0%
 				Defense Matrix Maximum Time: 500%
 				Defense Matrix Recharge Rate: 500%
-				Ultimate Generation - Combat Self-Destruct: 500%
-				Ultimate Generation - Passive Self-Destruct: 500%
+				Movement Speed: 150%
+				Ultimate Generation - Combat Self-Destruct: 200%
 				Ultimate Generation Self-Destruct: 500%
 			}
 
 			Doomfist
 			{
+				Infinite Ultimate Duration: On
 				Rising Uppercut Cooldown Time: 0%
+				Rocket Punch Cooldown Time: 0%
+				Rocket Punch Knockback Scalar: 0%
 				Seismic Slam Cooldown Time: 0%
 				Ultimate Generation Meteor Strike: 500%
 			}
@@ -74,7 +81,8 @@ settings
 
 			Roadhog
 			{
-				Chain Hook Cooldown Time: 15%
+				Chain Hook Cooldown Time: 10%
+				Movement Speed: 150%
 				Take a Breather Cooldown Time: 0%
 				Ultimate Generation Whole Hog: 500%
 			}
@@ -97,8 +105,19 @@ settings
 			{
 				Adaptive Shield Cooldown Time: 0%
 				Grappling Claw Cooldown Time: 0%
+				Grappling Claw Knockback Scalar: 0%
 				Piledriver Cooldown Time: 0%
+				Primary Fire: Off
 				Ultimate Generation Minefield: 500%
+			}
+
+			Zarya
+			{
+				Movement Speed: 150%
+				Particle Cannon Secondary Knockback Scalar: 50%
+				Projectile Speed: 200%
+				Ultimate Generation - Passive Graviton Surge: 500%
+				Ultimate Generation Graviton Surge: 500%
 			}
 		}
 	}
@@ -110,6 +129,7 @@ variables
 		7: HeroRoster
 
 	player:
+		18: HeroSelectMenuOpen
 		22: MenuInWorldLocationTempStore
 		23: MenuTextIDTempStore
 		25: TempIterator
@@ -126,10 +146,13 @@ rule("Initalize Globals")
 	actions
 	{
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(D.Va), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
-			Hero(Mei));
+			Hero(Mei), Hero(Zarya));
 		Pause Match Time;
+		Create HUD Text(Filtered Array(All Players(All Teams), !Is Button Held(Current Array Element, Interact) && True), Custom String(
+			"Press and Hold Interact (F) to Open Hero Select Menu\r\nRelease Interact Over Hero You Want To Select"), Null, Null, Left, 0,
+			Green, White, White, Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Interact) && True), Custom String(
-			"Release Interact Over The Hero You Want To Select"), Null, Null, Top, 0, Red, White, White, Visible To, Default Visibility);
+			"Release Interact Over The Hero You Want To Select"), Null, Null, Left, 0, Red, White, White, Visible To, Default Visibility);
 	}
 }
 
@@ -152,6 +175,7 @@ rule("Initialize Player")
 		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[0]);
 		Big Message(Event Player, Custom String("Use Interact Key To Switch Heros"));
 		Set Damage Received(Event Player, 0);
+		Event Player.HeroSelectMenuOpen = False;
 	}
 }
 
@@ -193,25 +217,28 @@ rule("Hero Select Menu: Interact")
 
 	actions
 	{
+		"If a menu is already open, delete the in world text and recreate the menu in the proper location"
+		If(Event Player.HeroSelectMenuOpen);
+			For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
+				Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+				Abort;
+			End;
+		End;
 		Event Player.MenuInWorldLocationTempStore = Empty Array;
 		Event Player.MenuTextIDTempStore = Empty Array;
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
-			disabled Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
-				+ 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (Event Player.TempIterator / Count Of(Global.HeroRoster))),
-				Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(Global.HeroRoster))), 3), Event Player, Rotation));
-			disabled Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
-				Eye Position(Event Player) + Facing Direction Of(Event Player) * 1 + World Vector Of(Vector(Sine From Degrees(360 * (
-				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
-				Global.HeroRoster))), 0), Event Player, Rotation) * 0.400, 3, Do Not Clip, Visible To, White, Default Visibility);
 			Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
 				+ Facing Direction Of(Event Player) * 1 + 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (
 				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
 				Global.HeroRoster))), 0), Event Player, Rotation));
 			Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
-				Event Player.MenuInWorldLocationTempStore[Event Player.TempIterator], 3, Do Not Clip, None, White, Default Visibility);
+				Event Player.MenuInWorldLocationTempStore[Event Player.TempIterator] + Vector(0, -0.100, 0), 3, Do Not Clip, None, White,
+				Default Visibility);
 			Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
 			Wait(0.016, Ignore Condition);
 		End;
+		Event Player.HeroSelectMenuOpen = True;
+		Big Message(Event Player, Custom String("Release Interact Over The Hero You Want To Select"));
 	}
 }
 
@@ -228,7 +255,7 @@ rule("Close Hero Select Menu")
 	{
 		Is Button Held(Event Player, Interact) == False;
 		Has Spawned(Event Player) == True;
-		Count Of(Event Player.MenuTextIDTempStore) > 1;
+		Event Player.HeroSelectMenuOpen == True;
 	}
 
 	actions
@@ -236,10 +263,40 @@ rule("Close Hero Select Menu")
 		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
 			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
 			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
-		disabled Small Message(All Players(All Teams), Custom String("removing in world text"));
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
 			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
 		End;
+		Event Player.HeroSelectMenuOpen = False;
+	}
+}
+
+disabled rule("Close Hero Select Menu")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Primary Fire) == True;
+		Has Spawned(Event Player) == True;
+		Count Of(Event Player.MenuTextIDTempStore) > 1;
+		Event Player.HeroSelectMenuOpen == True;
+	}
+
+	actions
+	{
+		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
+			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
+			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
+			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+		End;
+		Event Player.HeroSelectMenuOpen = False;
+		Global.A = 0;
 	}
 }
 
@@ -273,7 +330,7 @@ rule("Change Hook to Grappling Hook")
 		Event Player.RoadhogHookPosition = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
 			+ 120 * Facing Direction Of(Event Player), All Players(All Teams), Event Player, True);
 		"Abort if hook didn't connect with a wall within 25m. For reference, 20m is hook range for normal roadhog."
-		If(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) > 25);
+		If(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) > 28);
 			Small Message(Event Player, Custom String("Out of hook range!"));
 			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 			Abort;
@@ -314,38 +371,7 @@ rule("Change Take A Breather to Bouncy Ball Hog")
 	}
 }
 
-disabled rule("Roadhog Ultimate")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Roadhog;
-	}
-
-	conditions
-	{
-		Is Using Ultimate(Event Player) == True;
-	}
-
-	actions
-	{
-		Small Message(Event Player, Custom String("Hold Melee to Cancel Ultimate"));
-		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Melee));
-			Wait(0.066, Ignore Condition);
-			"Cause knockback on player"
-			disabled Apply Impulse(Event Player, Facing Direction Of(Event Player), -10, To World, Cancel Contrary Motion);
-			"Player Knockback"
-			Apply Impulse(Event Player, Facing Direction Of(Event Player), -1.500, To World, Cancel Contrary Motion);
-			"\"Drill\" Through Walls, Skyboxes, etc."
-			Teleport(Event Player, Position Of(Event Player) + Facing Direction Of(Event Player) * -1.500);
-		End;
-		"For melee cancel on ult"
-		Cancel Primary Action(Event Player);
-	}
-}
-
-rule("Limit Roadhog Ultimate Duration")
+disabled rule("Limit Roadhog Ultimate Duration")
 {
 	event
 	{
@@ -364,25 +390,5 @@ rule("Limit Roadhog Ultimate Duration")
 		"Set Ult Duration to 3 sec, then cancel it"
 		Wait(3, Ignore Condition);
 		Cancel Primary Action(Event Player);
-	}
-}
-
-disabled rule("Add Knockback When Secondary Fire Used")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Roadhog;
-	}
-
-	conditions
-	{
-		Is Firing Secondary(Event Player) == True;
-	}
-
-	actions
-	{
-		Apply Impulse(Event Player, Facing Direction Of(Event Player), -12, To World, Cancel Contrary Motion);
 	}
 }
