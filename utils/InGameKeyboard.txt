@@ -1,5 +1,10 @@
 settings
 {
+	main
+	{
+		Description: "In Game Keyboard Demo! Press Interact to open the keyboard, use left click to type, click \"Done\" to enter text! Version Control: https://github.com/WelkinU/OverwatchWorkshopScripts/tree/master/utils"
+	}
+
 	modes
 	{
 		Assault
@@ -30,6 +35,7 @@ variables
 		0: KeyboardLayout
 
 	player:
+		19: KeyboardFullTextExtry
 		20: KeyboardKeyTempIndex
 		21: TempIterator
 		22: KeyboardWorldPositionSave
@@ -48,12 +54,15 @@ rule("Keyboard Setup")
 	actions
 	{
 		Global.KeyboardLayout = Empty Array;
-		Global.KeyboardLayout[0] = Array(Custom String("Q"), Custom String("W"), Custom String("E"), Custom String("R"), Custom String(
+		Global.KeyboardLayout[0] = Array(Custom String("0"), Custom String("1"), Custom String("2"), Custom String("3"), Custom String(
+			"4"), Custom String("5"), Custom String("6"), Custom String("7"), Custom String("8"), Custom String("9"));
+		Global.KeyboardLayout[1] = Array(Custom String("Q"), Custom String("W"), Custom String("E"), Custom String("R"), Custom String(
 			"T"), Custom String("Y"), Custom String("U"), Custom String("I"), Custom String("O"), Custom String("P"));
-		Global.KeyboardLayout[1] = Array(Custom String("A"), Custom String("S"), Custom String("D"), Custom String("F"), Custom String(
+		Global.KeyboardLayout[2] = Array(Custom String("A"), Custom String("S"), Custom String("D"), Custom String("F"), Custom String(
 			"G"), Custom String("H"), Custom String("J"), Custom String("K"), Custom String("L"), Custom String("DONE"));
-		Global.KeyboardLayout[2] = Array(Custom String("Z"), Custom String("X"), Custom String("E"), Custom String("C"), Custom String(
+		Global.KeyboardLayout[3] = Array(Custom String("Z"), Custom String("X"), Custom String("E"), Custom String("C"), Custom String(
 			"V"), Custom String("B"), Custom String("N"), Custom String("M"), Custom String("RESET"));
+		Global.KeyboardLayout[4] = Array(Custom String("SPACE"));
 	}
 }
 
@@ -69,9 +78,10 @@ rule("Init Player")
 	actions
 	{
 		Event Player.KeyboardTextIDSave = Empty Array;
-		Event Player.T = Custom String("");
-		Create HUD Text(Filtered Array(Event Player, Event Player.T != Custom String("")), Custom String("Entered: {0}", Event Player.T),
-			Null, Null, Top, 1, White, White, White, Visible To and String, Default Visibility);
+		Event Player.KeyboardFullTextExtry = Custom String("");
+		Create HUD Text(Filtered Array(Event Player, Event Player.KeyboardFullTextExtry != Custom String("")), Custom String(
+			"Entered: {0}", Event Player.KeyboardFullTextExtry), Null, Null, Top, 1, White, White, White, Visible To and String,
+			Default Visibility);
 	}
 }
 
@@ -177,17 +187,19 @@ rule("Left Click To Click Letters")
 			Event Player.ColIterator = 0;
 		End;
 		If(Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator] == Custom String("DONE"));
-			Small Message(Event Player, Custom String("Entered: {0}", Event Player.T));
+			Small Message(Event Player, Custom String("Entered: {0}", Event Player.KeyboardFullTextExtry));
 			For Player Variable(Event Player, RowIterator, 0, Count Of(Event Player.KeyboardTextIDSave), 1);
 				Destroy In-World Text(Event Player.KeyboardTextIDSave[Event Player.RowIterator]);
 			End;
 			Wait(0.100, Ignore Condition);
-			Event Player.T = Custom String("");
+			Event Player.KeyboardFullTextExtry = Custom String("");
 			Event Player.KeyboardTextIDSave = Empty Array;
 		Else If(Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator] == Custom String("RESET"));
-			Event Player.T = Custom String("");
+			Event Player.KeyboardFullTextExtry = Custom String("");
+		Else If(Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator] == Custom String("SPACE"));
+			Event Player.KeyboardFullTextExtry = Custom String("{0} ", Event Player.KeyboardFullTextExtry);
 		Else;
-			Event Player.T = Custom String("{0}{1}", Event Player.T,
+			Event Player.KeyboardFullTextExtry = Custom String("{0}{1}", Event Player.KeyboardFullTextExtry,
 				Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator]);
 		End;
 	}
