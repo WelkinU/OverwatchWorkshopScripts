@@ -258,9 +258,9 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPLocations[13] = Array(Null, Vector(64.532, 6.250, -40.387), Vector(-77.100, 4.250, -126.112), Vector(-36.291, 6.289,
 			-76.113), Vector(83.923, 5.448, -11.755), Vector(20.178, -0.375, -13.382), Vector(15.481, -0.696, -75.174), Vector(29.361,
 			0.248, -86.335), Vector(34.451, 7.250, -85.951), Vector(1.450, 7.250, -72.604), Vector(-26.881, 5.493, -103.545), Vector(
-			51.870, 0.250, -93.652));
+			62.795, 3.244, -60.486), Vector(103.051, 2.428, -21.095));
 		Global.CPPunchUpperSlamCounts[13] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 0), Vector(1, 0, 1), Vector(1, 0,
-			1), Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 1, 1), Vector(1, 0, 1), Vector(1, 1, 0), Vector(1, 1, 1));
+			1), Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 1, 1), Vector(1, 0, 1), Vector(1, 1, 0), Vector(1, 0, 0), Vector(1, 1, 1));
 		"--------------Set Level 14 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[14] = Array(Null, Vector(348.019, -21.940, -33.351));
 		Global.CPPunchUpperSlamCounts[14] = Array(Null, Vector(1, 1, 1));
@@ -275,9 +275,10 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		"--------------Set Level 17 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[17] = Array(Null, Vector(100.626, -0.100, -59.070), Vector(96.628, 7.250, -33.417), Vector(42.712, 1.250,
 			-48.064), Vector(38.955, 4.095, -47.063), Vector(11.238, 1.250, -48.593), Vector(0.973, 7.250, -51.721), Vector(20.326, -0.122,
-			-12.712), Vector(-44.377, 2.265, -65.303), Vector(-22.678, 0.248, -38.557));
+			-12.712), Vector(62.864, 3.231, -60.388), Vector(95.600, 0.250, -30.278), Vector(-44.377, 2.265, -65.303), Vector(-22.678,
+			0.248, -38.557));
 		Global.CPPunchUpperSlamCounts[17] = Array(Null, Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 0, 0), Vector(1, 1, 1), Vector(1, 0,
-			1), Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1));
+			1), Vector(0, 1, 0), Vector(1, 0, 1), Vector(1, 0, 0), Vector(1, 1, 0), Vector(0, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 18 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[18] = Array(Null, Vector(39.989, 3.630, -31.791), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
 			-133.650), Vector(-27.110, 3.250, -133.603), Vector(-15.738, 4.250, -86.475), Vector(-4.372, 18.247, 0.788), Vector(25.515,
