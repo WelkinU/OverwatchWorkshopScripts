@@ -41,6 +41,11 @@ settings
 				Regenerative Burst Cooldown Time: 70%
 			}
 
+			Doomfist
+			{
+				Seismic Slam Cooldown Time: 50%
+			}
+
 			Moira
 			{
 				Biotic Energy Recharge Rate: 300%
@@ -165,18 +170,18 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			"Ana Level 2"), Custom String("Moira Level 2"), Custom String("Doomfist Level 3"), Custom String("Roadhog Level 3"),
 			Custom String("Ana Level 3"), Custom String("Moira Level 3"), Custom String("Doomfist Level 4"), Custom String(
 			"Roadhog Level 4"), Custom String("Ana Level 4"), Custom String("Moira Level 4"), Custom String("Doomfist Level 5"),
-			Custom String("Doomfist Off Map"));
+			Custom String("Doomfist Canal Level"), Custom String("Doomfist Off Map"));
 		Global.LevelDescriptions = Array(Null, Custom String("Easy"), Custom String("Intro"), Custom String("Intro"), Custom String(
 			"Intro"), Custom String("Medium"), Custom String("Medium"), Custom String("Medium"), Custom String("Medium"), Custom String(
 			" Hard"), Custom String("Hard"), Custom String("Hard"), Custom String("Hard"), Custom String("Very Hard"), Custom String(
 			"Very Hard"), Custom String("Very Hard"), Custom String("Very Hard"), Custom String("Craziness From Pioneer"), Custom String(
-			"So You Think You Know Stalls?"));
+			"I Hope You Like Boats"), Custom String("So You Think You Know Stalls?"));
 		"Set heros for each level, index zero is origin point"
 		Global.LevelHeros = Array(Hero(Doomfist), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog),
 			Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(
 			Moira), Hero(Doomfist), Hero(Doomfist));
 		"Add to this array the level numbers of levels you want to have ability limits on"
-		Global.LevelsWithLimitedAbilityCounts = Array();
+		Global.LevelsWithLimitedAbilityCounts = Array(18);
 		"Set the starting position when the player loads into the game"
 		Global.CPLocations = Array(Array(Vector(38.190, 7.248, -69.430)));
 		"Set the starting position abilities when the player loads into the game"
@@ -227,9 +232,10 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		"--------------Set Level 8 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[8] = Array(Null, Vector(67.084, 1.277, -41.468), Vector(66.691, 6.450, -31.185), Vector(99.199, 7.450, -31.584),
 			Vector(100.661, -0.365, -61.562), Vector(104.546, 3.438, -118.993), Vector(80.057, 5.458, -11.198), Vector(43.930, 7.450,
-			-46.228), Vector(30.470, 0.450, -79.285), Vector(-41.882, 4.441, -87.349), Vector(-32.309, 3.836, -29.713));
+			-46.228), Vector(30.470, 0.450, -79.285), Vector(-41.882, 4.441, -87.349), Vector(-32.309, 3.836, -29.713), Vector(-25.062,
+			0.514, -66.170));
 		Global.CPPunchUpperSlamCounts[8] = Array(Null, Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 0, 1), Vector(0, 1, 1),
-			Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 1));
+			Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 0), Vector(0, 1, 1), Vector(0, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 9 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[9] = Array(Null, Vector(72.643, 1.250, -51.213), Vector(53.767, 5.240, -84.606), Vector(2.471, 7.245, -69.491),
 			Vector(-44.800, 2.874, -65.699), Vector(14.730, 6.186, -29.372), Vector(15.514, -0.752, -73.822), Vector(11.201, 1.250,
@@ -251,9 +257,11 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts[11] = Array(Null, Vector(1, 0, 0), Vector(0, 1, 1), Vector(0, 0, 1), Vector(0, 1, 1), Vector(0, 1,
 			0), Vector(0, 1, 1), Vector(0, 1, 1), Vector(0, 1, 0), Vector(0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 12 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[12] = Array(Null, Vector(350.005, -23.541, -41.827));
-		Global.CPPunchUpperSlamCounts[12] = Array(Null, Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1,
-			1));
+		Global.CPLocations[12] = Array(Null, Vector(57.825, 1.383, -40.530), Vector(59.204, 0.450, -25.766), Vector(58.572, 6.257,
+			-14.868), Vector(29.529, 0.450, -82.777), Vector(34.473, 7.450, -66.794), Vector(-5.770, 0.704, -86.354), Vector(-35.973,
+			6.450, -75.902), Vector(64.280, 6.450, -40.234));
+		Global.CPPunchUpperSlamCounts[12] = Array(Null, Vector(0, 1, 0), Vector(0, 1, 0), Vector(0, 0, 1), Vector(0, 1, 0), Vector(0, 0,
+			1), Vector(0, 0, 1), Vector(0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 13 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[13] = Array(Null, Vector(64.532, 6.250, -40.387), Vector(-77.100, 4.250, -126.112), Vector(-36.291, 6.289,
 			-76.113), Vector(83.923, 5.448, -11.755), Vector(20.178, -0.375, -13.382), Vector(15.481, -0.696, -75.174), Vector(29.361,
@@ -280,12 +288,21 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts[17] = Array(Null, Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 0, 0), Vector(1, 1, 1), Vector(1, 0,
 			1), Vector(0, 1, 0), Vector(1, 0, 1), Vector(1, 0, 0), Vector(1, 1, 0), Vector(0, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 18 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[18] = Array(Null, Vector(39.989, 3.630, -31.791), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
+		Global.CPLocations[18] = Array(Null, Vector(28.317, 1.558, -73.882), Vector(22.451, 4.164, -75.798), Vector(-15.795, 1.250,
+			-79.185), Vector(34.673, 7.248, -77.924), Vector(27.400, -0.781, -53.959), Vector(15.646, -0.922, -73.562), Vector(8.472,
+			1.100, -54.827), Vector(29.435, 3.249, -39.804), Vector(34.675, 7.250, -85.935), Vector(14.395, -0.046, -59.975), Vector(
+			55.125, 5.240, -87.430), Vector(10.521, 1.250, -77.487), Vector(30.159, 0.250, -90.922), Vector(1.443, 7.250, -72.258), Vector(
+			20.372, -0.063, -13.028), Vector(80.121, 0.250, -25.492), Vector(80.242, 1.245, -52.485));
+		Global.CPPunchUpperSlamCounts[18] = Array(Null, Vector(0, 0, 0), Vector(1, 1, 1), Vector(0, 0, 1), Vector(0, 1, 1), Vector(1, 0,
+			0), Vector(1, 0, 0), Vector(0, 2, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(3, 1, 1), Vector(2, 0, 0), Vector(0, 3, 0),
+			Vector(1, 0, 0), Vector(1, 2, 0), Vector(9, 9, 0), Vector(0, 3, 1), Vector(1, 1, 1));
+		"--------------Set Level 19 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[19] = Array(Null, Vector(39.989, 3.630, -31.791), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
 			-133.650), Vector(-27.110, 3.250, -133.603), Vector(-15.738, 4.250, -86.475), Vector(-4.372, 18.247, 0.788), Vector(25.515,
 			-0.896, 27.851), Vector(-10.232, 0.889, 48.579), Vector(82.594, 2.925, 52.756), Vector(-42.306, -0.459, -7.170), Vector(13.890,
 			-0.433, 39.303), Vector(-42.089, -0.506, -6.698), Vector(-1.840, 17.344, -20.191), Vector(-42.384, -0.516, -5.926), Vector(
 			79.794, 3.255, 51.579), Vector(-42.457, -0.462, -5.479), Vector(-98.766, -0.831, -60.027), Vector(-53.002, 47.292, -115.263));
-		Global.CPPunchUpperSlamCounts[18] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1,
+		Global.CPPunchUpperSlamCounts[19] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1,
 			1), Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 0, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1),
 			Vector(0, 1, 0), Vector(1, 1, 0), Vector(1, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1));
 		"Autogenerate checkpoint facing, radii, and other variables based on CPLocations"
@@ -319,6 +336,10 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 		If(Global.LevelIterator == 2);
 			Global.TempUltimate360MaxSlam[4] = Vector(1, 0, 0);
 		End;
+		"------------------Use this code block to set Level 12 modifiers------------------"
+		If(Global.LevelIterator == 12);
+			Global.TempRadii[6] = 6;
+		End;
 		"------------------Use this code block to set Level 13 modifiers------------------"
 		If(Global.LevelIterator == 13);
 			Global.TempUltimate360MaxSlam[4] = Vector(1, 0, 1);
@@ -330,6 +351,12 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 		End;
 		"------------------Use this code block to set Level 18 modifiers------------------"
 		If(Global.LevelIterator == 18);
+			Global.TempRadii[2] = 1;
+			Global.TempUltimate360MaxSlam[3] = Vector(1, 0, 0);
+			disabled Global.TempTeleport[14] = True;
+		End;
+		"------------------Use this code block to set Level 19 modifiers------------------"
+		If(Global.LevelIterator == 19);
 			Global.TempTeleport[1] = True;
 			Global.TempTeleport[5] = True;
 			Global.TempUltimate360MaxSlam[8] = Vector(1, 0, 0);
@@ -365,7 +392,8 @@ rule("-------------OVERRIDE HERO HELP DESCRIPTIONS HERE-----------")
 			Custom String("Primal Rage"), Null, Custom String("{0} Passive: Wall Climb", Icon String(Arrow: Up)));
 		Global.HeroHelpRoster[3] = Hero(Roadhog);
 		Global.HeroHelpDescriptions[3] = Array(Custom String("Right Click = Impulse"), Custom String("Is Now Grappling Hook"),
-			Custom String("You Bounce Off Ground. Faster Speed = Higher Bounce"), Custom String("Impulse Backward"), Null, Null);
+			Custom String("You Bounce Off Ground. Faster Speed = Higher Bounce"), Custom String("Impulse Backward Even Through Walls"),
+			Null, Null);
 		Global.HeroHelpRoster[4] = Hero(Ana);
 		Global.HeroHelpDescriptions[4] = Array(Null, Custom String("Teleports To Sleep Dart Impact Location"), Custom String(
 			"Impulse When Healing Yourself"), Null, Custom String("Impulse In Direction You're Facing"), Null);
@@ -612,9 +640,10 @@ rule("Initialize Player HUD and Effects")
 		"Dev Mode HUD"
 		Create HUD Text(Filtered Array(Event Player, Global.DevModeEngaged), Null, Null, Custom String(
 			"--------------Player Variables------------------\r\n{0}\r\n--------------Checkpoint Variables--------------\r\n{1}\r\n{2}\r\n-------------",
-			Custom String("{0}\r\nNext CP Dist: {2}", Custom String("Position: {0}\r\nFacing: {1}\r\nBackend Level Index: {2}",
-			Position Of(Event Player), Facing Direction Of(Event Player), Event Player.CurrentLevel), Null, Distance Between(Position Of(
-			Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])), Custom String(
+			Custom String("{0}\r\nAltitude: {1}\r\nNext CP Dist: {2}", Custom String(
+			"Position: {0}\r\nFacing: {1}\r\nBackend Level Index: {2}", Position Of(Event Player), Facing Direction Of(Event Player),
+			Event Player.CurrentLevel), Altitude Of(Event Player), Distance Between(Position Of(Event Player),
+			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])), Custom String(
 			"Checkpoint Position: {0}\r\nCheckpoint Abilities {1}\r\n{2}",
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP],
 			Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP], Custom String(
@@ -2535,6 +2564,7 @@ rule("Camera follow orb position model")
 	actions
 	{
 		Small Message(Event Player, Custom String("Melee To Teleport"));
+		Set Move Speed(Event Player, 0);
 		Event Player.MoiraOrbPosition = Eye Position(Event Player);
 		Event Player.MoiraOrbFacing = Facing Direction Of(Event Player);
 		Start Camera(Event Player, Event Player.MoiraOrbPosition, Event Player.MoiraOrbPosition + Facing Direction Of(Event Player), 30);
@@ -2556,6 +2586,13 @@ rule("Camera follow orb position model")
 		End;
 		Stop Camera(Event Player);
 		Teleport(Event Player, Event Player.MoiraOrbPosition);
+		Set Move Speed(Event Player, 100);
+		Wait(0.050, Ignore Condition);
+		"To prevent player from getting on the skybox - these parameters might be Rialto specific"
+		If(True && Y Component Of(Position Of(Event Player)) > 25);
+			Call Subroutine(RespawnPlayer);
+			Small Message(Event Player, Custom String("Don't go on skybox!"));
+		End;
 	}
 }
 
