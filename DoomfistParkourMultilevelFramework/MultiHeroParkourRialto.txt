@@ -188,11 +188,12 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts = Array(Array(Vector(1, 1, 1)));
 		"--------------Set Level 1 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[1] = Array(Null, Vector(55.802, 3.234, -51.813), Vector(73.838, 5.258, -16.479), Vector(43.415, 0.250, -13.142),
-			Vector(20.084, -0.757, -13.820), Vector(15.936, 2.164, -48.795), Vector(2.504, 7.245, -51.653), Vector(-15.014, 7.247,
-			-50.960), Vector(-35.901, 6.250, -75.953), Vector(-51.563, 3.100, -102.471), Vector(-45.747, 6.250, -140.297), Vector(-42.530,
-			6.248, -157.890), Vector(-57.717, 12.633, -167.797));
-		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1),
-			Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1));
+			Vector(20.084, -0.757, -13.820), Vector(15.936, 2.164, -48.795), Vector(1.182, 7.250, -51.306), Vector(-15.014, 7.247,
+			-50.960), Vector(-35.901, 6.250, -75.953), Vector(-51.563, 3.100, -102.471), Vector(-45.747, 6.250, -140.297), Vector(-38.248,
+			6.248, -151.409), Vector(-45.657, 5.250, -157.886), Vector(-57.717, 12.633, -167.797));
+		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(0, 1, 1),
+			Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(
+			1, 1, 1));
 		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[2] = Array(Null, Vector(55.702, 3.348, -51.396), Vector(63.955, 6.401, -39.958), Vector(67.504, 6.387, -31.407),
 			Vector(75.340, 5.408, -24.759), Vector(103.011, 2.585, -21.082));
@@ -212,15 +213,15 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			Vector(103.674, 2.429, -20.913), Vector(100.442, -0.019, -59.992), Vector(89.290, 0.177, -37.484), Vector(67.438, 6.250,
 			-31.846), Vector(30.027, 3.250, -39.323), Vector(15.606, -0.683, -74.298), Vector(13.831, 1.250, -50.140), Vector(32.184,
 			1.250, -48.370), Vector(-2.319, 7.250, -42.094), Vector(20.073, -0.230, -10.955));
-		Global.CPPunchUpperSlamCounts[5] = Array(Null, Vector(1, 0, 1), Vector(1, 1, 1), Vector(1, 1, 0), Vector(1, 1, 1), Vector(1, 1, 0),
-			Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 1, 1), Vector(0, 0, 1), Vector(1, 1, 1), Vector(1, 0, 0), Vector(
+		Global.CPPunchUpperSlamCounts[5] = Array(Null, Vector(1, 0, 1), Vector(1, 1, 1), Vector(1, 0, 0), Vector(1, 0, 1), Vector(1, 1, 0),
+			Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 0, 1), Vector(1, 1, 1), Vector(0, 0, 1), Vector(1, 0, 1), Vector(1, 0, 0), Vector(
 			1, 1, 1));
 		"--------------Set Level 6 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[6] = Array(Null, Vector(43.206, 7.348, -42.854), Vector(76.062, 5.377, -24.407), Vector(93.173, 0.557, 0.720),
 			Vector(107.081, 0.378, -5.411), Vector(63.227, 3.340, -52.793), Vector(29.882, 1.374, -53.130), Vector(20.233, 0.009, -14.789),
-			Vector(-14.401, 7.406, -48.345));
+			Vector(-14.401, 7.406, -48.345), Vector(-36.443, 6.388, -76), Vector(-64.236, 6.686, -125.890));
 		Global.CPPunchUpperSlamCounts[6] = Array(Null, Vector(0, 1, 1), Vector(0, 1, 0), Vector(0, 0, 1), Vector(0, 1, 1), Vector(0, 1, 1),
-			Vector(1, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1));
+			Vector(1, 1, 0), Vector(1, 1, 0), Vector(1, 0, 1), Vector(0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 7 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[7] = Array(Null, Vector(54.510, 6, -40.498), Vector(2.518, 6.995, -51.538), Vector(43.854, 5.652, -82.987),
 			Vector(40.735, -0.492, -14.443), Vector(103.047, 2.179, -20.809), Vector(100.487, -0.313, -59.093), Vector(57.200, 6, -39.414),
