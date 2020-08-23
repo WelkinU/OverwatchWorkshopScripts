@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Parkour: Multi-Hero Edition by WelkinTern. Select a hero (Doomfist, Roadhog, Ana, Moira) at the start point, then select a level and use your abilities to get to the next checkpoint. Ability modifier help on the left side of screen. Sigma hero modifers from ReZero. Workshop Code: VP3H4"
+		Description: "Doomfist Parkour: Multi-Hero Edition by WelkinTern. Select a hero (Doomfist, Roadhog, Ana, Moira) at the start point, then select a level and use your abilities to get to the next checkpoint. Ability modifier help on the left side of screen. Sigma hero modifers from ReZero. Many checkpoints from Pioneer community. Workshop Code: VP3H4"
 	}
 
 	modes
@@ -179,7 +179,7 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		"Set heros for each level, index zero is origin point"
 		Global.LevelHeros = Array(Hero(Doomfist), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog),
 			Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(
-			Moira), Hero(Doomfist), Hero(Doomfist));
+			Moira), Hero(Doomfist), Hero(Doomfist), Hero(Doomfist));
 		"Add to this array the level numbers of levels you want to have ability limits on"
 		Global.LevelsWithLimitedAbilityCounts = Array(18);
 		"Set the starting position when the player loads into the game"
@@ -293,10 +293,11 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			-79.185), Vector(34.673, 7.248, -77.924), Vector(27.400, -0.781, -53.959), Vector(15.646, -0.922, -73.562), Vector(8.472,
 			1.100, -54.827), Vector(29.435, 3.249, -39.804), Vector(34.675, 7.250, -85.935), Vector(14.395, -0.046, -59.975), Vector(
 			55.125, 5.240, -87.430), Vector(10.521, 1.250, -77.487), Vector(30.159, 0.250, -90.922), Vector(1.443, 7.250, -72.258), Vector(
-			20.372, -0.063, -13.028), Vector(80.121, 0.250, -25.492), Vector(80.242, 1.245, -52.485));
+			20.372, -0.063, -13.028), Vector(80.121, 0.250, -25.492), Vector(80.242, 1.245, -52.485), Vector(-108.555, -0.979, -58.900),
+			Vector(-136, 0, -19.500));
 		Global.CPPunchUpperSlamCounts[18] = Array(Null, Vector(0, 0, 0), Vector(1, 1, 1), Vector(0, 0, 1), Vector(0, 1, 1), Vector(1, 0,
 			0), Vector(1, 0, 0), Vector(0, 2, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(3, 1, 1), Vector(2, 0, 0), Vector(0, 3, 0),
-			Vector(1, 0, 0), Vector(1, 2, 0), Vector(9, 9, 0), Vector(0, 3, 1), Vector(1, 1, 1));
+			Vector(1, 0, 0), Vector(1, 2, 0), Vector(9, 9, 0), Vector(0, 3, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 19 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[19] = Array(Null, Vector(39.989, 3.630, -31.791), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
 			-133.650), Vector(-27.110, 3.250, -133.603), Vector(-15.738, 4.250, -86.475), Vector(-4.372, 18.247, 0.788), Vector(25.515,
@@ -354,7 +355,8 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 		If(Global.LevelIterator == 18);
 			Global.TempRadii[2] = 1;
 			Global.TempUltimate360MaxSlam[3] = Vector(1, 0, 0);
-			disabled Global.TempTeleport[14] = True;
+			Global.TempTeleport[17] = True;
+			Global.TempRadii[19] = 25;
 		End;
 		"------------------Use this code block to set Level 19 modifiers------------------"
 		If(Global.LevelIterator == 19);
@@ -401,6 +403,28 @@ rule("-------------OVERRIDE HERO HELP DESCRIPTIONS HERE-----------")
 		Global.HeroHelpRoster[5] = Hero(Moira);
 		Global.HeroHelpDescriptions[5] = Array(Null, Custom String("Fade with Zero Gravity"), Custom String(
 			"Teleport To Orb Location Using Melee"), Custom String("Weird Grapple Thing (In Work)"), Null, Null);
+	}
+}
+
+rule("Canal Level Specific End Boss Notification")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentCP == 18;
+		Event Player.CurrentLevel == 18;
+	}
+
+	actions
+	{
+		Big Message(Event Player, Custom String("Get on the speedboat!"));
+		Small Message(Event Player, Custom String("Can take some time for the boats to circle the map..."));
 	}
 }
 
@@ -894,7 +918,10 @@ rule("Arrived At Next Checkpoint")
 		If(Global.CPTeleport[Event Player.CurrentLevel][Event Player.CurrentCP] != Null);
 			Event Player.CurrentCP += 1;
 		End;
+		"Don't respawn player on last checkpoint of the level"
+		disabled If(Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]));
 		Call Subroutine(RespawnPlayer);
+		disabled End;
 	}
 }
 
@@ -1041,7 +1068,9 @@ rule("R -> Quick Reset")
 
 	actions
 	{
+		Event Player.BlockArriveAtNextPoint = True;
 		Call Subroutine(RespawnPlayer);
+		Event Player.BlockArriveAtNextPoint = False;
 	}
 }
 
