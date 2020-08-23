@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Parkour: Multi-Hero Edition by WelkinTern. Select a hero (Doomfist, Roadhog, Ana, Moira) at the start point, then select a level and use your abilities to get to the next checkpoint. Ability modifier help on the left side of screen. Sigma hero modifers from ReZero. Many checkpoints from Pioneer community. Workshop Code: VP3H4"
+		Description: "Doomfist Parkour: Multi-Hero Edition by WelkinTern. Select a hero (Doomfist, Roadhog, Ana, Moira) at the start point, then select a level and use your abilities to get to the next checkpoint. Ability modifier help on the left side of screen. This map uses many checkpoints from Pioneer community and attempts to minimize usage of existing Rialto checkpoints. Workshop Code: VP3H4"
 	}
 
 	modes
@@ -170,16 +170,16 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			"Ana Level 2"), Custom String("Moira Level 2"), Custom String("Doomfist Level 3"), Custom String("Roadhog Level 3"),
 			Custom String("Ana Level 3"), Custom String("Moira Level 3"), Custom String("Doomfist Level 4"), Custom String(
 			"Roadhog Level 4"), Custom String("Ana Level 4"), Custom String("Moira Level 4"), Custom String("Doomfist Level 5"),
-			Custom String("Doomfist Canal Level"), Custom String("Doomfist Off Map"));
+			Custom String("Doomfist Canal Level"), Custom String("Doomfist Off Map"), Custom String("Doomfist Leftovers"));
 		Global.LevelDescriptions = Array(Null, Custom String("Easy"), Custom String("Intro"), Custom String("Intro"), Custom String(
 			"Intro"), Custom String("Medium"), Custom String("Medium"), Custom String("Medium"), Custom String("Medium"), Custom String(
 			" Hard"), Custom String("Hard"), Custom String("Hard"), Custom String("Hard"), Custom String("Very Hard"), Custom String(
 			"Very Hard"), Custom String("Very Hard"), Custom String("Very Hard"), Custom String("Craziness From Pioneer"), Custom String(
-			"I Hope You Like Boats"), Custom String("So You Think You Know Stalls?"));
+			"I Hope You Like Boats"), Custom String("So You Think You Know Stalls?"), Custom String("Very Hard"));
 		"Set heros for each level, index zero is origin point"
 		Global.LevelHeros = Array(Hero(Doomfist), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog),
 			Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(Moira), Hero(Doomfist), Hero(Roadhog), Hero(Ana), Hero(
-			Moira), Hero(Doomfist), Hero(Doomfist), Hero(Doomfist));
+			Moira), Hero(Doomfist), Hero(Doomfist), Hero(Doomfist), Hero(Doomfist));
 		"Add to this array the level numbers of levels you want to have ability limits on"
 		Global.LevelsWithLimitedAbilityCounts = Array(18);
 		"Set the starting position when the player loads into the game"
@@ -264,12 +264,12 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts[12] = Array(Null, Vector(0, 1, 0), Vector(0, 1, 0), Vector(0, 0, 1), Vector(0, 1, 0), Vector(0, 0,
 			1), Vector(0, 0, 1), Vector(0, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 13 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[13] = Array(Null, Vector(64.532, 6.250, -40.387), Vector(-77.100, 4.250, -126.112), Vector(-36.291, 6.289,
-			-76.113), Vector(83.923, 5.448, -11.755), Vector(20.178, -0.375, -13.382), Vector(15.481, -0.696, -75.174), Vector(29.361,
-			0.248, -86.335), Vector(34.451, 7.250, -85.951), Vector(1.450, 7.250, -72.604), Vector(-26.881, 5.493, -103.545), Vector(
-			62.795, 3.244, -60.486), Vector(103.051, 2.428, -21.095));
+		Global.CPLocations[13] = Array(Null, Vector(43.084, 0.248, -10.600), Vector(-77.100, 4.250, -126.112), Vector(-36.291, 6.289,
+			-76.113), Vector(83.923, 5.448, -11.755), Vector(20.178, -0.375, -13.382), Vector(15.481, -0.696, -75.174), Vector(34.451,
+			7.250, -85.951), Vector(1.450, 7.250, -72.604), Vector(-26.881, 5.493, -103.545), Vector(62.657, 3.225, -60.803), Vector(
+			103.051, 2.428, -21.095));
 		Global.CPPunchUpperSlamCounts[13] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 0), Vector(1, 0, 1), Vector(1, 0,
-			1), Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 1, 1), Vector(1, 0, 1), Vector(1, 1, 0), Vector(1, 0, 0), Vector(1, 1, 1));
+			1), Vector(1, 0, 1), Vector(0, 1, 1), Vector(1, 0, 1), Vector(1, 1, 0), Vector(1, 0, 0), Vector(1, 1, 1));
 		"--------------Set Level 14 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[14] = Array(Null, Vector(348.019, -21.940, -33.351));
 		Global.CPPunchUpperSlamCounts[14] = Array(Null, Vector(1, 1, 1));
@@ -284,13 +284,13 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		"--------------Set Level 17 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[17] = Array(Null, Vector(100.626, -0.100, -59.070), Vector(96.628, 7.250, -33.417), Vector(42.712, 1.250,
 			-48.064), Vector(38.955, 4.095, -47.063), Vector(11.238, 1.250, -48.593), Vector(0.973, 7.250, -51.721), Vector(20.326, -0.122,
-			-12.712), Vector(62.864, 3.231, -60.388), Vector(95.600, 0.250, -30.278), Vector(-44.377, 2.265, -65.303), Vector(-22.678,
-			0.248, -38.557));
+			-12.712), Vector(62.864, 3.231, -60.388), Vector(95.600, 0.250, -30.278), Vector(-44.377, 2.265, -65.303), Vector(-22.007,
+			0.248, -38.748));
 		Global.CPPunchUpperSlamCounts[17] = Array(Null, Vector(1, 0, 0), Vector(1, 0, 0), Vector(0, 0, 0), Vector(1, 1, 1), Vector(1, 0,
 			1), Vector(0, 1, 0), Vector(1, 0, 1), Vector(1, 0, 0), Vector(1, 1, 0), Vector(0, 1, 0), Vector(1, 1, 1));
 		"--------------Set Level 18 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[18] = Array(Null, Vector(28.317, 1.558, -73.882), Vector(22.451, 4.164, -75.798), Vector(-15.795, 1.250,
-			-79.185), Vector(34.673, 7.248, -77.924), Vector(27.400, -0.781, -53.959), Vector(15.646, -0.922, -73.562), Vector(8.472,
+			-79.185), Vector(34.673, 7.248, -77.924), Vector(13.869, -0.238, -61.052), Vector(15.646, -0.922, -73.562), Vector(8.472,
 			1.100, -54.827), Vector(29.435, 3.249, -39.804), Vector(34.675, 7.250, -85.935), Vector(14.395, -0.046, -59.975), Vector(
 			55.125, 5.240, -87.430), Vector(10.521, 1.250, -77.487), Vector(30.159, 0.250, -90.922), Vector(1.443, 7.250, -72.258), Vector(
 			20.372, -0.063, -13.028), Vector(80.121, 0.250, -25.492), Vector(80.242, 1.245, -52.485), Vector(-108.555, -0.979, -58.900),
@@ -299,7 +299,7 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			0), Vector(1, 0, 0), Vector(0, 2, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(3, 1, 1), Vector(2, 0, 0), Vector(0, 3, 0),
 			Vector(1, 0, 0), Vector(1, 2, 0), Vector(9, 9, 0), Vector(0, 3, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 19 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[19] = Array(Null, Vector(39.989, 3.630, -31.791), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
+		Global.CPLocations[19] = Array(Null, Vector(-53.273, 1.566, -61.560), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
 			-133.650), Vector(-27.110, 3.250, -133.603), Vector(-15.738, 4.250, -86.475), Vector(-4.372, 18.247, 0.788), Vector(25.515,
 			-0.896, 27.851), Vector(-10.232, 0.889, 48.579), Vector(82.594, 2.925, 52.756), Vector(-42.306, -0.459, -7.170), Vector(13.890,
 			-0.433, 39.303), Vector(-42.089, -0.506, -6.698), Vector(-1.840, 17.344, -20.191), Vector(-42.384, -0.516, -5.926), Vector(
@@ -307,6 +307,11 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts[19] = Array(Null, Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1,
 			1), Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 0, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1),
 			Vector(0, 1, 0), Vector(1, 1, 0), Vector(1, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1));
+		"--------------Set Level 20 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[20] = Array(Null, Vector(89.171, -0.170, -34.802), Vector(64.386, 6.250, -39.676), Vector(-18.340, 3.771,
+			-39.382), Vector(-0.637, 7.250, -41.219), Vector(-75.795, 3.250, -100.606));
+		Global.CPPunchUpperSlamCounts[20] = Array(Null, Vector(0, 1, 1), Vector(1, 0, 0), Vector(0, 0, 1), Vector(1, 0, 0), Vector(1, 1,
+			1));
 		"Autogenerate checkpoint facing, radii, and other variables based on CPLocations"
 		Call Subroutine(AutogenerateMapVariables);
 		"Override autogenerated variables based on rule right below this one"
@@ -345,6 +350,7 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 		"------------------Use this code block to set Level 13 modifiers------------------"
 		If(Global.LevelIterator == 13);
 			Global.TempUltimate360MaxSlam[4] = Vector(1, 0, 1);
+			Global.TempRadii[6] = 4;
 		End;
 		"------------------Use this code block to set Level 17 modifiers------------------"
 		If(Global.LevelIterator == 17);
@@ -563,12 +569,12 @@ rule("Initialize Global HUD and Effects")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(" \r\n "), Left, 1, White, White, White, Visible To and String,
 			Default Visibility);
 		"Top Scores HUD"
-		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Custom String("Top Scores"),
+		disabled Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Custom String("Top Scores"),
 			Null, Null, Right, 0, White, White, Green, Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
 			"{0}", Global.TopScoreString), Right, 1, White, White, Green, Visible To and String, Default Visibility);
 		"All Scores HUD"
-		Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Custom String("All Scores"),
+		disabled Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Custom String("All Scores"),
 			Null, Null, Right, 4, White, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Null, Null, Custom String(
 			"{0}", Global.AllScoreString), Right, 5, White, White, White, Visible To and String, Default Visibility);
@@ -963,27 +969,6 @@ rule("Respawn If Touched Ground Not On Checkpoints")
 	}
 }
 
-rule("Level End Boss Notification (for fun)")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Event Player.CurrentLevel > 0;
-		Event Player.CurrentCP + 2 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
-	}
-
-	actions
-	{
-		Big Message(Event Player, Custom String("Level End Boss!"));
-	}
-}
-
 rule("Finished Level")
 {
 	event
@@ -1041,6 +1026,27 @@ rule("Respawn Player If They Die")
 		Respawn(Event Player);
 		Wait(0.100, Ignore Condition);
 		Call Subroutine(RespawnPlayer);
+	}
+}
+
+disabled rule("Level End Boss Notification (for fun)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentLevel > 0;
+		Event Player.CurrentCP + 2 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
+	}
+
+	actions
+	{
+		Big Message(Event Player, Custom String("Level End Boss!"));
 	}
 }
 
@@ -1262,10 +1268,12 @@ rule("Hello + Interact -> Free Roam")
 		If(Event Player.FreeRoamEnabled);
 			"Respawn the player so they can't free roam into next checkpoint, then turn off free roam"
 			Call Subroutine(RespawnPlayer);
+			Event Player.FreeRoamEnabled = False;
+			"Then reset abilities"
+			Call Subroutine(RespawnPlayer);
 			If(Event Player.LevelTimer > 0 && Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]));
 				Chase Player Variable At Rate(Event Player, LevelTimer, 9999, 1, Destination and Rate);
 			End;
-			Event Player.FreeRoamEnabled = False;
 			Small Message(Event Player, Custom String("Free Roam Disabled"));
 		Else;
 			Event Player.FreeRoamEnabled = True;
@@ -1348,28 +1356,6 @@ rule("Teleport Enabled with Melee + Left Click if done with level, free roam ena
 	{
 		Teleport(Event Player, Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player) + 60 * Facing Direction Of(
 			Event Player), All Players(All Teams), Event Player, True));
-	}
-}
-
-disabled rule("Can Melee Cancel Slam")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Doomfist;
-	}
-
-	conditions
-	{
-		Is Using Ability 2(Event Player) == True;
-		Is Button Held(Event Player, Melee) == True;
-	}
-
-	actions
-	{
-		Cancel Primary Action(Event Player);
-		Small Message(Event Player, Custom String("Testing melee slam cancel"));
 	}
 }
 
@@ -1603,36 +1589,36 @@ rule("Subroutine 5: UpdateTopScoreboard")
 	actions
 	{
 		"Create TOP Scoreboard String"
-		Event Player.TopScoreboardString = Custom String("");
+		Event Player.TopScoreboardString = Custom String("---------------------------- Top Scores ----------------------------");
 		For Player Variable(Event Player, X, Count Of(Global.TopScoreTimes) - 1, -1, -1);
 			If(Global.TopScoreTimes[Event Player.X] < 9999);
-				If(Event Player.TopScoreboardString == Custom String(""));
-					Event Player.TopScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X],
-						Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]);
-				Else;
-					Event Player.TopScoreboardString = Custom String("{0}\r\n{1}", Event Player.TopScoreboardString, Custom String("{0} - {1} {2}",
-						Global.LevelNames[Event Player.X], Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]));
-				End;
+				disabled If(Event Player.TopScoreboardString == Custom String(""));
+				disabled Event Player.TopScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X],
+					Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]);
+				disabled Else;
+				Event Player.TopScoreboardString = Custom String("{0}\r\n{1}", Event Player.TopScoreboardString, Custom String("{0} - {1} {2}",
+					Global.LevelNames[Event Player.X], Global.TopScorePlayer[Event Player.X + 0], Global.TopScoreTimes[Event Player.X + 0]));
+				disabled End;
 			End;
 		End;
 		Global.TopScoreString = Event Player.TopScoreboardString;
 		"Create All Scoreboard String"
-		Event Player.AllScoreboardString = Custom String("");
+		Event Player.AllScoreboardString = Custom String("---------------------------- All Scores ----------------------------");
 		For Player Variable(Event Player, X, Count Of(Global.TopScoreTimes) - 1, -1, -1);
 			For Player Variable(Event Player, Y, 0, Count Of(All Players(All Teams)), 1);
 				If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] < 9999);
-					If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] > 0);
-						If(Event Player.AllScoreboardString == Custom String(""));
-							Event Player.AllScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X], All Players(All Teams)
-								[Event Player.Y], All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X]);
-						Else;
-							Event Player.AllScoreboardString = Custom String("{0}\r\n{1}", Event Player.AllScoreboardString, Custom String("{0} - {1} {2}",
-								Global.LevelNames[Event Player.X], All Players(All Teams)[Event Player.Y], All Players(All Teams)
-								[Event Player.Y].TopPersonalScores[Event Player.X]));
-						End;
-					End;
+					disabled If(All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X] > 0);
+					disabled If(Event Player.AllScoreboardString == Custom String(""));
+					disabled Event Player.AllScoreboardString = Custom String("{0} - {1} {2}", Global.LevelNames[Event Player.X], All Players(All Teams)
+						[Event Player.Y], All Players(All Teams)[Event Player.Y].TopPersonalScores[Event Player.X]);
+					disabled Else;
+					Event Player.AllScoreboardString = Custom String("{0}\r\n{1}", Event Player.AllScoreboardString, Custom String("{0} - {1} {2}",
+						Global.LevelNames[Event Player.X], All Players(All Teams)[Event Player.Y], All Players(All Teams)
+						[Event Player.Y].TopPersonalScores[Event Player.X]));
+					disabled End;
 				End;
 			End;
+		End;
 		End;
 		Global.AllScoreString = Event Player.AllScoreboardString;
 	}
