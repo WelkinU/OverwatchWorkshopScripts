@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Parkour Illios! MultiLevel Framework with meteor strike, view next point ability, spectate mode, ability limit levels, 360's and max slam detectors by WelkinTern. Make a Pull Request on the code repository: https://github.com/WelkinU/OverwatchWorkshopScripts/tree/master/DoomfistParkourMultilevelFramework"
+		Description: "Doomfist Parkour Illios! MultiLevel Framework with meteor strike, ability limit levels, 360's and max slam detectors by WelkinTern. Make a Pull Request on the code repository: https://github.com/WelkinU/OverwatchWorkshopScripts/tree/master/DoomfistParkourMultilevelFramework"
 	}
 
 	modes
@@ -30,7 +30,7 @@ settings
 		{
 			Doomfist
 			{
-				Seismic Slam Cooldown Time: 66%
+				Seismic Slam Cooldown Time: 50%
 			}
 
 			enabled heroes
@@ -125,10 +125,11 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPPunchUpperSlamCounts = Array(Array(Vector(0, 1, 1)));
 		"--------------Set Level 1 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[1] = Array(Null, Vector(330.406, -13.468, -59.449), Vector(320.344, -19.130, -67.381), Vector(340.852, -17.142,
-			-31.094), Vector(374.400, -25.456, -0.206), Vector(349.785, -24.119, 22.751), Vector(332.640, -19.241, 11.032), Vector(325.261,
-			-23.196, -4.375));
-		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 0), Vector(1, 1, 1),
-			Vector(0, 1, 1), Vector(1, 1, 1));
+			-31.094), Vector(374.400, -25.456, -0.206), Vector(349.785, -24.119, 22.751), Vector(332.640, -19.241, 11.032), Vector(331.807,
+			-15.504, 9.075), Vector(325.261, -23.196, -4.375), Vector(330.713, -17.234, -16.812), Vector(325.305, -16.154, -29.197),
+			Vector(352.807, -16.351, -49.285), Vector(355.443, -14.362, -50.529));
+		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 0),
+			Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 0, 1), Vector(1, 1, 1), Vector(0, 0, 0), Vector(1, 1, 1));
 		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[2] = Array(Null, Vector(327.667, -13.280, -44.683), Vector(300.220, -16.160, -44.800), Vector(331.404, -17.101,
 			-17.060), Vector(355.572, -14.360, -50.583), Vector(371.751, -25.259, -42.809), Vector(324.158, -16.155, -29.186), Vector(
@@ -230,11 +231,13 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		"--------------Set Level 13 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[13] = Array(Null, Vector(351.570, -17.142, -24.945), Vector(371.751, -26.142, -1.772), Vector(356.935, -22.625,
 			4.063), Vector(359.344, -12.094, 4.492), Vector(357.436, -23.260, -33.211), Vector(345.893, -15.032, -11.093), Vector(369.154,
-			-25.480, -12.922), Vector(-65.593, 67.366, -180.277), Vector(-64.115, 62.880, -143.219), Vector(-31.888, 70.018, -162.711),
-			Vector(-31.648, 70.017, -150.521), Vector(15.604, 70.007, -163.736));
+			-25.480, -12.922), Vector(320.433, -22.628, -11.960), Vector(300.906, -13.359, -47.375), Vector(-65.593, 67.366, -180.277),
+			Vector(-64.115, 62.880, -143.219), Vector(-31.888, 70.018, -162.711), Vector(-31.648, 70.017, -150.521), Vector(15.604, 70.007,
+			-163.736));
 		Global.CPPunchUpperSlamCounts[13] = Array(Null, Vector(0, 2, 0), Vector(0, 0, 1), Vector(0, 2, 0), Vector(0, 1, 0), Vector(1, 0,
-			1), Vector(0, 0, 0), Vector(1, 1, 1), Vector(0, 2, 1), Vector(1, 2, 0), Vector(0, 0, 0), Vector(0, 3, 3), Vector(1, 1, 1));
-		"--------------Set Level 15 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+			1), Vector(0, 0, 0), Vector(2, 0, 0), Vector(0, 4, 3), Vector(1, 1, 1), Vector(0, 2, 1), Vector(1, 2, 0), Vector(0, 0, 0),
+			Vector(0, 3, 3), Vector(1, 1, 1));
+		"--------------Set Level 14 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[14] = Array(Null, Vector(342.636, -24.082, 34.731), Vector(272.810, -15.309, -69.499), Vector(359.351, -11.949,
 			4.793), Vector(122.571, 66.890, -181.208), Vector(-65.024, 67.175, -180.594), Vector(122.571, 66.890, -181.208), Vector(
 			-178.453, 1.023, -91.238), Vector(-280.805, 1.710, 7.200), Vector(-169.021, -2.665, -60.788));
@@ -269,7 +272,7 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 		"------------------Use this code block to set Level 1 modifiers------------------"
 		If(Global.LevelIterator == 1);
 			"Use this code to make them do a 360 max-slam on CP 6"
-			Global.TempUltimate360MaxSlam[6] = Vector(0, 1, 1);
+			Global.TempUltimate360MaxSlam[7] = Vector(0, 1, 0);
 			disabled Global.TempUltimate360MaxSlam[13] = Vector(0, 1, 0);
 		End;
 		"------------------Use this code block to set Level 2 modifiers------------------"
@@ -355,7 +358,7 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 		End;
 		"------------------Use this code block to set Level 13 modifiers------------------"
 		If(Global.LevelIterator == 13);
-			Global.TempTeleport[7] = True;
+			Global.TempTeleport[9] = True;
 			Global.TempFacing[3] = Vector(-0.340, 0, 0.940);
 		End;
 		"------------------Use this code block to set Level 14 modifiers------------------"
