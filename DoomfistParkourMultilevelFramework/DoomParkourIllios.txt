@@ -558,37 +558,6 @@ rule("Initialize Player HUD and Effects")
 	}
 }
 
-disabled rule("Map Building Convenience Features - COMMENT THESE WHEN DEPLOYING MAP")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-}
-
-disabled rule("Map Building HUD")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	actions
-	{
-		Create HUD Text(Event Player, Custom String("Position {0}\r\nFacing {1}\r\nAltitude {2}", Position Of(Event Player),
-			Facing Direction Of(Event Player), Altitude Of(Event Player)), Null, Null, Right, 0, White, White, White,
-			Visible To and String, Default Visibility);
-		Create HUD Text(All Players(All Teams), Custom String("RayCastAltitude: {0}", Distance Between(Position Of(Event Player),
-			Ray Cast Hit Position(Position Of(Event Player) + Vector(0, 0.100, 0), Position Of(Event Player) + Vector(0, -10, 0),
-			All Players(All Teams), Event Player, True))), Null, Null, Right, 1, White, White, White, Visible To and String,
-			Default Visibility);
-	}
-}
-
 disabled rule("Multi-Level Framework")
 {
 	event
@@ -608,12 +577,12 @@ rule("Enter Into Level")
 
 	conditions
 	{
-		Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player)) < 2)) > 0;
 		Is On Ground(Event Player) == True;
 		Event Player.CurrentCP == 0;
 		Has Spawned(Event Player) == True;
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
+		Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player)) < 2)) > 0;
 	}
 
 	actions
@@ -640,15 +609,15 @@ rule("Respawn If Touched Ground Not On Level Entry Point")
 
 	conditions
 	{
-		Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player)) < 2)) == 0;
 		Is On Ground(Event Player) == True;
 		Event Player.CurrentCP == 0;
 		Has Spawned(Event Player) == True;
+		"Disable this rule if Free Roam Mode enabled"
+		Event Player.FreeRoamEnabled == False;
 		"Not on current checkpoint"
 		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
 			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
-		"Disable this rule if Free Roam Mode enabled"
-		Event Player.FreeRoamEnabled == False;
+		Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player)) < 2)) == 0;
 	}
 
 	actions
@@ -668,11 +637,11 @@ rule("Start Timer When Player Leaves Origin Point")
 
 	conditions
 	{
-		Distance Between(Position Of(Event Player), Global.CPLocations[0][0]) > Global.CPRadii[0][0];
 		Event Player.CurrentCP <= 0;
 		Has Spawned(Event Player) == True;
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
+		Distance Between(Position Of(Event Player), Global.CPLocations[0][0]) > Global.CPRadii[0][0];
 	}
 
 	actions
@@ -695,18 +664,18 @@ rule("Arrived At Next Checkpoint")
 
 	conditions
 	{
-		"Within range of next checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
-			< Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		"Player has selected a level"
 		Event Player.CurrentCP > 0;
 		Is On Ground(Event Player) == True;
-		"Is not on last checkpoint in level"
-		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		Event Player.CurrentLevel > 0;
 		Event Player.BlockArriveAtNextPoint != True;
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
+		"Is not on last checkpoint in level"
+		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
+		"Within range of next checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
+			< Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 	}
 
 	actions
@@ -750,12 +719,6 @@ rule("Respawn If Touched Ground Not On Checkpoints")
 
 	conditions
 	{
-		"Not on current checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
-			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
-		"Not within range of next checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
-			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		"Player has selected a level"
 		Event Player.CurrentCP > 0;
 		Is On Ground(Event Player) == True;
@@ -763,6 +726,12 @@ rule("Respawn If Touched Ground Not On Checkpoints")
 		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
+		"Not on current checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
+			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
+		"Not within range of next checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
+			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 	}
 
 	actions
@@ -808,11 +777,11 @@ rule("Finished Level")
 
 	conditions
 	{
-		"Is on last checkpoint in level"
-		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		Event Player.CurrentCP > 0;
 		Event Player.CurrentLevel > 0;
 		Event Player.LevelTimer > 0;
+		"Is on last checkpoint in level"
+		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 	}
 
 	actions
@@ -1159,28 +1128,6 @@ rule("Teleport Enabled with Melee + Left Click if done with level, free roam ena
 	}
 }
 
-disabled rule("Can Melee Cancel Slam")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Doomfist;
-	}
-
-	conditions
-	{
-		Is Using Ability 2(Event Player) == True;
-		Is Button Held(Event Player, Melee) == True;
-	}
-
-	actions
-	{
-		Cancel Primary Action(Event Player);
-		Small Message(Event Player, Custom String("Testing melee slam cancel"));
-	}
-}
-
 disabled rule("Subroutines")
 {
 	event
@@ -1200,7 +1147,7 @@ rule("Subroutine 0: RespawnPlayer")
 	actions
 	{
 		Disallow Button(Event Player, Interact);
-		Disallow Button(Event Player, Secondary Fire);
+		disabled Disallow Button(Event Player, Secondary Fire);
 		Disallow Button(Event Player, Ultimate);
 		Disallow Button(Event Player, Ability 1);
 		Disallow Button(Event Player, Ability 2);
@@ -1250,7 +1197,7 @@ rule("Subroutine 0: RespawnPlayer")
 		"Redundant, but just in case"
 		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
 		Event Player.Count360Slam125 = Vector(0, 0, 0);
-		Allow Button(Event Player, Secondary Fire);
+		disabled Allow Button(Event Player, Secondary Fire);
 		Allow Button(Event Player, Ability 1);
 		Allow Button(Event Player, Ability 2);
 		Allow Button(Event Player, Ultimate);
