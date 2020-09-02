@@ -9,4 +9,4 @@
 ## Doomfist Multi-Hero Maps
 | Map | Workshop Code | Heros | Comments |
 | :- | :- | :- | :- |
-| Rialto | VP3H4 | Doomfist, Roadhog, Ana, Moira | 20 Levels, 4 Levels For Each Hero, Doomfist has extra cool levels |
+| Rialto | VP3H4 | Doomfist, Roadhog, Ana, Moira | 20 Levels, 4 Levels For Each Hero, Doomfist has extra cool levels. Framework also supports Winston and Sigma |
