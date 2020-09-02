@@ -1,5 +1,16 @@
 # OverwatchWorkshopScripts
 
+## Doomfist Parkour Maps
+| Map | Workshop Code | Comments
+| :- | :- | :- |
+| Illios | 7RDMK | 14 Levels, 180+ Checkpoints |
+| Busan Stadium (Lucioball) | 55ESWS | 5 Levels, Only Available During Summer Games Event |
+
+## Doomfist Multi-Hero Maps
+| Map | Workshop Code | Heros | Comments |
+| :- | :- | :- | :- |
+| Rialto | VP3H4 | Doomfist, Roadhog, Ana, Moira | 20 Levels, 4 Levels For Each Hero, Doomfist has extra cool levels |
+
 ### Doomfist Pioneering Parkour - MultiLevel Edition (Workshop Code: KN199P)
 Version of Doomfist Parkour that lets users create their own levels and level checkpoints. Different levels have different built-in constraints. Multi-Hero level included as well as a huge number of convenience features! 
 <img src="https://user-images.githubusercontent.com/47000850/85912875-d6687400-b7fd-11ea-8730-0af198745d6c.png" alt="image" width="630"/>
