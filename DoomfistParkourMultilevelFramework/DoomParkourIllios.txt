@@ -112,11 +112,12 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.LevelNames = Array(Null, Custom String("Level 1"), Custom String("Level 1.5"), Custom String("Level 2.5"), Custom String(
 			"Level 3"), Custom String("Level 3.5"), Custom String("Level 4"), Custom String("Level 5"), Custom String("Level 6"),
 			Custom String("Level 7"), Custom String("Slam Only Ruins"), Custom String("Slam Only Well"), Custom String(
-			"Slam Only Lighthouse"), Custom String("Level 5.5"), Custom String("Cross Map"));
+			"Slam Only Lighthouse 2"), Custom String("Level 5.5"), Custom String("Slam Only Lighthouse 1"), Custom String("Cross Map"),
+			Custom String("Uppercut Challenge"));
 		Global.LevelDescriptions = Array(Null, Custom String("Easy"), Custom String("Easy"), Custom String("Gimmicky"), Custom String(
 			"Medium"), Custom String("Hard"), Custom String("Harder"), Custom String("Very Hard"), Custom String("Very Hard"),
 			Custom String("Extreme"), Custom String("Speedrun"), Custom String("Hard"), Custom String("Extreme"), Custom String(
-			"Very Hard"), Custom String("If You Dare"));
+			"Very Hard"), Custom String("Very Hard"), Custom String("If You Dare"), Custom String("Extreme"));
 		"Add to this array the level numbers of levels you want to have ability limits on"
 		Global.LevelsWithLimitedAbilityCounts = Array(8, 13);
 		"Set the starting position when the player loads into the game"
@@ -127,9 +128,10 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 		Global.CPLocations[1] = Array(Null, Vector(330.406, -13.468, -59.449), Vector(320.344, -19.130, -67.381), Vector(340.852, -17.142,
 			-31.094), Vector(374.400, -25.456, -0.206), Vector(349.785, -24.119, 22.751), Vector(332.640, -19.241, 11.032), Vector(331.807,
 			-15.504, 9.075), Vector(325.261, -23.196, -4.375), Vector(330.713, -17.234, -16.812), Vector(325.305, -16.154, -29.197),
-			Vector(352.807, -16.351, -49.285), Vector(355.443, -14.362, -50.529));
+			Vector(352.807, -16.351, -49.285), Vector(355.443, -14.362, -50.529), Vector(371.072, -25.617, -57.070));
 		Global.CPPunchUpperSlamCounts[1] = Array(Null, Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 0),
-			Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 0, 1), Vector(1, 1, 1), Vector(0, 0, 0), Vector(1, 1, 1));
+			Vector(0, 1, 0), Vector(0, 0, 1), Vector(1, 1, 0), Vector(0, 0, 1), Vector(1, 1, 1), Vector(0, 0, 0), Vector(0, 0, 1), Vector(
+			1, 1, 1));
 		"--------------Set Level 2 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
 		Global.CPLocations[2] = Array(Null, Vector(327.667, -13.280, -44.683), Vector(300.220, -16.160, -44.800), Vector(331.404, -17.101,
 			-17.060), Vector(355.572, -14.360, -50.583), Vector(371.751, -25.259, -42.809), Vector(324.158, -16.155, -29.186), Vector(
@@ -238,11 +240,24 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			1), Vector(0, 0, 0), Vector(2, 0, 0), Vector(0, 4, 3), Vector(1, 1, 1), Vector(0, 2, 1), Vector(1, 2, 0), Vector(0, 0, 0),
 			Vector(0, 3, 3), Vector(1, 1, 1));
 		"--------------Set Level 14 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[14] = Array(Null, Vector(342.636, -24.082, 34.731), Vector(272.810, -15.309, -69.499), Vector(359.351, -11.949,
+		Global.CPLocations[14] = Array(Null, Vector(301.556, -13.148, -40.967), Vector(309.598, -17.489, -57.545), Vector(318.890, -19.189,
+			-71.881), Vector(318.932, -18.763, -52.982), Vector(317.739, -16.154, -43.747), Vector(306.879, -16.485, -55.864), Vector(
+			327.753, -13.271, -45.086), Vector(306.617, -16.485, -56.247), Vector(297.726, -14.662, -45.929), Vector(315.168, -12.182,
+			-59.564), Vector(335.443, -21.398, -97.122));
+		Global.CPPunchUpperSlamCounts[14] = Array(Null, Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0,
+			1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(0, 0, 1), Vector(1, 1, 1));
+		"--------------Set Level 15 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[15] = Array(Null, Vector(342.636, -24.082, 34.731), Vector(272.810, -15.309, -69.499), Vector(359.351, -11.949,
 			4.793), Vector(122.571, 66.890, -181.208), Vector(-65.024, 67.175, -180.594), Vector(122.571, 66.890, -181.208), Vector(
 			-178.453, 1.023, -91.238), Vector(-280.805, 1.710, 7.200), Vector(-169.021, -2.665, -60.788));
-		Global.CPPunchUpperSlamCounts[14] = Array(Null, Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 1, 0), Vector(1, 1,
+		Global.CPPunchUpperSlamCounts[15] = Array(Null, Vector(1, 0, 0), Vector(0, 1, 0), Vector(1, 1, 1), Vector(1, 1, 0), Vector(1, 1,
 			1), Vector(1, 1, 1), Vector(1, 0, 0), Vector(0, 1, 1), Vector(1, 1, 1));
+		"--------------Set Level 16 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
+		Global.CPLocations[16] = Array(Null, Vector(330.988, -19.239, 9.717), Vector(312.638, -13.359, -18.919), Vector(300.815, -13.357,
+			-47.543), Vector(312.690, -13.359, -19.054), Vector(359.224, -11.948, 4.651), Vector(331.440, -13.292, -35.170), Vector(
+			287.269, -24.044, -101.277));
+		Global.CPPunchUpperSlamCounts[16] = Array(Null, Vector(0, 1, 0), Vector(0, 1, 0), Vector(0, 1, 0), Vector(0, 1, 0), Vector(0, 1,
+			0), Vector(0, 1, 0), Vector(1, 1, 1));
 		"Autogenerate checkpoint facing, radii, and other variables based on CPLocations"
 		Call Subroutine(AutogenerateMapVariables);
 		"Override autogenerated variables based on rule right below this one"
@@ -361,8 +376,8 @@ rule("-------------OVERRIDE AUTO-GENERATED CP RADII / FACING, SET TELEPORTS, ULT
 			Global.TempTeleport[9] = True;
 			Global.TempFacing[3] = Vector(-0.340, 0, 0.940);
 		End;
-		"------------------Use this code block to set Level 14 modifiers------------------"
-		If(Global.LevelIterator == 14);
+		"------------------Use this code block to set Level 15 modifiers------------------"
+		If(Global.LevelIterator == 15);
 			Global.TempTeleport[3] = True;
 			Global.TempUltimate360MaxSlam[4] = Vector(1, 0, 0);
 			Global.TempTeleport[6] = True;
