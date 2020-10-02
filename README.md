@@ -9,7 +9,7 @@
 ## Doomfist Multi-Hero Maps
 | Map | Workshop Code | Heros | Comments |
 | :- | :- | :- | :- |
-| Rialto | VP3H4 | Doomfist, Roadhog, Ana, Moira | 20 Levels, 4 Levels For Each Hero, Doomfist has extra cool levels |
+| Rialto | VP3H4 | Doomfist, Roadhog, Ana, Moira | 20 Levels, 4 Levels For Each Hero, Doomfist has extra cool levels. Framework also supports Winston and Sigma |
 
 ### Doomfist Pioneering Parkour - MultiLevel Edition (Workshop Code: KN199P)
 Version of Doomfist Parkour that lets users create their own levels and level checkpoints. Different levels have different built-in constraints. Multi-Hero level included as well as a huge number of convenience features! 
