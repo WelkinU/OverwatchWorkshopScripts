@@ -5,6 +5,12 @@ settings
 		Description: "Doomfist Pioneering Parkour - MultiLevel Edition v1.0! Have multiple Pioneer Parkour Levels running, each with different rules. Supports multi-hero levels, with Sigma (by ReZero), Ana, Winston, Roadhog, and more! Made by WelkinTern.   Level 1: Pioneer Timer  Level 2: No Restriction  Level 3: Ability Restrictions, 360 detector, and 125 Slam detector  Source Control: https://github.com/WelkinU/OverwatchWorkshopScripts"
 	}
 
+	lobby
+	{
+		Max Team 1 Players: 12
+		Max Team 2 Players: 0
+	}
+
 	modes
 	{
 		Capture the Flag
@@ -12,7 +18,6 @@ settings
 			enabled maps
 			{
 				Ayutthaya
-				Busan Downtown Lunar New Year
 			}
 		}
 
@@ -223,7 +228,8 @@ rule("Initialize Global Variables")
 		Disable Built-In Game Mode Completion;
 		"If you want to add an extra level type to the game mode, just add a description here and that's it!"
 		Global.LevelDescriptions = Array(Custom String("Free Roam"), Custom String("Level 1: Easy"), Custom String("Level 2: Medium"),
-			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Sigma Parkour"));
+			Custom String("Level 3: Expert"), Custom String("Level 4: Multi-Hero"), Custom String("Level 5: Sigma Parkour"), Custom String(
+			"Level 6: Tiny Doomfist"));
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		"Global constant for checkpoint circle radius"
 		Global.CPRadius = 2;
@@ -1957,6 +1963,49 @@ rule("Level 5: Sigma Parkour Modifier")
 		Event Player.sigma_barrier_ON = False;
 		Wait(0.016, Ignore Condition);
 		Start Forcing Player To Be Hero(Event Player, Hero(Sigma));
+	}
+}
+
+rule("Level 6: Tiny Doomfist Modifier")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.CurrentLevel == 6;
+		Event Player.CurrentCP > 0;
+	}
+
+	actions
+	{
+		Start Scaling Player(Event Player, 0.100, False);
+		Start Modifying Hero Voice Lines(Event Player, 3, False);
+	}
+}
+
+rule("Level 6: Tiny Doomfist Part 2")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player.CurrentLevel != 6 || Event Player.CurrentCP == 0) == True;
+	}
+
+	actions
+	{
+		Start Scaling Player(Event Player, 1, False);
+		Start Modifying Hero Voice Lines(Event Player, 1, False);
 	}
 }
 
