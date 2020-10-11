@@ -135,8 +135,8 @@ settings
 
 	workshop
 	{
-		Pioneer Time Limit in Seconds: 90
-		Time Before Player Can Skip Level: 60
+		Player Size Tiny Doom = 0.1 Normal = 1 Massive Doom = 6: 0.100
+		Time Before Player Can Skip Level: 180
 	}
 }
 
@@ -148,6 +148,7 @@ variables
 		2: CPAbilityCounts
 		3: CPUltimateTeleportPrimary
 		4: CPFacingDirections
+		5: CPHeroList
 		6: GameStarted
 		7: PioneerTimer
 		9: MultiHeroEnabled
@@ -262,8 +263,9 @@ rule("Global HUD")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Quick Reset: Reload\r\nGo back a CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}", Custom String(
 			"Teleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
-			"Spectate Mode: Interact + Melee \r\nSkip Level (after 5 min): Interact + Need Healing Voiceline"), Custom String(
-			"Switch Hero (Multi-Hero Mode): Emote")), Left, 1, White, White, White, Visible To and String, Default Visibility);
+			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
+			Custom String("Switch Hero (Multi-Hero Mode Only): Emote")), Left, 1, White, White, White, Visible To and String,
+			Default Visibility);
 	}
 }
 
@@ -292,6 +294,11 @@ rule("Initialize player")
 		Disable Game Mode HUD(Event Player);
 		disabled Start Scaling Player(Event Player, Global.PlayerScaleConstant, True);
 		Event Player.TimeSpentOnCP = 0;
+		If(Global.PlayerScaleConstant < 0.700);
+			Start Modifying Hero Voice Lines(Event Player, 4, False);
+		Else If(Global.PlayerScaleConstant > 2);
+			Start Modifying Hero Voice Lines(Event Player, 0.500, False);
+		End;
 	}
 }
 
@@ -322,6 +329,17 @@ rule("Player HUD")
 		Create HUD Text(Filtered Array(Event Player, Event Player.TimeSpentOnCP > Global.SkipTimeLimit), Custom String(
 			"Have spent more than {0} sec on this CP.\r\nUse Interact + Need Healing Voiceline to skip CP.", Global.SkipTimeLimit), Null,
 			Null, Top, 1, Red, White, White, Visible To and String, Default Visibility);
+		"Create Ring, Text and Icon Effects"
+		Create Effect(Event Player, Ring, White, Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
+			Visible To Position and Radius);
+		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Purple,
+			Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
+		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP + 1]),
+			Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Do Not Clip, Visible To Position and String, Yellow,
+			Default Visibility);
+		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
+			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Yellow, True);
 	}
 }
 
@@ -362,6 +380,7 @@ rule("Create Origin Point")
 		Event Player.IsPioneer = True;
 		Global.GameStarted = True;
 		disabled Call Subroutine(RespawnPlayer);
+		Global.CPHeroList = Array(Hero Of(Event Player));
 	}
 }
 
@@ -382,15 +401,15 @@ rule("Game Started (origin point just created by host) - Create World Effects")
 	actions
 	{
 		"Create Ring, Text and Icon Effects"
-		Create Effect(Event Player, Ring, White, Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
+		disabled Create Effect(Event Player, Ring, White, Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
 			Visible To Position and Radius);
-		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Purple,
+		disabled Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Purple,
 			Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
-		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+		disabled Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
 			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP]),
 			Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Do Not Clip, Visible To Position and String, Yellow,
 			Default Visibility);
-		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
+		disabled Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
 			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Yellow, True);
 		"Restart player at origin point after it's created and start timer"
 		Call Subroutine(RespawnPlayer);
@@ -417,6 +436,8 @@ rule("Pioneer Create Point")
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
 		Event Player.BlockPioneerNewPoint == False;
+		"Can't pioneer in spectate mode"
+		Event Player.SpectateMode == False;
 	}
 
 	actions
@@ -444,10 +465,11 @@ rule("Pioneer Create Point")
 		"Create the next point"
 		Event Player.BlockArriveNextPoint = True;
 		Modify Global Variable(CPLocations, Append To Array, Event Player.TempVariable);
-		Modify Global Variable(PioneerList, Append To Array, Event Player);
+		Modify Global Variable(PioneerList, Append To Array, Custom String("{0}", Event Player));
 		Modify Global Variable(CPAbilityCounts, Append To Array, Event Player.CPAbilityCounts);
 		Small Message(All Players(All Teams), Custom String("created point {0}", Event Player.CPAbilityCounts));
 		Modify Global Variable(CPUltimateTeleportPrimary, Append To Array, Event Player.CountUltimateTeleportPrimary);
+		Modify Global Variable(CPHeroList, Append To Array, Hero Of(Event Player));
 		Call Subroutine(RespawnPlayer);
 		Event Player.IsPioneer = False;
 		Event Player.BlockArriveNextPoint = False;
@@ -474,6 +496,7 @@ rule("Non-Pioneer Arrive At CP")
 		Distance Between(Global.CPLocations[Event Player.CurrentCP + 1], Position Of(Event Player)) <= Global.CPRadius;
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
+		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
 	}
 
 	actions
@@ -482,9 +505,12 @@ rule("Non-Pioneer Arrive At CP")
 		Event Player.CurrentCP += 1;
 		Event Player.MaxUnlockedCP = Max(Event Player.MaxUnlockedCP, Event Player.CurrentCP);
 		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
-			If(Count Of(Filtered Array(All Players(All Teams), Event Player.IsPioneer)) == 0);
-				Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
-				Event Player.IsPioneer = True;
+			If(Count Of(Filtered Array(All Players(All Teams), Current Array Element.IsPioneer)) == 0);
+				"So you can't pioneer your own point unless you are the only player alive (aka not spectating)"
+				If(Count Of(All Living Players(All Teams)) == 1 || Last Of(Global.PioneerList) != Custom String("{0}", Event Player));
+					Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
+					Event Player.IsPioneer = True;
+				End;
 			End;
 		End;
 		Call Subroutine(HandleSkipTimer);
@@ -604,19 +630,39 @@ rule("Pioneer runs out of time")
 	actions
 	{
 		"To prevent this rule from conflicting with the \"start pioneer timer\" rule"
-		Wait(0.100, Abort When False);
+		Wait(3, Abort When False);
 		"Is there a player on final checkpoint waiting for pioneer"
 		If(Count Of(Filtered Array(All Players(All Teams), !Current Array Element.IsPioneer && Count Of(Global.CPLocations)
 			== Event Player.CurrentCP + 1)) > 0);
 			Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
 				!Current Array Element.IsPioneer && Count Of(Global.CPLocations) == Event Player.CurrentCP + 1));
-			Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed to {0}", Event Player.TempVariable));
+			Event Player.IsPioneer = False;
+			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+			Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Event Player.TempVariable));
 			Event Player.TempVariable.ForceRespawn = True;
 			Event Player.TempVariable.IsPioneer = True;
 		Else;
 			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 			Big Message(All Players(All Teams), Custom String("No one to pass pioneer to", Event Player.TempVariable));
 		End;
+	}
+}
+
+rule("Set Pioneer Timer to Zero if there isn't a pioneer")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Count Of(Filtered Array(All Players(All Teams), Current Array Element.IsPioneer)) == 0;
+	}
+
+	actions
+	{
+		Global.PioneerTimer = 0;
 	}
 }
 
@@ -805,7 +851,7 @@ rule("Interact + Need Healing Voiceline = Skip CP if you have spent enough time"
 		Call Subroutine(RespawnPlayer);
 		"Allow player to pioneer using CP skip"
 		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
-			If(Count Of(Filtered Array(All Players(All Teams), Event Player.IsPioneer)) == 0);
+			If(Count Of(Filtered Array(All Players(All Teams), Current Array Element.IsPioneer)) == 0);
 				Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
 				Event Player.IsPioneer = True;
 			End;
@@ -872,6 +918,8 @@ rule("Used Ultimate")
 	conditions
 	{
 		Is Using Ultimate(Event Player) == True;
+		"Don't trigger if player has complete point"
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -892,6 +940,8 @@ rule("Used Secondary (Rocket Punch)")
 	conditions
 	{
 		Is Firing Secondary(Event Player) == True;
+		"Don't trigger if player has complete point"
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -912,6 +962,8 @@ rule("Used Ability 1 (Uppercut)")
 	conditions
 	{
 		Is Using Ability 1(Event Player) == True;
+		"Don't trigger if player has complete point"
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -954,6 +1006,8 @@ rule("Used Ability 2 - Start Slam Timer")
 	conditions
 	{
 		Is Using Ability 2(Event Player) == True;
+		"Don't trigger if player has complete point"
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -1014,6 +1068,8 @@ rule("Increment Slam Counter")
 		Has Spawned(Event Player) == True;
 		Is Using Ability 2(Event Player) == True;
 		disabled Event Player.SlamTimer > 0.250;
+		"Don't trigger if player has complete point"
+		disabled Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -1151,6 +1207,7 @@ rule("Pioneer Left Match")
 				Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
 					== Event Player.CurrentCP + 1));
 				Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed to {0}", Event Player.TempVariable));
+				Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 				Event Player.TempVariable.ForceRespawn = True;
 				Event Player.TempVariable.IsPioneer = True;
 			End;
@@ -1292,12 +1349,20 @@ rule("Sub3: HandleSkipTimer")
 	actions
 	{
 		"If Player is pioneer or waiting for pioneer"
-		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 || False);
+		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 && !Event Player.IsPioneer);
 			Stop Chasing Player Variable(Event Player, TimeSpentOnCP);
 			Event Player.TimeSpentOnCP = 0;
 		Else;
 			Event Player.TimeSpentOnCP = 0;
 			Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
 		End;
+		"If Player is pioneer or waiting for pioneer"
+		disabled If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 || False);
+		disabled Stop Chasing Player Variable(Event Player, TimeSpentOnCP);
+		disabled Event Player.TimeSpentOnCP = 0;
+		disabled Else;
+		disabled Event Player.TimeSpentOnCP = 0;
+		disabled Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
+		disabled End;
 	}
 }
