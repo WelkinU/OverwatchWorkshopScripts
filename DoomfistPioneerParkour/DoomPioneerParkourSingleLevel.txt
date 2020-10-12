@@ -160,8 +160,9 @@ variables
 		15: PlayerMoveSpeedConstant
 		16: NonInfiniteModeWinTime
 		17: PioneerMinDistanceConstant
-		18: CPRadius
+		18: PunchGraceEnabled
 		19: PrimaryFireUsefulForTheseHeros
+		20: CPRadius
 
 	player:
 		0: CurrentCP
@@ -180,9 +181,11 @@ variables
 		19: WinstonBouncyBubbleCooldown
 		21: WinstonBubbleEffect
 		22: TempVariable
-		23: CancelPointTimer
+		23: TempVariable2
+		24: CancelPointTimer
 		26: sigma_barrier_ready_to_destroy
 		27: sigma_barrier_ON
+		28: Grace
 		34: Count360Slam125
 }
 
@@ -218,7 +221,7 @@ rule("Initialize Globals")
 
 	actions
 	{
-		Global.CPRadius = Workshop Setting Real(Custom String("Gameplay"), Custom String("Checkpoint Radius (m)"), 2, 0, 20);
+		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20);
 		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False);
 		Global.NonInfiniteModeWinTime = Workshop Setting Integer(Custom String("Infinite Mode"), Custom String(
 			"Time Limit Before Victory in Non-Infinite Mode"), 300, 90, 1200);
@@ -231,15 +234,16 @@ rule("Initialize Globals")
 			"Player Size (Tiny Doom = 0.1, Normal = 1, Massive Doom = 6)"), 1, 0.100, 6);
 		Global.PioneerTimeLimitConstant = Workshop Setting Integer(Custom String("Pioneer Settings"), Custom String(
 			"Pioneer Time Limit in Seconds"), 180, 90, 600);
-		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Gameplay"), Custom String("Player Move Speed Scale Factor"),
-			100, 10, 1000);
+		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
+			"Player Move Speed Scale Factor"), 100, 10, 1000);
 		Global.PioneerMinDistanceConstant = 8;
-		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Gameplay"), Custom String("Time Before Player Can Skip Level"), 240,
-			60, 9999);
+		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Game Constants"), Custom String(
+			"Time Before Player Can Skip Level"), 240, 60, 9999);
 		disabled Disable Inspector Recording;
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		Global.GameStarted = False;
 		Pause Match Time;
+		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True);
 	}
 }
 
@@ -281,6 +285,9 @@ rule("Initialize player")
 	actions
 	{
 		Start Scaling Player(Event Player, Global.PlayerScaleConstant, False);
+		"Punch grace from Hax framework"
+		Chase Player Variable At Rate(Event Player, Grace, Is Firing Secondary(Event Player) ? 0.500 : False, Is Firing Secondary(
+			Event Player) ? 0.260 : True, Destination and Rate);
 		Event Player.CurrentCP = 0;
 		Event Player.IsPioneer = False;
 		Event Player.BlockArriveNextPoint = False;
@@ -292,7 +299,6 @@ rule("Initialize player")
 		Enable Death Spectate Target HUD(Event Player);
 		Disable Game Mode In-World UI(Event Player);
 		Disable Game Mode HUD(Event Player);
-		disabled Start Scaling Player(Event Player, Global.PlayerScaleConstant, True);
 		Event Player.TimeSpentOnCP = 0;
 		If(Global.PlayerScaleConstant < 0.700);
 			Start Modifying Hero Voice Lines(Event Player, 4, False);
@@ -438,6 +444,8 @@ rule("Pioneer Create Point")
 		Event Player.BlockPioneerNewPoint == False;
 		"Can't pioneer in spectate mode"
 		Event Player.SpectateMode == False;
+		"Punch grace from Hax framework"
+		(!Global.PunchGraceEnabled || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
 	}
 
 	actions
@@ -448,7 +456,7 @@ rule("Pioneer Create Point")
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
-		Event Player.TempVariable = Position Of(Event Player);
+		Event Player.TempVariable2 = Position Of(Event Player);
 		Set Move Speed(Event Player, 0);
 		Call Subroutine(CancelMomentum);
 		"Allow player 3 sec to cancel the CP"
@@ -462,9 +470,12 @@ rule("Pioneer Create Point")
 				Abort;
 			End;
 		End;
+		"Force all players waiting for pioneer to respawn - otherwise they could be standing on top of the next CP"
+		Filtered Array(All Players(All Teams), Current Array Element == Event Player && Count Of(Global.CPLocations)
+			== Event Player.CurrentCP + 1).ForceRespawn = True;
 		"Create the next point"
 		Event Player.BlockArriveNextPoint = True;
-		Modify Global Variable(CPLocations, Append To Array, Event Player.TempVariable);
+		Modify Global Variable(CPLocations, Append To Array, Event Player.TempVariable2);
 		Modify Global Variable(PioneerList, Append To Array, Custom String("{0}", Event Player));
 		Modify Global Variable(CPAbilityCounts, Append To Array, Event Player.CPAbilityCounts);
 		Small Message(All Players(All Teams), Custom String("created point {0}", Event Player.CPAbilityCounts));
@@ -536,6 +547,8 @@ rule("Non-Pioneer Respawn If Touch Ground Outside of current or next CP")
 		Distance Between(Global.CPLocations[Event Player.CurrentCP + 1], Position Of(Event Player)) > Global.CPRadius;
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
+		"Punch grace from Hax framework"
+		(!Global.PunchGraceEnabled || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
 	}
 
 	actions
@@ -630,7 +643,7 @@ rule("Pioneer runs out of time")
 	actions
 	{
 		"To prevent this rule from conflicting with the \"start pioneer timer\" rule"
-		Wait(3, Abort When False);
+		Wait(4, Abort When False);
 		"Is there a player on final checkpoint waiting for pioneer"
 		If(Count Of(Filtered Array(All Players(All Teams), !Current Array Element.IsPioneer && Count Of(Global.CPLocations)
 			== Event Player.CurrentCP + 1)) > 0);
@@ -1154,6 +1167,10 @@ rule("Handle Player Death")
 	actions
 	{
 		Event Player.BlockPioneerNewPoint = True;
+		"In case you die during 3 seconds after pioneering"
+		If(Event Player.CancelPointTimer > 0);
+			Wait(3, Ignore Condition);
+		End;
 		Respawn(Event Player);
 		Wait(0.100, Ignore Condition);
 		If(Global.GameStarted);
@@ -1254,9 +1271,9 @@ rule("Sub0: RespawnPlayer")
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ultimate Charge(Event Player, 100);
-		Event Player.CancelPointTimer = 0;
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
+		Event Player.CancelPointTimer = 0;
 		"If player is not pioneer, player is not waiting for pioneer"
 		If(Count Of(Global.CPLocations) > Event Player.CurrentCP + 1);
 			If(X Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]) == 0);
@@ -1349,20 +1366,40 @@ rule("Sub3: HandleSkipTimer")
 	actions
 	{
 		"If Player is pioneer or waiting for pioneer"
-		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 && !Event Player.IsPioneer);
-			Stop Chasing Player Variable(Event Player, TimeSpentOnCP);
-			Event Player.TimeSpentOnCP = 0;
-		Else;
-			Event Player.TimeSpentOnCP = 0;
-			Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
-		End;
-		"If Player is pioneer or waiting for pioneer"
-		disabled If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 || False);
+		disabled If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 && !Event Player.IsPioneer);
 		disabled Stop Chasing Player Variable(Event Player, TimeSpentOnCP);
 		disabled Event Player.TimeSpentOnCP = 0;
 		disabled Else;
 		disabled Event Player.TimeSpentOnCP = 0;
 		disabled Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
 		disabled End;
+		"If Player is pioneer or waiting for pioneer"
+		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 || False);
+			Stop Chasing Player Variable(Event Player, TimeSpentOnCP);
+			Event Player.TimeSpentOnCP = 0;
+		Else;
+			Event Player.TimeSpentOnCP = 0;
+			Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
+		End;
+	}
+}
+
+rule("Punch Grace")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.Grace = 0.119;
 	}
 }
