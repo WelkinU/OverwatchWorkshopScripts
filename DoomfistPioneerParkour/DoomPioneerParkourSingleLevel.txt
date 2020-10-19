@@ -264,12 +264,24 @@ rule("Global HUD")
 			Global.PioneerTimer, Global.PioneerTimeLimitConstant), Null, Null, Left, 0, White, White, White, Visible To and String,
 			Default Visibility);
 		"Controls HUD"
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
-			"Quick Reset: Reload\r\nGo back a CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}", Custom String(
-			"Teleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Interact)), Null, Null, Custom String(
+			"-------------------------- Controls --------------------------\r\nQuick Reset: Reload\r\nPrev CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}",
+			Custom String("Teleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
 			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
 			Custom String("Switch Hero (Multi-Hero Mode Only): Emote")), Left, 1, White, White, White, Visible To and String,
 			Default Visibility);
+		"Game Settings HUD"
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Interact)), Null, Null, Custom String(
+			"--------------------------Game Settings--------------------------\r\n{0}\r\n{1}\r\n{2}", Custom String(
+			"Infinite Mode Enabled: {0}\r\nMulti-Hero Enabled: {1}\r\nAbility Limits Enabled: {2}", Global.InfiniteModeEnabledConstant,
+			Global.MultiHeroEnabled, Global.AbilityCountsEnabledConstant), Custom String(
+			"Player Scale Constant: {0}\r\nPunch Grace Enabled: {1}\r\nPlayer Move Speed Constant: {2}", Global.PlayerScaleConstant,
+			Global.PunchGraceEnabled, Global.PlayerMoveSpeedConstant), Custom String(
+			"Pioneer Time Limit: {0}\r\nPlayer CP Skip Time Limit: {1}\r\n{2}", Global.PioneerTimeLimitConstant, Global.SkipTimeLimit,
+			Custom String("CP Radius: {0}", Global.CPRadius))), Left, 2, White, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), !Is Button Held(Current Array Element, Interact)), Null, Null,
+			Custom String("Hold Interact Key (Default F) For Controls / Game Settings"), Left, 1, White, White, White,
+			Visible To and String, Default Visibility);
 	}
 }
 
@@ -305,6 +317,17 @@ rule("Initialize player")
 		Else If(Global.PlayerScaleConstant > 2);
 			Start Modifying Hero Voice Lines(Event Player, 0.500, False);
 		End;
+		"Create Ring, Text and Icon Effects"
+		Create Effect(Event Player, Ring, White, Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
+			Visible To Position and Radius);
+		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Purple,
+			Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
+		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP + 1]),
+			Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Do Not Clip, Visible To Position and String, Yellow,
+			Default Visibility);
+		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
+			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Yellow, True);
 	}
 }
 
@@ -334,18 +357,23 @@ rule("Player HUD")
 			Blue, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, Event Player.TimeSpentOnCP > Global.SkipTimeLimit), Custom String(
 			"Have spent more than {0} sec on this CP.\r\nUse Interact + Need Healing Voiceline to skip CP.", Global.SkipTimeLimit), Null,
-			Null, Top, 1, Red, White, White, Visible To and String, Default Visibility);
-		"Create Ring, Text and Icon Effects"
-		Create Effect(Event Player, Ring, White, Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
-			Visible To Position and Radius);
-		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Purple,
-			Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
-		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
-			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP + 1]),
-			Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Do Not Clip, Visible To Position and String, Yellow,
+			Null, Right, 0, Red, White, White, Visible To and String, Default Visibility);
+		"Controls HUD"
+		disabled Create HUD Text(Event Player, Null, Null, Custom String(
+			"-------------------------- Controls --------------------------\r\nQuick Reset: Reload\r\nPrev CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}",
+			Custom String("Teleport (Use Sparingly): Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
+			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
+			Custom String("Switch Hero (Multi-Hero Mode Only): Emote")), Left, 1, White, White, White, Visible To and String,
 			Default Visibility);
-		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
-			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Yellow, True);
+		"Game Settings HUD"
+		disabled Create HUD Text(Event Player, Null, Null, Custom String(
+			"--------------------------Game Settings--------------------------\r\n{0}\r\n{1}\r\n{2}", Custom String(
+			"Infinite Mode Enabled: {0}\r\nMulti-Hero Enabled: {1}\r\nAbility Limits Enabled: {2}", Global.InfiniteModeEnabledConstant,
+			Global.MultiHeroEnabled, Global.AbilityCountsEnabledConstant), Custom String(
+			"Player Scale Constant: {0}\r\nPunch Grace Enabled: {1}\r\nPlayer Move Speed Constant: {2}", Global.PlayerScaleConstant,
+			Global.PunchGraceEnabled, Global.PlayerMoveSpeedConstant), Custom String(
+			"Pioneer Time Limit: {0}\r\nPlayer CP Skip Time Limit: {1}\r\n{2}", Global.PioneerTimeLimitConstant, Global.SkipTimeLimit,
+			Custom String("CP Radius: {0}", Global.CPRadius))), Left, 2, White, White, White, Visible To and String, Default Visibility);
 	}
 }
 
