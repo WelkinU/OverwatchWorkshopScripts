@@ -356,8 +356,8 @@ rule("Player HUD")
 			Global.CPAbilityCounts[Event Player.CurrentCP]) - Z Component Of(Event Player.CPAbilityCounts))), Null, Null, Top, -1.400,
 			Blue, White, White, Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, Event Player.TimeSpentOnCP > Global.SkipTimeLimit), Custom String(
-			"Have spent more than {0} sec on this CP.\r\nUse Interact + Need Healing Voiceline to skip CP.", Global.SkipTimeLimit), Null,
-			Null, Right, 0, Red, White, White, Visible To and String, Default Visibility);
+			"Skip CP Now Available", Global.SkipTimeLimit), Null, Null, Right, 0, Red, White, White, Visible To and String,
+			Default Visibility);
 		"Controls HUD"
 		disabled Create HUD Text(Event Player, Null, Null, Custom String(
 			"-------------------------- Controls --------------------------\r\nQuick Reset: Reload\r\nPrev CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}",
