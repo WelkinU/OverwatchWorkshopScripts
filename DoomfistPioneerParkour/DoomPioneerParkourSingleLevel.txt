@@ -178,6 +178,7 @@ variables
 		11: BlockArriveNextPoint
 		12: BlockPioneerNewPoint
 		14: SlamTimer
+		15: PunchFixStore
 		18: WinstonBubbleLocation
 		19: WinstonBouncyBubbleCooldown
 		21: WinstonBubbleEffect
@@ -285,8 +286,8 @@ rule("Global HUD")
 			Custom String("CP Radius: {0}", Global.CPRadius))), Left, 2, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null, Null,
-			Custom String("Hold Interact Key (Default F) For Controls / Game Settings"), Left, 1, Color(White), Color(White), Color(White),
-			Visible To and String, Default Visibility);
+			Custom String("Hold Interact Key ({0}) For Controls / Game Settings", Input Binding String(Button(Interact))), Left, 1, Color(
+			White), Color(White), Color(White), Visible To and String, Default Visibility);
 	}
 }
 
@@ -442,8 +443,9 @@ rule("Game Started (origin point just created by host) - Create World Effects")
 	{
 		"Restart player at origin point after it's created and start timer"
 		Call Subroutine(RespawnPlayer);
-		Event Player.TimeSpentOnCP = 0;
-		Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
+		disabled Event Player.TimeSpentOnCP = 0;
+		disabled Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
+		Call Subroutine(HandleSkipTimer);
 	}
 }
 
@@ -511,6 +513,7 @@ rule("Pioneer Create Point")
 		Event Player.BlockArriveNextPoint = False;
 		Event Player.TimeSpentOnCP = 0;
 		Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
+		disabled Call Subroutine(HandleSkipTimer);
 	}
 }
 
@@ -1288,6 +1291,9 @@ rule("Sub0: RespawnPlayer")
 			Event Player.sigma_barrier_ON = False;
 			Event Player.sigma_barrier_ready_to_destroy = False;
 		End;
+		disabled If(Is Button Held(Event Player, Button(Secondary Fire)) && Hero Of(Event Player) == Hero(Doomfist));
+		Event Player.PunchFixStore = Hero Of(Event Player) == Hero(Doomfist) && Is Button Held(Event Player, Button(Secondary Fire));
+		disabled End;
 		Cancel Primary Action(Event Player);
 		Call Subroutine(CancelMomentum);
 		"Added this to fix issue where if you pressed R while using slam, the slam cooldown wasn't reset"
@@ -1360,6 +1366,9 @@ rule("Sub0: RespawnPlayer")
 		Event Player.Count360Slam125 -= Event Player.Count360Slam125;
 		disabled Event Player.Count360Slam125 = Vector(0, 0, 0);
 		Set Move Speed(Event Player, Global.PlayerMoveSpeedConstant);
+		If(Event Player.PunchFixStore);
+			Start Holding Button(Event Player, Button(Secondary Fire));
+		End;
 	}
 }
 
