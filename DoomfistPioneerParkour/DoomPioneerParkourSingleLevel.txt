@@ -109,6 +109,11 @@ settings
 				Spawn With Ultimate Ready: On
 			}
 
+			Doomfist
+			{
+				Seismic Slam Cooldown Time: 50%
+			}
+
 			Roadhog
 			{
 				Ammunition Clip Size Scalar: 25%
@@ -142,7 +147,6 @@ settings
 	workshop
 	{
 		Multi-Hero Mode Enabled: On
-		Time Before Player Can Skip Level: 180
 	}
 }
 
@@ -1343,16 +1347,32 @@ rule("Pioneer Left Match")
 
 	actions
 	{
-		"Is there a not pioneer"
-		If(Global.CurrentPioneer == Null);
-			"Is there a player on final checkpoint waiting for pioneer"
-			If(Count Of(Filtered Array(All Players(All Teams), True && Count Of(Global.CPLocations) == Event Player.CurrentCP + 1)) > 0);
-				Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
-					== Event Player.CurrentCP + 1));
-				Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed to {0}", Event Player.TempVariable));
-				Global.PioneerTimer = Global.PioneerTimeLimitConstant;
-				Event Player.TempVariable.ForceRespawn = True;
-				Global.CurrentPioneer = Event Player.TempVariable;
+		If(Global.CurrentPioneer != Null);
+			"Pioneer is not in game"
+			If(Count Of(Filtered Array(All Players(All Teams), Current Array Element == Global.CurrentPioneer)) == 0);
+				"Is there a player on final checkpoint waiting for pioneer"
+				If(Count Of(Filtered Array(All Players(All Teams), True && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1))
+					> 0);
+					Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
+						== Current Array Element.CurrentCP + 1));
+					Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed to {0}", Event Player.TempVariable));
+					Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+					Event Player.TempVariable.ForceRespawn = True;
+					Global.CurrentPioneer = Event Player.TempVariable;
+				End;
+			End;
+		Else;
+			If(Count Of(All Living Players(All Teams)) == 1);
+				"Is there a player on final checkpoint waiting for pioneer"
+				If(Count Of(Filtered Array(All Players(All Teams), True && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1))
+					> 0);
+					Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
+						== Current Array Element.CurrentCP + 1));
+					Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed to {0}", Event Player.TempVariable));
+					Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+					Event Player.TempVariable.ForceRespawn = True;
+					Global.CurrentPioneer = Event Player.TempVariable;
+				End;
 			End;
 		End;
 	}
