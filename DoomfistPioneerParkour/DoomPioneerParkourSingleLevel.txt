@@ -715,9 +715,9 @@ rule("Pioneer runs out of time")
 		Wait(4, Abort When False);
 		"Is there a player on final checkpoint waiting for pioneer"
 		If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
-			== Event Player.CurrentCP + 1)) > 0);
+			== Current Array Element.CurrentCP + 1)) > 0);
 			Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
-				Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Event Player.CurrentCP + 1));
+				Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1));
 			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 			Event Player.TempVariable.ForceRespawn = True;
 			Global.CurrentPioneer = Event Player.TempVariable;
