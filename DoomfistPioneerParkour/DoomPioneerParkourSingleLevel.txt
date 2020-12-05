@@ -1257,6 +1257,8 @@ rule("Reset Cooldowns If In Starting CP Ring")
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+		Event Player.CPAbilityCounts = Vector(0, 0, 0);
+		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 	}
 }
 
