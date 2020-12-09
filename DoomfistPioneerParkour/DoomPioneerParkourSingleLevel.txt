@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Special Edition. Includes modifiers for player scale, move speed, Doomfist Punch Grace, other heros, and more. To change gameplay and pioneer parameters, go to Lobby -> Settings -> Workshop Settings. Made by WelkinTern, Source Code: https://github.com/WelkinU/OverwatchWorkshopScripts/blob/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour - Special Edition. Includes modifiers for effect locks, player scale, Punch Grace, other heros, move speed, and more. To change gameplay and pioneer parameters, go to Lobby -> Settings -> Workshop Settings. Made by WelkinTern, Source Code: https://github.com/WelkinU/OverwatchWorkshopScripts/blob/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -429,8 +429,8 @@ rule("Player HUD")
 			Global.CPEffectLockSphereArray[Event Player.CurrentCP], Flag, Visible To and Position, Color(Yellow), True);
 		Create In-World Text(Filtered Array(Event Player,
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained),
-			Custom String("Effect Lock"), Global.CPEffectLockSphereArray[Event Player.CurrentCP], 3, Do Not Clip, None, Color(Yellow),
-			Default Visibility);
+			Custom String("Effect Lock"), Global.CPEffectLockSphereArray[Event Player.CurrentCP], 1.300, Do Not Clip,
+			Visible To and Position, Color(Yellow), Default Visibility);
 	}
 }
 
@@ -1302,7 +1302,8 @@ rule("Reset Cooldowns If In Starting CP Ring")
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
-		Event Player.CPAbilityCounts = Vector(0, 0, 0);
+		"if u charge punch, then jump and land in circle, it takes your punch away "
+		disabled Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 	}
 }
