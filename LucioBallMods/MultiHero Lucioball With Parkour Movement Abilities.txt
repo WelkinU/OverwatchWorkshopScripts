@@ -145,8 +145,7 @@ rule("Initalize Globals")
 
 	actions
 	{
-		Global.HeroRoster = Array(Hero(Doomfist), Hero(D.Va), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
-			Hero(Mei), Hero(Zarya));
+		Global.HeroRoster = Array(Hero(Doomfist), Hero(D.Va), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog), Hero(Mei), Hero(Zarya));
 		Pause Match Time;
 		Create HUD Text(Filtered Array(All Players(All Teams), !Is Button Held(Current Array Element, Interact) && True), Custom String(
 			"Press and Hold Interact (F) to Open Hero Select Menu\r\nRelease Interact Over Hero You Want To Select"), Null, Null, Left, 0,
