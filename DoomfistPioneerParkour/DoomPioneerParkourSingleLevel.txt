@@ -146,7 +146,7 @@ settings
 
 	workshop
 	{
-		Green Sphere Radius: 3.000
+		Effect Lock White Sphere Radius: 1.700
 		Multi-Hero Mode Enabled: On
 	}
 }
@@ -180,6 +180,8 @@ variables
 		23: CPGreenSphereArray
 		24: GreenSphereRadiusConstant
 		25: CPEffectLockSphereArray
+		26: EffectLockSphereRadiusConstant
+		27: DevModeEngaged
 
 	player:
 		0: CurrentCP
@@ -248,7 +250,7 @@ rule("Initialize Globals")
 		disabled Disable Inspector Recording;
 		Pause Match Time;
 		"These are the allowed heros for multi-hero mode"
-		Global.HeroRoster = Array(Hero(Doomfist), Hero(D.Va), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
+		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
 			Hero(Widowmaker), Hero(Junkrat));
 		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
 		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False, 0);
@@ -273,8 +275,11 @@ rule("Initialize Globals")
 		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True, 0);
 		Global.SlamBuffEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Slam Buff Enabled (Slam resets bhop)"),
 			False, 0);
-		Global.GreenSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String("Green Sphere Radius"), 2,
+		Global.GreenSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String("Green Sphere Radius"), 3,
 			1, 5, 0);
+		Global.EffectLockSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
+			"Effect Lock (White) Sphere Radius"), 2, 1, 5, 0);
+		Global.DevModeEngaged = False;
 	}
 }
 
@@ -414,11 +419,11 @@ rule("Player HUD")
 		"Effect Lock Sphere Create Non-Pioneer"
 		Create Effect(Filtered Array(Event Player,
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained), Sphere,
-			Color(White), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant,
+			Color(White), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Global.EffectLockSphereRadiusConstant,
 			Visible To Position and Radius);
 		"Effect Lock Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Event Player, Current Array Element.EffectLockSphereLocation != Null), Sphere, Color(White),
-			Event Player.EffectLockSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+			Event Player.EffectLockSphereLocation, Global.EffectLockSphereRadiusConstant, Visible To Position and Radius);
 		Create HUD Text(Filtered Array(Event Player, (
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && Current Array Element.EffectLockObtained != True && True)
 			== True), Custom String("Effect Lock Required!"), Null, Null, Top, 0, Color(Red), Color(White), Color(White), Visible To,
@@ -714,6 +719,7 @@ rule("Start Pioneer Timer and set Invisible when player becomes pioneer")
 		Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 		Chase Global Variable At Rate(PioneerTimer, 0, 1, Destination and Rate);
 		Set Invisible(Event Player, All);
+		Disallow Button(Event Player, Button(Melee));
 	}
 }
 
@@ -735,6 +741,7 @@ rule("Set Non-Pioneer Visible")
 	actions
 	{
 		Set Invisible(Event Player, None);
+		Allow Button(Event Player, Button(Melee));
 	}
 }
 
@@ -766,6 +773,7 @@ rule("Pioneer runs out of time")
 			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 			Event Player.TempVariable.ForceRespawn = True;
 			Global.CurrentPioneer = Event Player.TempVariable;
+			Wait(0.100, Ignore Condition);
 			Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
 		Else;
 			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
@@ -979,7 +987,7 @@ rule("Melee + Left Click = Teleport")
 	{
 		Is Button Held(Event Player, Button(Primary Fire)) == True;
 		Is Button Held(Event Player, Button(Melee)) == True;
-		Event Player.TeleportEnabled == True;
+		(Event Player.TeleportEnabled || Global.DevModeEngaged) == True;
 	}
 
 	actions
@@ -1021,6 +1029,110 @@ rule("Interact + Need Healing Voiceline = Skip CP if you have spent enough time"
 		End;
 		Call Subroutine(HandleSkipTimer);
 		Event Player.BlockArriveNextPoint = False;
+	}
+}
+
+rule("Interact + Group Up Voiceline = Dev Mode Engaged")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player == Host Player;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating(Event Player, Group Up) == True;
+	}
+
+	actions
+	{
+		If(Global.DevModeEngaged);
+			Small Message(All Players(All Teams), Custom String("Dev Mode Disengaged"));
+			Global.DevModeEngaged = False;
+		Else;
+			Small Message(All Players(All Teams), Custom String("Dev Mode Engaged"));
+			Global.DevModeEngaged = True;
+		End;
+	}
+}
+
+rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		disabled Is Button Held(Event Player, Button(Jump)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		"This condition is so this rule doesn't get executed at same time as a player is using the level cancel"
+		Event Player.CancelPointTimer == 0;
+		"Is pioneer or is waiting for pioneer"
+		(Global.CurrentPioneer == Event Player || Count Of(Global.CPLocations) == Event Player.CurrentCP + 1) == True;
+		Global.MultiHeroEnabled == True;
+		Is Communicating(Event Player, Ultimate Status) == True;
+	}
+
+	actions
+	{
+		"If a menu is already open, delete the in world text and recreate the menu in the proper location"
+		If(Event Player.HeroSelectMenuOpen);
+			For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
+				Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+				Abort;
+			End;
+		End;
+		Event Player.MenuInWorldLocationTempStore = Empty Array;
+		Event Player.MenuTextIDTempStore = Empty Array;
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
+			Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
+				+ Facing Direction Of(Event Player) * 1 + 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (
+				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
+				Global.HeroRoster))), 0), Event Player, Rotation));
+			Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
+				Event Player.MenuInWorldLocationTempStore[Event Player.TempIterator] + Vector(0, -0.100, 0), 3, Do Not Clip, None, Color(
+				White), Default Visibility);
+			Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
+			Wait(0.016, Ignore Condition);
+		End;
+		Event Player.HeroSelectMenuOpen = True;
+		Big Message(Event Player, Custom String("Release Interact Over The Hero You Want To Select"));
+	}
+}
+
+rule("Close Hero Select Menu")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == False;
+		Has Spawned(Event Player) == True;
+		Event Player.HeroSelectMenuOpen == True;
+	}
+
+	actions
+	{
+		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
+			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
+			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
+			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+		End;
+		Event Player.HeroSelectMenuOpen = False;
 	}
 }
 
@@ -1403,7 +1515,7 @@ rule("Pioneer Left Match")
 					> 0);
 					Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
 						== Current Array Element.CurrentCP + 1));
-					Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed to {0}", Event Player.TempVariable));
+					Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed", Event Player.TempVariable));
 					Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 					Event Player.TempVariable.ForceRespawn = True;
 					Global.CurrentPioneer = Event Player.TempVariable;
@@ -1444,8 +1556,12 @@ rule("Sub0: RespawnPlayer")
 
 	actions
 	{
+		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentCP]);
 		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
+		disabled If(Is Firing Secondary(Event Player));
+		disabled Event Player.CPAbilityCounts = Vector(1, 0, 0);
+		disabled End;
 		"If player is not pioneer and is not waiting for pioneer"
 		If(Count Of(Global.CPLocations) > Event Player.CurrentCP + 1);
 			Start Forcing Player To Be Hero(Event Player, Global.CPHeroList[Event Player.CurrentCP]);
@@ -1461,6 +1577,8 @@ rule("Sub0: RespawnPlayer")
 		Event Player.PunchFixStore = Hero Of(Event Player) == Hero(Doomfist) && Is Button Held(Event Player, Button(Secondary Fire));
 		Cancel Primary Action(Event Player);
 		Call Subroutine(CancelMomentum);
+		Event Player.CPAbilityCounts = Vector(0, 0, 0);
+		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 		"Added this to fix issue where if you pressed R while using slam, the slam cooldown wasn't reset"
 		Wait(0.100, Ignore Condition);
 		Stop Chasing Player Variable(Event Player, SlamTimer);
@@ -1469,8 +1587,6 @@ rule("Sub0: RespawnPlayer")
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ultimate Charge(Event Player, 100);
-		Event Player.CPAbilityCounts = Vector(0, 0, 0);
-		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 		Event Player.CancelPointTimer = 0;
 		"If player is not pioneer, player is not waiting for pioneer"
 		If(Count Of(Global.CPLocations) > Event Player.CurrentCP + 1);
@@ -1538,6 +1654,10 @@ rule("Sub0: RespawnPlayer")
 		Event Player.GreenSphereLocation = Null;
 		Event Player.EffectLockSphereLocation = Null;
 		Event Player.EffectLockObtained = False;
+		"Sigma Barrier Reset"
+		If(Hero Of(Event Player) == Hero(Junkrat));
+			Set Ability Charge(Event Player, Button(Ability 1), 2);
+		End;
 	}
 }
 
@@ -1587,7 +1707,7 @@ rule("Punch Grace")
 	{
 		Ongoing - Each Player;
 		All;
-		All;
+		Doomfist;
 	}
 
 	conditions
@@ -1598,82 +1718,6 @@ rule("Punch Grace")
 	actions
 	{
 		Event Player.Grace = 0.119;
-	}
-}
-
-rule("Pioneer can switch hero")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		disabled Is Button Held(Event Player, Button(Jump)) == True;
-		Is Button Held(Event Player, Button(Interact)) == True;
-		"This condition is so this rule doesn't get executed at same time as a player is using the level cancel"
-		Event Player.CancelPointTimer == 0;
-		"Is pioneer or is waiting for pioneer"
-		(Global.CurrentPioneer == Event Player || Count Of(Global.CPLocations) == Event Player.CurrentCP + 1) == True;
-		Global.MultiHeroEnabled == True;
-		Is Communicating(Event Player, Ultimate Status) == True;
-	}
-
-	actions
-	{
-		"If a menu is already open, delete the in world text and recreate the menu in the proper location"
-		If(Event Player.HeroSelectMenuOpen);
-			For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
-				Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
-				Abort;
-			End;
-		End;
-		Event Player.MenuInWorldLocationTempStore = Empty Array;
-		Event Player.MenuTextIDTempStore = Empty Array;
-		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
-			Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
-				+ Facing Direction Of(Event Player) * 1 + 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (
-				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
-				Global.HeroRoster))), 0), Event Player, Rotation));
-			Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
-				Event Player.MenuInWorldLocationTempStore[Event Player.TempIterator] + Vector(0, -0.100, 0), 3, Do Not Clip, None, Color(
-				White), Default Visibility);
-			Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
-			Wait(0.016, Ignore Condition);
-		End;
-		Event Player.HeroSelectMenuOpen = True;
-		Big Message(Event Player, Custom String("Release Interact Over The Hero You Want To Select"));
-	}
-}
-
-rule("Close Hero Select Menu")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Interact)) == False;
-		Has Spawned(Event Player) == True;
-		Event Player.HeroSelectMenuOpen == True;
-	}
-
-	actions
-	{
-		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
-			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
-			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
-		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
-			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
-		End;
-		Event Player.HeroSelectMenuOpen = False;
 	}
 }
 
@@ -1820,7 +1864,7 @@ rule("Pioneer Create Effect Lock Sphere with Group Up Voiceline")
 	{
 		Event Player.EffectLockSphereLocation = Eye Position(Event Player);
 		Small Message(Event Player, Custom String("Effect Lock Sphere Created!"));
-		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
+		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 	}
 }
 
@@ -1838,13 +1882,14 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 		Global.CurrentPioneer != Event Player;
 		Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Null;
 		Distance Between(Eye Position(Event Player), Global.CPEffectLockSphereArray[Event Player.CurrentCP])
-			< Global.GreenSphereRadiusConstant;
+			< Global.EffectLockSphereRadiusConstant;
+		Event Player.EffectLockObtained != True;
 	}
 
 	actions
 	{
 		Event Player.EffectLockObtained = True;
-		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
+		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Small Message(Event Player, Custom String("Effect Lock Obtained!"));
 	}
 }
