@@ -25,6 +25,7 @@ settings
 		{
 			enabled maps
 			{
+				Castillo
 				Château Guillard
 				Petra
 			}
@@ -35,12 +36,10 @@ settings
 			disabled maps
 			{
 				Blizzard World
-				Hanamura Winter
 				Hollywood Halloween
 				Horizon Lunar Colony
 				King's Row
 				Lijiang Tower Lunar New Year
-				Temple of Anubis
 				Watchpoint: Gibraltar
 				Workshop Chamber
 				Workshop Expanse
@@ -228,13 +227,33 @@ subroutines
 	0: RespawnPlayer
 	2: CancelMomentum
 	3: HandleSkipTimer
+	4: MemoryRecall
 }
 
-rule("Memory")
+rule("Memory - Put variables in here")
+{
+	event
+	{
+		Subroutine;
+		MemoryRecall;
+	}
+}
+
+rule("Memory Recall Handle")
 {
 	event
 	{
 		Ongoing - Global;
+	}
+
+	actions
+	{
+		Wait(0.500, Ignore Condition);
+		Call Subroutine(MemoryRecall);
+		"something in memory"
+		If(Count Of(Global.CPLocations) > 0);
+			Global.GameStarted = True;
+		End;
 	}
 }
 
