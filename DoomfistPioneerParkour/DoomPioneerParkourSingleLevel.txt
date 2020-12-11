@@ -333,22 +333,15 @@ rule("Global HUD")
 			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
 			Custom String("Switch Hero (Multi-Hero Mode Only): Interact + Ultimate Status Voiceline")), Left, 1, Color(White), Color(
 			White), Color(White), Visible To and String, Default Visibility);
-		"Game Settings HUD"
-		disabled Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
-			Custom String("--------------------------Game Settings--------------------------\r\n{0}\r\n{1}\r\n{2}", Custom String(
-			"Infinite Mode Enabled: {0}\r\nMulti-Hero Enabled: {1}\r\nAbility Limits Enabled: {2}", Global.InfiniteModeEnabledConstant,
-			Global.MultiHeroEnabled, Global.AbilityCountsEnabledConstant), Custom String(
-			"Player Scale Constant: {0}\r\nPunch Grace Enabled: {1}\r\nPlayer Move Speed Constant: {2}", Global.PlayerScaleConstant,
-			Global.PunchGraceEnabled, Global.PlayerMoveSpeedConstant), Custom String(
-			"Pioneer Time Limit: {0}\r\nPlayer CP Skip Time Limit: {1}\r\n{2}", Global.PioneerTimeLimitConstant, Global.SkipTimeLimit,
-			Custom String("CP Radius: {0}", Global.CPRadius))), Left, 2, Color(White), Color(White), Color(White), Visible To and String,
-			Default Visibility);
-		disabled Create HUD Text(Filtered Array(All Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null, Null,
-			Custom String("Hold Interact Key ({0}) For Controls / Game Settings", Input Binding String(Button(Interact))), Left, 1, Color(
-			White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
 			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
+		Create HUD Text(Host Player, Null, Null, Custom String(
+			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Group Up Voiceline\r\nSave Map:\r\n{0}\r\n{1}",
+			Custom String(
+			"1. Open Workshop Inspector, Select \"variable target\" to be Global\r\n2. Press button [X] on bottom middle to copy all variables"),
+			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(White), Color(White), Color(
+			White), Visible To, Default Visibility);
 	}
 }
 
@@ -436,10 +429,11 @@ rule("Player HUD")
 			Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, !Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"Hold Interact Key ({0}) For Controls / Game Settings", Input Binding String(Button(Interact))), Left, 1, Color(White), Color(
-			White), Color(White), Visible To and String, Default Visibility);
+			White), Color(Red), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations)
-			== Event Player.CurrentCP + 1 && Global.MultiHeroEnabled), Custom String("Change Hero With Interact + Ultimate Status"), Null,
-			Null, Right, 0, Color(Red), Color(White), Color(White), Visible To and String, Default Visibility);
+			== Event Player.CurrentCP + 1 && Global.MultiHeroEnabled), Custom String(
+			"Create Effect Lock With Melee\r\nCreate Environmental Sphere with Crouch\r\nChange Hero With Interact + Ultimate Status"),
+			Null, Null, Right, 0, Color(Red), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Green Sphere Create"
 		Create Effect(Filtered Array(Event Player, Global.CPGreenSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(
 			Green), Global.CPGreenSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
@@ -726,6 +720,7 @@ rule("Handle ForceRespawn")
 	{
 		Call Subroutine(RespawnPlayer);
 		Event Player.ForceRespawn = False;
+		Call Subroutine(HandleSkipTimer);
 	}
 }
 
