@@ -123,6 +123,7 @@ settings
 
 			Sigma
 			{
+				Accretion Cooldown Time: 60%
 				Kinetic Grasp Cooldown Time: 20%
 			}
 
@@ -146,7 +147,6 @@ settings
 
 	workshop
 	{
-		Effect Lock White Sphere Radius: 1.700
 		Multi-Hero Mode Enabled: On
 	}
 }
@@ -199,20 +199,28 @@ variables
 		15: PunchFixStore
 		16: GreenSphereLocation
 		17: EffectLockSphereLocation
-		18: WinstonBubbleLocation
-		19: WinstonBouncyBubbleCooldown
-		21: WinstonBubbleEffect
 		22: TempVariable
 		23: TempVariable2
 		24: CancelPointTimer
 		26: sigma_barrier_ready_to_destroy
 		27: sigma_barrier_ON
-		28: Grace
+		28: sigma_barrier_direction
+		29: sigma_barrier_init_position
+		30: sigma_barrier_chase
+		31: sigma_barrier_position
+		32: Grace
 		34: Count360Slam125
-		38: HeroSelectMenuOpen
-		39: MenuInWorldLocationTempStore
-		40: MenuTextIDTempStore
-		41: TempIterator
+		36: WinstonWallClimbEnabled
+		37: WinstonWallClimbTimer
+		38: WinstonBubbleLocation
+		39: WinstonBouncyBubbleCooldown
+		40: WinstonBubbleEffect
+		41: HeroSelectMenuOpen
+		42: MenuInWorldLocationTempStore
+		43: MenuTextIDTempStore
+		44: TempIterator
+		45: AnaSleepDartTeleLocation
+		46: RoadhogHookPosition
 }
 
 subroutines
@@ -251,7 +259,7 @@ rule("Initialize Globals")
 		Pause Match Time;
 		"These are the allowed heros for multi-hero mode"
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
-			Hero(Widowmaker), Hero(Junkrat));
+			Hero(Widowmaker), Hero(Junkrat), Hero(Ana));
 		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
 		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False, 0);
 		Global.NonInfiniteModeWinTime = Workshop Setting Integer(Custom String("Infinite Mode"), Custom String(
@@ -319,6 +327,9 @@ rule("Global HUD")
 		disabled Create HUD Text(Filtered Array(All Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String("Hold Interact Key ({0}) For Controls / Game Settings", Input Binding String(Button(Interact))), Left, 1, Color(
 			White), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
+			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
+			Default Visibility);
 	}
 }
 
@@ -1326,6 +1337,28 @@ rule("Used Ability 2 + 125 Slam Detector")
 	}
 }
 
+rule("Used Primary Fire (If Ana)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Firing Primary(Event Player) == True;
+		"Don't trigger if player has complete point"
+		Event Player.CancelPointTimer == 0;
+	}
+
+	actions
+	{
+		Event Player.CountUltimateTeleportPrimary += Forward;
+	}
+}
+
 rule("Increment Slam Counter")
 {
 	event
@@ -1559,9 +1592,6 @@ rule("Sub0: RespawnPlayer")
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentCP]);
 		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
-		disabled If(Is Firing Secondary(Event Player));
-		disabled Event Player.CPAbilityCounts = Vector(1, 0, 0);
-		disabled End;
 		"If player is not pioneer and is not waiting for pioneer"
 		If(Count Of(Global.CPLocations) > Event Player.CurrentCP + 1);
 			Start Forcing Player To Be Hero(Event Player, Global.CPHeroList[Event Player.CurrentCP]);
@@ -1593,6 +1623,9 @@ rule("Sub0: RespawnPlayer")
 			If(X Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]) == 0);
 				Set Secondary Fire Enabled(Event Player, False);
 			Else;
+				Set Secondary Fire Enabled(Event Player, True);
+			End;
+			If(Hero Of(Event Player) == Hero(Ana));
 				Set Secondary Fire Enabled(Event Player, True);
 			End;
 			If(Y Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]) == 0);
@@ -1891,5 +1924,609 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 		Event Player.EffectLockObtained = True;
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Small Message(Event Player, Custom String("Effect Lock Obtained!"));
+	}
+}
+
+disabled rule("Sigma Abilities")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Barrier {1}")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.sigma_barrier_ON = True;
+		Event Player.sigma_barrier_init_position = Eye Position(Event Player) + Facing Direction Of(Event Player) * 3;
+		Event Player.sigma_barrier_direction = Facing Direction Of(Event Player);
+		Event Player.sigma_barrier_chase = 0;
+		Chase Player Variable At Rate(Event Player, sigma_barrier_chase, Distance Between(Event Player.sigma_barrier_init_position,
+			Ray Cast Hit Position(Event Player.sigma_barrier_init_position,
+			Event Player.sigma_barrier_init_position + Event Player.sigma_barrier_direction * 200, Null, Event Player, False)), 16.500,
+			Destination and Rate);
+		"Updates barrier position"
+		While(True);
+			Event Player.sigma_barrier_position = Event Player.sigma_barrier_init_position + Event Player.sigma_barrier_direction * Event Player.sigma_barrier_chase;
+			Wait(0.016, Ignore Condition);
+			Abort If Condition Is False;
+		End;
+	}
+}
+
+rule("Barrier {2}")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == False;
+		Event Player.sigma_barrier_ON == True;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, sigma_barrier_chase);
+		Wait(0.192, Ignore Condition);
+		Event Player.sigma_barrier_ready_to_destroy = True;
+	}
+}
+
+rule("Barrier Launch")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Event Player.sigma_barrier_ON == True;
+		Distance Between(Eye Position(Event Player), Event Player.sigma_barrier_position) < 3;
+	}
+
+	actions
+	{
+		"{Turns shield into a bouncepad instead when turned on}"
+		disabled Event Player.sigma_barrier_direction = Vector(X Component Of(Event Player.sigma_barrier_direction), Absolute Value(Y Component Of(
+			Event Player.sigma_barrier_direction)), Z Component Of(Event Player.sigma_barrier_direction));
+		Apply Impulse(Event Player, Event Player.sigma_barrier_direction, 30, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("Remove Barrier")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Event Player.sigma_barrier_ready_to_destroy == True;
+		Is Button Held(Event Player, Button(Secondary Fire)) == True;
+	}
+
+	actions
+	{
+		Event Player.sigma_barrier_ON = False;
+		Wait(0.016, Ignore Condition);
+		Event Player.sigma_barrier_ready_to_destroy = False;
+	}
+}
+
+rule("Destroy Pulse On Death")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Dead(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.sigma_barrier_ON = False;
+		Event Player.sigma_barrier_ready_to_destroy = False;
+	}
+}
+
+rule("Vortex Drag {By default, using vortex makes you glide across the ground without resetting during the animation}")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Gravity(Event Player, 0);
+		Set Move Speed(Event Player, 0);
+		Wait(2, Restart When True);
+		Set Gravity(Event Player, 100);
+		Set Move Speed(Event Player, 100);
+	}
+}
+
+rule("Vortex Refresh")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		Is Dead(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Move Speed(Event Player, 100);
+		Set Gravity(Event Player, 100);
+	}
+}
+
+rule("Rock Booster")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Sigma;
+	}
+
+	conditions
+	{
+		"Rock can be used during the vortex animation"
+		Is Using Ability 2(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait(0.650, Ignore Condition);
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), -14, To World, Cancel Contrary Motion);
+	}
+}
+
+disabled rule("WINSTON STUFF")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Initialize Winston")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Winston;
+	}
+
+	actions
+	{
+		Event Player.WinstonBubbleLocation = Null;
+	}
+}
+
+rule("Create Bubble")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Winston;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+	}
+
+	actions
+	{
+		"Place Bubble on ground below player. Easier for new players to figure out what's going on (compared to Ray Cast bubble position)."
+		Event Player.WinstonBubbleLocation = Position Of(Event Player) + World Vector Of(Forward, Event Player, Rotation)
+			* Horizontal Speed Of(Event Player) * 0.300 + Down * Altitude Of(Event Player);
+		"Use Ray Cast to determine bubble position"
+		disabled Event Player.WinstonBubbleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ Facing Direction Of(Event Player) * 160, All Players(All Teams), Event Player, False);
+		If(Distance Between(Event Player.WinstonBubbleLocation, Position Of(Event Player)) > 100);
+			Small Message(Event Player, Custom String("Barrier Cast Out Of Range (100m)"));
+			Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+			Abort;
+		End;
+		Create Effect(Event Player, Sphere, Color(Blue), Event Player.WinstonBubbleLocation, 5, Visible To Position and Radius);
+		Event Player.WinstonBubbleEffect = Last Created Entity;
+		Event Player.WinstonBouncyBubbleCooldown = 9;
+		Chase Player Variable At Rate(Event Player, WinstonBouncyBubbleCooldown, 0, 1, Destination and Rate);
+		While(Event Player.WinstonBouncyBubbleCooldown > 0 && !Is Dead(Event Player));
+			Wait(0.100, Ignore Condition);
+		End;
+		Destroy Effect(Event Player.WinstonBubbleEffect);
+		Event Player.WinstonBubbleLocation = Null;
+	}
+}
+
+rule("Winston Bubble Physics Rule")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Winston;
+	}
+
+	conditions
+	{
+		Event Player.WinstonBubbleLocation != Null;
+		Distance Between(Position Of(Event Player), Event Player.WinstonBubbleLocation) <= 5;
+	}
+
+	actions
+	{
+		"Direct Impulse - Cancel's Player Motion, so physically inaccurate bounce"
+		Apply Impulse(Event Player, Direction Towards(Event Player.WinstonBubbleLocation, Position Of(Event Player)), Speed Of(
+			Event Player) * 1.300, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("Winston Wall Climb")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Winston;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Jump)) == True;
+		"Make this so a player can't use wall climb multiple times in a row."
+		Event Player.WinstonWallClimbEnabled == True;
+	}
+
+	actions
+	{
+		Event Player.WinstonWallClimbTimer = 4;
+		"Set Wall Climb to have a max of 4 sec duration. This prevents you from wall climing against a roof/skybox for indefinite stall."
+		Chase Player Variable Over Time(Event Player, WinstonWallClimbTimer, 0, 4, Destination and Duration);
+		"Wall Climb while Jump is held, have been wall climbing less than 4 sec, are within 0.5m of wall"
+		While(Is Button Held(Event Player, Button(Jump)) && Event Player.WinstonWallClimbTimer > 0 && Distance Between(
+			Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player) + Direction From Angles(
+			Horizontal Angle From Direction(Facing Direction Of(Event Player)), 0) * 10, All Players(All Teams), Event Player, True),
+			Eye Position(Event Player)) < 3);
+			Wait(0.033, Ignore Condition);
+			Set Move Speed(Event Player, 0);
+			Apply Impulse(Event Player, Up, 7, To World, Cancel Contrary Motion);
+			Apply Impulse(Event Player, Forward, 1, To Player, Cancel Contrary Motion);
+			Event Player.WinstonWallClimbEnabled = False;
+		End;
+		Set Move Speed(Event Player, 100);
+		Wait(0.033, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Wall Climb Reset When On Ground")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Winston;
+	}
+
+	conditions
+	{
+		Is On Ground(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.WinstonWallClimbEnabled = True;
+	}
+}
+
+disabled rule("ANA MODIFIERS")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Ana Primary Impulse")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Firing Primary(Event Player) == True;
+		Has Status(Event Player, Rooted) == False;
+		disabled Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Gravity(Event Player, 0);
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), 15, To World, Cancel Contrary Motion);
+		Wait(0.060, Ignore Condition);
+		Set Gravity(Event Player, 100);
+	}
+}
+
+rule("Ana Sleep Dart Teleport")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Stop Camera(Event Player);
+		"The duration before Ana fires sleep dart"
+		Wait(0.300, Ignore Condition);
+		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ Facing Direction Of(Event Player) * 180, All Players(All Teams), Event Player, True);
+		"Shorten ray cast to avoid unintended tele through surfaces"
+		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
+			* 0.500;
+		If(Y Component Of(Event Player.AnaSleepDartTeleLocation) > 24);
+			Small Message(Event Player, Custom String("Teleport location elevation too high"));
+			Cancel Primary Action(Event Player);
+			Wait(0.100, Ignore Condition);
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+			Abort;
+		End;
+		"Sleep dart travel time"
+		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
+		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
+		Call Subroutine(CancelMomentum);
+		disabled Small Message(Event Player, Custom String("{0} alt {1}", Event Player.AnaSleepDartTeleLocation, Altitude Of(Event Player)));
+	}
+}
+
+rule("Heal = Impulse {must be damaged when spawning}")
+{
+	event
+	{
+		Player Dealt Healing;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Healee == Healer;
+		Has Status(Event Player, Rooted) == False;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), -15, To World, Cancel Contrary Motion);
+		Wait(1, Ignore Condition);
+	}
+}
+
+rule("Ana Health Managment")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Normalized Health(Event Player) >= 1;
+		Is In Spawn Room(Event Player) != True;
+	}
+
+	actions
+	{
+		Clear Status(Event Player, Phased Out);
+		Damage(Event Player, Event Player, 50);
+		Wait(0.250, Ignore Condition);
+		Loop If Condition Is True;
+		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+disabled rule("ROADHOG STUFF")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Change Hook to Grappling Hook")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		"Initial impulse to let you hook in midair without falling too far while hook is out"
+		Apply Impulse(Event Player, Up, 3, To World, Cancel Contrary Motion);
+		"Issue here is that we are using ray cast to determine hook impact, which isn't visually accurate, so the hook may impact a wall but not be deteted."
+		Event Player.RoadhogHookPosition = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ 120 * Facing Direction Of(Event Player), All Players(All Teams), Event Player, True);
+		"Abort if hook didn't connect with a wall within 25m. For reference, 20m is hook range for normal roadhog."
+		If(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) > 25);
+			Small Message(Event Player, Custom String("Out of hook range!"));
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+			Abort;
+		End;
+		"Wait for hook to \"hit\" something. Hook moves at 40m/s"
+		Wait(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) / 40, Ignore Condition);
+		"Impulse that increases with hook range. Hook impulse = Base Impulse + Hook Range x Range Multiplier."
+		Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.RoadhogHookPosition), 20 + Distance Between(
+			Event Player.RoadhogHookPosition, Position Of(Event Player)) * 0.800, To World, Cancel Contrary Motion);
+		"Large Linear Impulse. Disabled while testing impulse that increases with range."
+		disabled Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.RoadhogHookPosition), 40, To World,
+			Cancel Contrary Motion);
+	}
+}
+
+rule("Change Take A Breather to Bouncy Ball Hog")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+		disabled Is On Ground(Event Player) == True;
+		Altitude Of(Event Player) <= 1.500;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, Speed Of(Event Player) * 1.200, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("Add Knockback When Secondary Fire Used")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Firing Secondary(Event Player) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Facing Direction Of(Event Player), -12, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("Roadhog Ultimate")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ultimate(Event Player) == True;
+	}
+
+	actions
+	{
+		Disable Movement Collision With Environment(Event Player, False);
+		Small Message(Event Player, Custom String("Hold Melee to Cancel Ultimate"));
+		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Button(Melee)));
+			Wait(0.033, Ignore Condition);
+			"Cause knockback on player"
+			disabled Apply Impulse(Event Player, Facing Direction Of(Event Player), -10, To World, Cancel Contrary Motion);
+			"Player Knockback"
+			Apply Impulse(Event Player, Facing Direction Of(Event Player), -8, To World, Cancel Contrary Motion);
+			"\"Drill\" Through Walls, Skyboxes, etc."
+			disabled Teleport(Event Player, Position Of(Event Player) + Facing Direction Of(Event Player) * -1.500);
+		End;
+		"For melee cancel on ult"
+		Cancel Primary Action(Event Player);
+		Enable Movement Collision With Environment(Event Player);
+	}
+}
+
+rule("Limit Roadhog Ultimate Duration")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Roadhog;
+	}
+
+	conditions
+	{
+		Is Using Ultimate(Event Player) == True;
+	}
+
+	actions
+	{
+		"Set Ult Duration to 3 sec, then cancel it"
+		Wait(3, Ignore Condition);
+		Cancel Primary Action(Event Player);
 	}
 }
