@@ -325,6 +325,8 @@ rule("Global HUD")
 			"1. Open Workshop Inspector, Select \"variable target\" to be Global\r\n2. Press button [X] on bottom middle to copy all variables"),
 			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(White), Color(White), Color(
 			White), Visible To, Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
+			Color(White), Visible To, Default Visibility);
 	}
 }
 
@@ -373,7 +375,7 @@ rule("Initialize player")
 	}
 }
 
-rule("Player HUD")
+rule("Player HUD & Sphere initialize")
 {
 	event
 	{
@@ -426,7 +428,7 @@ rule("Player HUD")
 		"Effect Lock Sphere Create Non-Pioneer"
 		Create Effect(Filtered Array(Event Player,
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained), Sphere,
-			Color(White), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Global.EffectLockSphereRadiusConstant,
+			Color(White), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Global.EffectLockSphereRadiusConstant + -0.900,
 			Visible To Position and Radius);
 		"Effect Lock Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Event Player, Current Array Element.EffectLockSphereLocation != Null), Sphere, Color(White),
@@ -552,7 +554,7 @@ rule("Pioneer Create Point")
 			Abort;
 		End;
 		Event Player.TempVariable2 = Position Of(Event Player);
-		Set Move Speed(Event Player, 0);
+		Start Forcing Player Position(Event Player, Event Player.TempVariable2, False);
 		Call Subroutine(CancelMomentum);
 		"Allow player 3 sec to cancel the CP"
 		Event Player.CancelPointTimer = 3;
@@ -561,10 +563,12 @@ rule("Pioneer Create Point")
 		While(Event Player.CancelPointTimer > 0 && True);
 			Wait(0.016, Ignore Condition);
 			If(Is Button Held(Event Player, Button(Reload)));
+				Stop Forcing Player Position(Event Player);
 				Call Subroutine(RespawnPlayer);
 				Abort;
 			End;
 		End;
+		Stop Forcing Player Position(Event Player);
 		"Force all players waiting for pioneer to respawn - otherwise they could be standing on top of the next CP"
 		disabled Filtered Array(All Players(All Teams), Current Array Element == Event Player && Count Of(Global.CPLocations)
 			== Event Player.CurrentCP + 1).ForceRespawn = True;
@@ -579,7 +583,6 @@ rule("Pioneer Create Point")
 		Modify Global Variable(CPLocations, Append To Array, Event Player.TempVariable2);
 		Modify Global Variable(PioneerList, Append To Array, Custom String("{0}", Event Player));
 		Modify Global Variable(CPAbilityCounts, Append To Array, Event Player.CPAbilityCounts);
-		Small Message(All Players(All Teams), Custom String("created point {0}", Event Player.CPAbilityCounts));
 		Modify Global Variable(CPUltimateTeleportPrimary, Append To Array, Event Player.CountUltimateTeleportPrimary);
 		Modify Global Variable(CPHeroList, Append To Array, Hero Of(Event Player));
 		Modify Global Variable(CPGreenSphereArray, Append To Array, Event Player.GreenSphereLocation);
