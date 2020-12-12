@@ -181,6 +181,7 @@ variables
 		25: CPEffectLockSphereArray
 		26: EffectLockSphereRadiusConstant
 		27: DevModeEngaged
+		28: CPKillSphereArray
 
 	player:
 		0: CurrentCP
@@ -198,6 +199,7 @@ variables
 		15: PunchFixStore
 		16: GreenSphereLocation
 		17: EffectLockSphereLocation
+		18: KillSphereLocation
 		22: TempVariable
 		23: TempVariable2
 		24: CancelPointTimer
@@ -320,8 +322,8 @@ rule("Global HUD")
 	actions
 	{
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.GameStarted == False), Custom String(
-			"{0} Leave The Spawn and Press R to Create Origin Point!", Host Player), Null, Null, Top, 0, Color(Green), Color(White), Color(
-			White), Visible To and String, Default Visibility);
+			"{0} Press R to Create Origin Point!", Host Player), Null, Null, Top, 0, Color(Green), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.GameStarted), Custom String(
 			"Pioneer: {0}\r\nTime Remaining: {1}/{2}", Global.CurrentPioneer, Global.PioneerTimer, Global.PioneerTimeLimitConstant), Null,
 			Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
@@ -337,8 +339,7 @@ rule("Global HUD")
 			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String(
-			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Group Up Voiceline\r\nSave Map:\r\n{0}\r\n{1}",
-			Custom String(
+			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Hello\r\nSave Map:\r\n{0}\r\n{1}", Custom String(
 			"1. Open Workshop Inspector, Select \"variable target\" to be Global\r\n2. Press button [X] on bottom middle to copy all variables"),
 			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(White), Color(White), Color(
 			White), Visible To, Default Visibility);
@@ -432,7 +433,7 @@ rule("Player HUD")
 			White), Color(Red), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations)
 			== Event Player.CurrentCP + 1 && Global.MultiHeroEnabled), Custom String(
-			"Create Effect Lock With Melee\r\nCreate Environmental Sphere with Crouch\r\nChange Hero With Interact + Ultimate Status"),
+			"Create Effect Lock: Melee\r\nCreate Env Sphere: Crouch\r\nCreate Kill Sphere: Group Up\r\nChange Hero: Interact + Ultimate Status"),
 			Null, Null, Right, 0, Color(Red), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Green Sphere Create"
 		Create Effect(Filtered Array(Event Player, Global.CPGreenSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(
@@ -460,6 +461,12 @@ rule("Player HUD")
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained),
 			Custom String("Effect Lock"), Global.CPEffectLockSphereArray[Event Player.CurrentCP], 1.300, Do Not Clip,
 			Visible To and Position, Color(Yellow), Default Visibility);
+		"Kill Sphere Create"
+		Create Effect(Filtered Array(Event Player, Global.CPKillSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(Red),
+			Global.CPKillSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+		"Green Sphere Create Pioneer Only"
+		Create Effect(Filtered Array(Event Player, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
+			Event Player.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 	}
 }
 
@@ -502,6 +509,7 @@ rule("Create Origin Point")
 		Global.CPHeroList = Array();
 		Global.CPGreenSphereArray = Empty Array;
 		Global.CPEffectLockSphereArray = Empty Array;
+		Global.CPKillSphereArray = Empty Array;
 	}
 }
 
@@ -593,6 +601,7 @@ rule("Pioneer Create Point")
 		Modify Global Variable(CPUltimateTeleportPrimary, Append To Array, Event Player.CountUltimateTeleportPrimary);
 		Modify Global Variable(CPHeroList, Append To Array, Hero Of(Event Player));
 		Modify Global Variable(CPGreenSphereArray, Append To Array, Event Player.GreenSphereLocation);
+		Modify Global Variable(CPKillSphereArray, Append To Array, Event Player.KillSphereLocation);
 		Modify Global Variable(CPEffectLockSphereArray, Append To Array, Event Player.EffectLockSphereLocation);
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
@@ -1057,7 +1066,7 @@ rule("Interact + Need Healing Voiceline = Skip CP if you have spent enough time"
 	}
 }
 
-rule("Interact + Group Up Voiceline = Dev Mode Engaged")
+rule("Interact + Hello Voiceline = Dev Mode Engaged")
 {
 	event
 	{
@@ -1070,7 +1079,7 @@ rule("Interact + Group Up Voiceline = Dev Mode Engaged")
 	{
 		Event Player == Host Player;
 		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating(Event Player, Group Up) == True;
+		Is Communicating(Event Player, Hello) == True;
 	}
 
 	actions
@@ -1454,6 +1463,8 @@ rule("Reset Cooldowns If In Starting CP Ring")
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) < Global.CPRadius;
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
+		(Ability Cooldown(Event Player, Button(Secondary Fire)) > 0 || Ability Cooldown(Event Player, Button(Ability 1))
+			> 0 || Ability Cooldown(Event Player, Button(Ability 2)) > 0) == True;
 	}
 
 	actions
@@ -1701,7 +1712,7 @@ rule("Sub0: RespawnPlayer")
 		Event Player.GreenSphereLocation = Null;
 		Event Player.EffectLockSphereLocation = Null;
 		Event Player.EffectLockObtained = False;
-		"Sigma Barrier Reset"
+		Event Player.KillSphereLocation = Null;
 		If(Hero Of(Event Player) == Hero(Junkrat));
 			Set Ability Charge(Event Player, Button(Ability 1), 2);
 		End;
@@ -1938,6 +1949,76 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 		Event Player.EffectLockObtained = True;
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Small Message(Event Player, Custom String("Effect Lock Obtained!"));
+	}
+}
+
+rule("Pioneer Create Kill Sphere With Group Up")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer == Event Player;
+		Is Communicating(Event Player, Group Up) == True;
+	}
+
+	actions
+	{
+		Event Player.KillSphereLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ Facing Direction Of(Event Player) * 20, Null, Event Player, True);
+		Small Message(Event Player, Custom String("Kill Sphere Created!"));
+		Play Effect(Event Player, Buff Explosion Sound, Color(White), Event Player, 60);
+	}
+}
+
+rule("Pioneer Respawns if in kill sphere")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer == Event Player;
+		Event Player.KillSphereLocation != Null;
+		Distance Between(Eye Position(Event Player), Event Player.KillSphereLocation) < Global.GreenSphereRadiusConstant;
+	}
+
+	actions
+	{
+		Call Subroutine(RespawnPlayer);
+		Small Message(Event Player, Custom String("Avoid the red spheres!"));
+	}
+}
+
+rule("Non-Pioneer Respawns if in Kill Sphere")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer != Event Player;
+		Global.CPKillSphereArray[Event Player.CurrentCP] != Null;
+		Distance Between(Eye Position(Event Player), Global.CPKillSphereArray[Event Player.CurrentCP]) < Global.GreenSphereRadiusConstant;
+	}
+
+	actions
+	{
+		Call Subroutine(RespawnPlayer);
+		Small Message(Event Player, Custom String("Avoid the red spheres!"));
 	}
 }
 
