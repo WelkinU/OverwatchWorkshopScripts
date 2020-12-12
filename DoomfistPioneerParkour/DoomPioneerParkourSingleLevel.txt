@@ -241,24 +241,6 @@ rule("Memory - Put variables in here")
 	}
 }
 
-rule("Memory Recall Handle")
-{
-	event
-	{
-		Ongoing - Global;
-	}
-
-	actions
-	{
-		Wait(0.500, Ignore Condition);
-		Call Subroutine(MemoryRecall);
-		"something in memory"
-		If(Count Of(Global.CPLocations) > 0);
-			Global.GameStarted = True;
-		End;
-	}
-}
-
 disabled rule("Initialization")
 {
 	event
@@ -280,7 +262,7 @@ rule("Initialize Globals")
 		Pause Match Time;
 		"These are the allowed heros for multi-hero mode"
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
-			Hero(Widowmaker), Hero(Junkrat), Hero(Ana));
+			Hero(Junkrat), Hero(Ana));
 		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
 		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False, 0);
 		Global.NonInfiniteModeWinTime = Workshop Setting Integer(Custom String("Infinite Mode"), Custom String(
@@ -426,7 +408,7 @@ rule("Player HUD")
 			"Player Scale Constant: {0}\r\nPunch Grace Enabled: {1}\r\nPlayer Move Speed Constant: {2}", Global.PlayerScaleConstant,
 			Global.PunchGraceEnabled, Global.PlayerMoveSpeedConstant), Custom String(
 			"Pioneer Time Limit: {0}\r\nPlayer CP Skip Time Limit: {1}\r\n{2}", Global.PioneerTimeLimitConstant, Global.SkipTimeLimit,
-			Custom String("CP Radius: {0}", Global.CPRadius))), Left, 2, Color(White), Color(White), Color(White), Visible To and String,
+			Custom String("CP Radius: {0}", Global.CPRadius))), Right, 9, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, !Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"Hold Interact Key ({0}) For Controls / Game Settings", Input Binding String(Button(Interact))), Left, 1, Color(White), Color(
@@ -752,8 +734,10 @@ rule("Start Pioneer Timer and set Invisible when player becomes pioneer")
 	{
 		Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 		Chase Global Variable At Rate(PioneerTimer, 0, 1, Destination and Rate);
-		Set Invisible(Event Player, All);
 		Disallow Button(Event Player, Button(Melee));
+		If(Hero Of(Event Player) != Hero(Wrecking Ball));
+			Set Invisible(Event Player, All);
+		End;
 	}
 }
 
@@ -1165,6 +1149,9 @@ rule("Close Hero Select Menu")
 			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
 			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+		End;
+		If(Hero Of(Event Player) == Hero(Wrecking Ball));
+			Set Invisible(Event Player, None);
 		End;
 		Event Player.HeroSelectMenuOpen = False;
 	}
@@ -1596,6 +1583,24 @@ rule("Pioneer Left Match")
 	}
 }
 
+rule("Memory Recall Handle")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Wait(0.500, Ignore Condition);
+		Call Subroutine(MemoryRecall);
+		"something in memory"
+		If(Count Of(Global.CPLocations) > 0);
+			Global.GameStarted = True;
+		End;
+	}
+}
+
 disabled rule("Subroutines")
 {
 	event
@@ -1701,6 +1706,7 @@ rule("Sub0: RespawnPlayer")
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+		Set Ability Cooldown(Event Player, Button(Crouch), 0);
 		"Set to (0,0,0) without creating new object"
 		Event Player.Count360Slam125 -= Event Player.Count360Slam125;
 		disabled Event Player.Count360Slam125 = Vector(0, 0, 0);
@@ -1802,6 +1808,7 @@ rule("Pioneer Create Green Sphere with Melee")
 		disabled Is Communicating(Event Player, Need Healing) == True;
 		disabled Is In Air(Event Player) == True;
 		Is Button Held(Event Player, Button(Crouch)) == True;
+		Hero Of(Event Player) != Hero(Wrecking Ball);
 	}
 
 	actions
