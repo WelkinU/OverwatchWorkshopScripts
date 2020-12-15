@@ -415,10 +415,14 @@ rule("Player HUD & Sphere initialize")
 		Create HUD Text(Filtered Array(Event Player, !Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"Hold Interact Key ({0}) For Controls / Game Settings", Input Binding String(Button(Interact))), Left, 1, Color(White), Color(
 			White), Color(Red), Visible To and String, Default Visibility);
-		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations)
-			== Event Player.CurrentCP + 1 && Global.MultiHeroEnabled), Custom String(
+		"Pioneer special controls HUD"
+		Create HUD Text(Filtered Array(Event Player, Global.CurrentPioneer == Current Array Element), Custom String(
 			"Create Effect Lock: Melee\r\nCreate Env Sphere: Crouch\r\nCreate Kill Sphere: Group Up\r\nChange Hero: Interact + Ultimate Status"),
 			Null, Null, Right, 0, Color(Red), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(Event Player, Count Of(Global.CPLocations)
+			== Event Player.CurrentCP + 1 && Global.MultiHeroEnabled && Global.CurrentPioneer != Event Player), Custom String(
+			"Change Hero: Interact + Ultimate Status"), Null, Null, Right, 0, Color(Red), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		"Green Sphere Create"
 		Create Effect(Filtered Array(Event Player, Global.CPGreenSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(
 			Green), Global.CPGreenSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
@@ -554,7 +558,7 @@ rule("Pioneer Create Point")
 			Abort;
 		End;
 		Event Player.TempVariable2 = Position Of(Event Player);
-		Start Forcing Player Position(Event Player, Event Player.TempVariable2, False);
+		Start Forcing Player Position(Event Player, Position Of(Event Player), False);
 		Call Subroutine(CancelMomentum);
 		"Allow player 3 sec to cancel the CP"
 		Event Player.CancelPointTimer = 3;
@@ -1717,13 +1721,16 @@ rule("Sub0: RespawnPlayer")
 		If(Event Player.PunchFixStore);
 			Start Holding Button(Event Player, Button(Secondary Fire));
 		End;
-		Enable Movement Collision With Environment(Event Player);
-		Event Player.GreenSphereLocation = Null;
-		Event Player.EffectLockSphereLocation = Null;
-		Event Player.EffectLockObtained = False;
-		Event Player.KillSphereLocation = Null;
 		If(Hero Of(Event Player) == Hero(Junkrat));
 			Set Ability Charge(Event Player, Button(Ability 1), 2);
+		End;
+		Enable Movement Collision With Environment(Event Player);
+		Event Player.EffectLockSphereLocation = Null;
+		Event Player.EffectLockObtained = False;
+		"Don't reset env collision / kill sphere locations if you're the pioneer"
+		If(Global.CurrentPioneer != Event Player);
+			Event Player.GreenSphereLocation = Null;
+			Event Player.KillSphereLocation = Null;
 		End;
 	}
 }
