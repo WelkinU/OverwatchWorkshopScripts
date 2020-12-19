@@ -21,25 +21,18 @@ settings
 			}
 		}
 
-		Deathmatch
-		{
-			enabled maps
-			{
-				Castillo
-				Château Guillard
-				Petra
-			}
-		}
-
 		Skirmish
 		{
 			disabled maps
 			{
 				Blizzard World
+				Hanamura
 				Hollywood Halloween
 				Horizon Lunar Colony
 				King's Row
 				Lijiang Tower Lunar New Year
+				Numbani
+				Temple of Anubis
 				Watchpoint: Gibraltar
 				Workshop Chamber
 				Workshop Expanse
@@ -59,37 +52,10 @@ settings
 
 	heroes
 	{
-		Team 1
-		{
-			Genji
-			{
-				Ammunition Clip Size Scalar: 25%
-				Swift Strike Cooldown Time: 75%
-				Ultimate Duration: 34%
-			}
-		}
-
-		Team 2
-		{
-			Genji
-			{
-				Ammunition Clip Size Scalar: 25%
-				Swift Strike Cooldown Time: 75%
-				Ultimate Duration: 34%
-			}
-		}
-
-		Team FFA
-		{
-			Genji
-			{
-				Swift Strike Cooldown Time: 75%
-				Ultimate Duration: 34%
-			}
-		}
-
 		General
 		{
+			Ultimate Generation - Passive: 0%
+
 			Ana
 			{
 				Ammunition Clip Size Scalar: 25%
@@ -111,6 +77,13 @@ settings
 			Doomfist
 			{
 				Seismic Slam Cooldown Time: 50%
+			}
+
+			Genji
+			{
+				Ammunition Clip Size Scalar: 25%
+				Swift Strike Cooldown Time: 75%
+				Ultimate Duration: 34%
 			}
 
 			Roadhog
@@ -182,6 +155,7 @@ variables
 		26: EffectLockSphereRadiusConstant
 		27: DevModeEngaged
 		28: CPKillSphereArray
+		29: UltimateAbilitiesEnabledConstant
 
 	player:
 		0: CurrentCP
@@ -291,6 +265,8 @@ rule("Initialize Globals")
 		Global.EffectLockSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Effect Lock (White) Sphere Radius"), 2, 1, 5, 0);
 		Global.DevModeEngaged = False;
+		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Pioneer Settings"), Custom String(
+			"Ultimate Abilites Enabled"), True, 0);
 	}
 }
 
@@ -1701,8 +1677,10 @@ rule("Sub0: RespawnPlayer")
 			Set Ability 1 Enabled(Event Player, True);
 			Set Ability 2 Enabled(Event Player, True);
 			Event Player.TeleportEnabled = True;
-			Set Ultimate Ability Enabled(Event Player, True);
 			Set Primary Fire Enabled(Event Player, True);
+			If(Global.UltimateAbilitiesEnabledConstant);
+				Set Ultimate Ability Enabled(Event Player, True);
+			End;
 		End;
 		Event Player.WinstonBouncyBubbleCooldown = 0;
 		Destroy Effect(Event Player.WinstonBubbleEffect);
@@ -1718,7 +1696,7 @@ rule("Sub0: RespawnPlayer")
 		Event Player.Count360Slam125 -= Event Player.Count360Slam125;
 		disabled Event Player.Count360Slam125 = Vector(0, 0, 0);
 		Set Move Speed(Event Player, Global.PlayerMoveSpeedConstant);
-		If(Event Player.PunchFixStore);
+		If(Event Player.PunchFixStore && Is Button Held(Event Player, Button(Secondary Fire)));
 			Start Holding Button(Event Player, Button(Secondary Fire));
 		End;
 		If(Hero Of(Event Player) == Hero(Junkrat));
