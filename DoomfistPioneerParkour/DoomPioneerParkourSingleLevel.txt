@@ -13,33 +13,24 @@ settings
 
 	modes
 	{
-		Capture the Flag
+		Skirmish
 		{
 			enabled maps
 			{
-				Ayutthaya
-			}
-		}
-
-		Skirmish
-		{
-			disabled maps
-			{
-				Blizzard World
-				Hanamura
-				Hollywood Halloween
-				Horizon Lunar Colony
-				King's Row
-				Lijiang Tower Lunar New Year
-				Numbani
-				Temple of Anubis
-				Watchpoint: Gibraltar
-				Workshop Chamber
-				Workshop Expanse
-				Workshop Expanse Night
-				Workshop Green Screen
-				Workshop Island
-				Workshop Island Night
+				Blizzard World Winter
+				Busan
+				Eichenwalde
+				Eichenwalde Halloween
+				Hanamura Winter
+				Havana
+				Hollywood
+				Ilios
+				Junkertown
+				King's Row Winter
+				Lijiang Tower
+				Nepal
+				Paris
+				Rialto
 			}
 		}
 
@@ -162,6 +153,7 @@ variables
 		2: MaxUnlockedCP
 		4: CPAbilityCounts
 		5: CountUltimateTeleportPrimary
+		6: FacingDirectionLeavingCP
 		7: TeleportEnabled
 		8: TimeSpentOnCP
 		9: SpectateMode
@@ -206,7 +198,7 @@ subroutines
 	4: MemoryRecall
 }
 
-rule("Memory - Put variables in here")
+rule("--------MEMORY: PASTE VARIABLES HERE -------------------")
 {
 	event
 	{
@@ -232,7 +224,7 @@ rule("Initialize Globals")
 
 	actions
 	{
-		disabled Disable Inspector Recording;
+		Disable Inspector Recording;
 		Pause Match Time;
 		"These are the allowed heros for multi-hero mode"
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
@@ -293,7 +285,7 @@ rule("Global HUD")
 			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
 			Custom String("Switch Hero (Multi-Hero Mode Only): Interact + Ultimate Status Voiceline")), Left, 1, Color(White), Color(
 			White), Color(White), Visible To and String, Default Visibility);
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
+		Create HUD Text(Host Player, Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
 			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String(
@@ -568,11 +560,15 @@ rule("Pioneer Create Point")
 		Modify Global Variable(CPGreenSphereArray, Append To Array, Event Player.GreenSphereLocation);
 		Modify Global Variable(CPKillSphereArray, Append To Array, Event Player.KillSphereLocation);
 		Modify Global Variable(CPEffectLockSphereArray, Append To Array, Event Player.EffectLockSphereLocation);
+		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
 		Event Player.TimeSpentOnCP = 0;
 		Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
 		Global.CurrentPioneer = Null;
+		Enable Inspector Recording;
+		Log To Inspector(Custom String("Created Checkpoint {0}", Count Of(Global.CPLocations)));
+		Disable Inspector Recording;
 	}
 }
 
@@ -648,6 +644,7 @@ rule("Non-Pioneer Arrive At CP")
 			End;
 		End;
 		Call Subroutine(HandleSkipTimer);
+		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(RespawnPlayer);
 	}
 }
@@ -672,6 +669,7 @@ rule("If player joins after origin point created, start them at origin point")
 		Loop If(!Has Spawned(Event Player));
 		Wait(0.100, Ignore Condition);
 		Call Subroutine(HandleSkipTimer);
+		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(RespawnPlayer);
 	}
 }
@@ -694,6 +692,7 @@ rule("Handle ForceRespawn")
 	{
 		Call Subroutine(RespawnPlayer);
 		Event Player.ForceRespawn = False;
+		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(HandleSkipTimer);
 	}
 }
@@ -872,7 +871,7 @@ rule("Crouch + Interact - Move Back A Checkpoint")
 	}
 }
 
-rule("Interact + Left Click: Camera To See Next Point")
+rule("Interact + Left Click: Camera To See Next Point (or the effect lock sphere)")
 {
 	event
 	{
@@ -893,14 +892,25 @@ rule("Interact + Left Click: Camera To See Next Point")
 	{
 		Set Primary Fire Enabled(Event Player, False);
 		Set Facing(Event Player, Vector(-10, -10, 0), To World);
-		Start Camera(Event Player, Ray Cast Hit Position(Global.CPLocations[Event Player.CurrentCP + 1],
-			Global.CPLocations[Event Player.CurrentCP + 1] + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player,
-			True), Global.CPLocations[Event Player.CurrentCP + 1], 30);
+		"Look at effect lock sphere if it exists and is within 10 degrees of where the player is looking when pressing left click + interact. Otherwise look at next CP"
+		If(Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Null && Angle Between Vectors(Facing Direction Of(Event Player),
+			Direction Towards(Eye Position(Event Player), Global.CPEffectLockSphereArray[Event Player.CurrentCP]))
+			< 10 && Angle Between Vectors(Facing Direction Of(Event Player), Direction Towards(Eye Position(Event Player),
+			Global.CPLocations[Event Player.CurrentCP + 1])) > 10);
+			Start Camera(Event Player, Ray Cast Hit Position(Global.CPEffectLockSphereArray[Event Player.CurrentCP + 0],
+				Global.CPEffectLockSphereArray[Event Player.CurrentCP + 0] + Facing Direction Of(Event Player) * -15, All Players(All Teams),
+				Event Player, True), Global.CPEffectLockSphereArray[Event Player.CurrentCP + 0], 30);
+		Else;
+			Start Camera(Event Player, Ray Cast Hit Position(Global.CPLocations[Event Player.CurrentCP + 1],
+				Global.CPLocations[Event Player.CurrentCP + 1] + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player,
+				True), Global.CPLocations[Event Player.CurrentCP + 1], 30);
+		End;
 		While(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact)));
 			Wait(0.033, Ignore Condition);
 		End;
 		Stop Camera(Event Player);
 		Set Primary Fire Enabled(Event Player, True);
+		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
 	}
 }
 
@@ -926,6 +936,9 @@ rule("Interact + Jump -> Go Forward a Checkpoint")
 		If(Global.CurrentPioneer == Event Player);
 			Small Message(Event Player, Custom String("Can't change level while pioneer! Make a checkpoint!"));
 			Abort;
+		End;
+		If(Global.DevModeEngaged);
+			Event Player.MaxUnlockedCP = Count Of(Global.CPLocations) - 1;
 		End;
 		"If player is not on last CP"
 		If(Event Player.CurrentCP < Event Player.MaxUnlockedCP);
@@ -1051,6 +1064,8 @@ rule("Interact + Hello Voiceline = Dev Mode Engaged")
 
 	actions
 	{
+		"Right now Dev Mode lets all players teleport and skip any points with zero time using jump + interact"
+		disabled Wait(0.250, Ignore Condition);
 		If(Global.DevModeEngaged);
 			Small Message(All Players(All Teams), Custom String("Dev Mode Disengaged"));
 			Global.DevModeEngaged = False;
@@ -1501,7 +1516,7 @@ rule("Handle Player Death")
 	}
 }
 
-rule("Pioneer Save CP Facing Direction when leaving the CP")
+rule("Save CP Facing Direction when leaving the CP (for both pioneer and non-pioneer)")
 {
 	event
 	{
@@ -1512,7 +1527,7 @@ rule("Pioneer Save CP Facing Direction when leaving the CP")
 
 	conditions
 	{
-		Global.CurrentPioneer == Event Player;
+		disabled Global.CurrentPioneer == Event Player;
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
@@ -1520,7 +1535,10 @@ rule("Pioneer Save CP Facing Direction when leaving the CP")
 
 	actions
 	{
-		Global.CPFacingDirections[Event Player.CurrentCP] = Facing Direction Of(Event Player);
+		If(Global.CurrentPioneer == Event Player);
+			Global.CPFacingDirections[Event Player.CurrentCP] = Facing Direction Of(Event Player);
+		End;
+		Event Player.FacingDirectionLeavingCP = Facing Direction Of(Event Player);
 	}
 }
 
@@ -1566,7 +1584,7 @@ rule("Pioneer Left Match")
 	}
 }
 
-rule("Memory Recall Handle")
+rule("Handle Memory Recall")
 {
 	event
 	{
@@ -1604,7 +1622,10 @@ rule("Sub0: RespawnPlayer")
 	{
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentCP]);
-		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
+		If(Is Button Held(Event Player, Button(Interact)));
+			Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
+		End;
+		Set Facing(Event Player, Event Player.FacingDirectionLeavingCP, To World);
 		"If player is not pioneer and is not waiting for pioneer"
 		If(Count Of(Global.CPLocations) > Event Player.CurrentCP + 1);
 			Start Forcing Player To Be Hero(Event Player, Global.CPHeroList[Event Player.CurrentCP]);
@@ -1706,7 +1727,8 @@ rule("Sub0: RespawnPlayer")
 		Event Player.EffectLockSphereLocation = Null;
 		Event Player.EffectLockObtained = False;
 		"Don't reset env collision / kill sphere locations if you're the pioneer"
-		If(Global.CurrentPioneer != Event Player);
+		If(Global.CurrentPioneer != Event Player || (Is Button Held(Event Player, Button(Interact)) && Is Button Held(Event Player, Button(
+			Reload))));
 			Event Player.GreenSphereLocation = Null;
 			Event Player.KillSphereLocation = Null;
 		End;
