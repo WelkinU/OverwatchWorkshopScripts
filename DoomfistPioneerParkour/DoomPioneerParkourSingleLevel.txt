@@ -246,7 +246,7 @@ rule("Initialize Globals")
 			"Pioneer Time Limit in Seconds"), 180, 90, 600, 0);
 		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Player Move Speed Scale Factor"), 100, 10, 1000, 0);
-		Global.PioneerMinDistanceConstant = 8;
+		Global.PioneerMinDistanceConstant = 6;
 		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Game Constants"), Custom String(
 			"Time Before Player Can Skip Level"), 240, 60, 9999, 0);
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
@@ -342,7 +342,8 @@ rule("Initialize player")
 			Default Visibility);
 		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
 			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Color(Yellow), True);
-		Event Player.Invisible = False;
+		Event Player.Invisible = True;
+		Set Invisible(Event Player, All);
 	}
 }
 
@@ -536,6 +537,7 @@ rule("Pioneer Create Point")
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
+		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Event Player.TempVariable2 = Position Of(Event Player);
 		Start Forcing Player Position(Event Player, Position Of(Event Player), False);
 		Call Subroutine(CancelMomentum);
@@ -552,9 +554,6 @@ rule("Pioneer Create Point")
 			End;
 		End;
 		Stop Forcing Player Position(Event Player);
-		"Force all players waiting for pioneer to respawn - otherwise they could be standing on top of the next CP"
-		disabled Filtered Array(All Players(All Teams), Current Array Element == Event Player && Count Of(Global.CPLocations)
-			== Event Player.CurrentCP + 1).ForceRespawn = True;
 		"Hopefully tempvariable doesn't conflict with \"Pioneer runs out of time\" rule"
 		For Player Variable(Event Player, TempVariable, 0, Count Of(All Living Players(All Teams)), 1);
 			If(All Living Players(All Teams)[Event Player.TempVariable].CurrentCP == Count Of(Global.CPLocations) - 1);
@@ -708,6 +707,8 @@ rule("Handle ForceRespawn")
 		Event Player.BlockPioneerNewPoint = False;
 		Event Player.ForceRespawn = False;
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
+		"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
+		Wait(0.100, Ignore Condition);
 		Call Subroutine(HandleSkipTimer);
 	}
 }
@@ -755,8 +756,12 @@ rule("Set Non-Pioneer Visible")
 
 	actions
 	{
-		Set Invisible(Event Player, None);
 		Allow Button(Event Player, Button(Melee));
+		If(Event Player.Invisible);
+			Set Invisible(Event Player, None);
+		Else;
+			Small Message(Event Player, Custom String("Invisible"));
+		End;
 	}
 }
 
@@ -2452,26 +2457,6 @@ rule("Winston Wall Climb")
 	}
 }
 
-disabled rule("Wall Climb Reset When On Ground")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Winston;
-	}
-
-	conditions
-	{
-		Is On Ground(Event Player) == True;
-	}
-
-	actions
-	{
-		Event Player.WinstonWallClimbEnabled = True;
-	}
-}
-
 disabled rule("ANA MODIFIERS")
 {
 	event
@@ -2696,8 +2681,8 @@ rule("Roadhog Ultimate")
 	actions
 	{
 		Disable Movement Collision With Environment(Event Player, False);
-		Small Message(Event Player, Custom String("Hold Melee to Cancel Ultimate"));
-		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Button(Melee)));
+		Small Message(Event Player, Custom String("Hold {0} to Cancel Ultimate", Input Binding String(Button(Primary Fire))));
+		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Button(Primary Fire)));
 			Wait(0.033, Ignore Condition);
 			"Cause knockback on player"
 			disabled Apply Impulse(Event Player, Facing Direction Of(Event Player), -10, To World, Cancel Contrary Motion);
