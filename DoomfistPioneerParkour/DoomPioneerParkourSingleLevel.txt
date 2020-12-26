@@ -79,7 +79,7 @@ settings
 
 			Roadhog
 			{
-				Ammunition Clip Size Scalar: 25%
+				Ammunition Clip Size Scalar: 40%
 				Chain Hook Cooldown Time: 75%
 				Take a Breather Cooldown Time: 75%
 			}
@@ -151,6 +151,7 @@ variables
 	player:
 		0: CurrentCP
 		2: MaxUnlockedCP
+		3: Invisible
 		4: CPAbilityCounts
 		5: CountUltimateTeleportPrimary
 		6: FacingDirectionLeavingCP
@@ -284,8 +285,8 @@ rule("Global HUD")
 			"-------------------------- Controls --------------------------\r\nQuick Reset: Reload\r\nPrev CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}",
 			Custom String("Teleport: Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
 			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
-			Custom String("Switch Hero (Multi-Hero Mode Only): Interact + Ultimate Status Voiceline")), Left, 1, Color(White), Color(
-			White), Color(White), Visible To and String, Default Visibility);
+			Custom String("Switch Hero (Multi-Hero Mode Only): Interact + Ultimate Status Voiceline\r\nToggle Invisible: Crouch + Jump")),
+			Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
 			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
@@ -341,6 +342,7 @@ rule("Initialize player")
 			Default Visibility);
 		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
 			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Color(Yellow), True);
+		Event Player.Invisible = False;
 	}
 }
 
@@ -701,7 +703,9 @@ rule("Handle ForceRespawn")
 
 	actions
 	{
+		Event Player.BlockPioneerNewPoint = True;
 		Call Subroutine(RespawnPlayer);
+		Event Player.BlockPioneerNewPoint = False;
 		Event Player.ForceRespawn = False;
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(HandleSkipTimer);
@@ -831,7 +835,7 @@ rule("Reload - Quick Reset")
 	conditions
 	{
 		Is Button Held(Event Player, Button(Reload)) == True;
-		Is On Ground(Event Player) != True;
+		disabled Is On Ground(Event Player) != True;
 		"This condition is so this rule doesn't get executed at same time as a player is using the level cancel"
 		Event Player.CancelPointTimer == 0;
 		"So player can't R and get teleported outside map before origin point is selected"
@@ -1132,6 +1136,35 @@ rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
 		End;
 		Event Player.HeroSelectMenuOpen = True;
 		Big Message(Event Player, Custom String("Release Interact Over The Hero You Want To Select"));
+	}
+}
+
+rule("Crouch + Jump: Toggle Invisiblity")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Jump)) == True;
+		Is Button Held(Event Player, Button(Crouch)) == True;
+		Global.CurrentPioneer != Event Player;
+	}
+
+	actions
+	{
+		If(Event Player.Invisible);
+			Set Invisible(Event Player, None);
+			Small Message(Event Player, Custom String("Visible"));
+		Else;
+			Small Message(Event Player, Custom String("Invisible"));
+			Set Invisible(Event Player, All);
+		End;
+		Event Player.Invisible = !Event Player.Invisible;
 	}
 }
 
@@ -1744,6 +1777,7 @@ rule("Sub0: RespawnPlayer")
 			Event Player.GreenSphereLocation = Null;
 			Event Player.KillSphereLocation = Null;
 		End;
+		Event Player.WinstonWallClimbEnabled = True;
 	}
 }
 
@@ -2418,7 +2452,7 @@ rule("Winston Wall Climb")
 	}
 }
 
-rule("Wall Climb Reset When On Ground")
+disabled rule("Wall Climb Reset When On Ground")
 {
 	event
 	{
