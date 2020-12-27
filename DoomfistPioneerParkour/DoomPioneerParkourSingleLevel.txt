@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Special Edition. Includes modifiers for effect locks, player scale, Punch Grace, other heros, move speed, and more. To change gameplay and pioneer parameters, go to Lobby -> Settings -> Workshop Settings. Made by WelkinTern, Source Code: https://github.com/WelkinU/OverwatchWorkshopScripts/blob/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour - Special Edition. Inlcudes tons of modifiers, to change gameplay and pioneer parameters, host can go to Lobby -> Settings -> Workshop Settings. Made by WelkinTern, Last Updated: Dec 26, 2020. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/blob/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -147,6 +147,9 @@ variables
 		27: DevModeEngaged
 		28: CPKillSphereArray
 		29: UltimateAbilitiesEnabledConstant
+		30: ReplaysEnabledConstant
+		31: ReplayPioneerPositionArray
+		32: ReplayPioneerFacingArray
 
 	player:
 		0: CurrentCP
@@ -167,6 +170,8 @@ variables
 		16: GreenSphereLocation
 		17: EffectLockSphereLocation
 		18: KillSphereLocation
+		19: ReplayPosition
+		20: ReplayFacing
 		22: TempVariable
 		23: TempVariable2
 		24: CancelPointTimer
@@ -261,6 +266,8 @@ rule("Initialize Globals")
 		Global.DevModeEngaged = False;
 		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Pioneer Settings"), Custom String(
 			"Ultimate Abilites Enabled"), True, 0);
+		Global.ReplaysEnabledConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
+			"Pioneer Replays Saved and Viewable"), True, 0);
 	}
 }
 
@@ -285,7 +292,8 @@ rule("Global HUD")
 			"-------------------------- Controls --------------------------\r\nQuick Reset: Reload\r\nPrev CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}",
 			Custom String("Teleport: Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
 			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
-			Custom String("Switch Hero (Multi-Hero Mode Only): Interact + Ultimate Status Voiceline\r\nToggle Invisible: Crouch + Jump")),
+			Custom String(
+			"Switch Hero: Interact + Ultimate Status\r\nToggle Invisible: Crouch + Jump\r\nView CP Replay: Interact + Thanks Voiceline")),
 			Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
 			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
@@ -476,6 +484,8 @@ rule("Create Origin Point")
 		Global.CPGreenSphereArray = Empty Array;
 		Global.CPEffectLockSphereArray = Empty Array;
 		Global.CPKillSphereArray = Empty Array;
+		Global.ReplayPioneerPositionArray = Empty Array;
+		Global.ReplayPioneerFacingArray = Empty Array;
 	}
 }
 
@@ -570,6 +580,8 @@ rule("Pioneer Create Point")
 		Modify Global Variable(CPGreenSphereArray, Append To Array, Event Player.GreenSphereLocation);
 		Modify Global Variable(CPKillSphereArray, Append To Array, Event Player.KillSphereLocation);
 		Modify Global Variable(CPEffectLockSphereArray, Append To Array, Event Player.EffectLockSphereLocation);
+		Global.ReplayPioneerPositionArray[Event Player.CurrentCP] = Event Player.ReplayPosition;
+		Global.ReplayPioneerFacingArray[Event Player.CurrentCP] = Event Player.ReplayFacing;
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
@@ -1783,6 +1795,8 @@ rule("Sub0: RespawnPlayer")
 			Event Player.KillSphereLocation = Null;
 		End;
 		Event Player.WinstonWallClimbEnabled = True;
+		Event Player.ReplayPosition = Empty Array;
+		Event Player.ReplayFacing = Empty Array;
 	}
 }
 
@@ -2716,5 +2730,75 @@ rule("Limit Roadhog Ultimate Duration")
 		"Set Ult Duration to 3 sec, then cancel it"
 		Wait(3, Ignore Condition);
 		Cancel Primary Action(Event Player);
+	}
+}
+
+disabled rule("Replay Saving / Watching Code")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Pioneer Save Replay")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer == Event Player;
+		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
+		Global.GameStarted == True;
+		Has Spawned(Event Player) == True;
+		Event Player.CancelPointTimer == 0;
+		Global.ReplaysEnabledConstant == True;
+	}
+
+	actions
+	{
+		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
+		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
+		Wait(0.100, Ignore Condition);
+		Loop If Condition Is True;
+		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
+		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
+	}
+}
+
+rule("Interact + Thanks: View Replay")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating(Event Player, Thanks) == True;
+	}
+
+	actions
+	{
+		If(!Global.ReplaysEnabledConstant);
+			Small Message(Event Player, Custom String("Replays Disabled (Host Can Turn It On In Workshop Settings)"));
+			Abort;
+		End;
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
+			Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
+				Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
+				30);
+			Wait(0.070, Ignore Condition);
+		End;
+		Wait(1, Ignore Condition);
+		Stop Camera(Event Player);
 	}
 }
