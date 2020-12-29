@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Special Edition. Inlcudes tons of modifiers, to change gameplay and pioneer parameters, host can go to Lobby -> Settings -> Workshop Settings. Made by WelkinTern, Last Updated: Dec 26, 2020. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/blob/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour - Special Edition. Incudes tons of modifiers, to change gameplay and pioneer parameters, host can go to Lobby -> Settings -> Workshop Settings. Made by WelkinTern, Last Updated: Dec 28, 2020. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/blob/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -110,6 +110,7 @@ settings
 
 	workshop
 	{
+		Green Sphere Radius: 3.500
 		Multi-Hero Mode Enabled: On
 	}
 }
@@ -287,7 +288,7 @@ rule("Global HUD")
 			"Pioneer: {0}\r\nTime Remaining: {1}/{2}", Global.CurrentPioneer, Global.PioneerTimer, Global.PioneerTimeLimitConstant), Null,
 			Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Controls HUD"
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
+		disabled Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String(
 			"-------------------------- Controls --------------------------\r\nQuick Reset: Reload\r\nPrev CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}",
 			Custom String("Teleport: Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
@@ -386,8 +387,8 @@ rule("Player HUD & Sphere initialize")
 			Button(Ability 2)), Z Component Of(Event Player.CPAbilityCounts))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(
 			White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, Event Player.TimeSpentOnCP > Global.SkipTimeLimit), Custom String(
-			"Have spent more than {0} sec on this CP.\r\nUse Interact + Need Healing Voiceline to skip CP.", Global.SkipTimeLimit), Null,
-			Null, Right, 0, Color(Red), Color(White), Color(White), Visible To and String, Default Visibility);
+			"Have spent more than {0}sec on CP\r\nUse Interact + Jump to skip CP", Global.SkipTimeLimit), Null, Null, Right, 0, Color(Red),
+			Color(White), Color(White), Visible To and String, Default Visibility);
 		"Game Settings HUD"
 		Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"--------------------------Game Settings--------------------------\r\n{0}\r\n{1}\r\n{2}", Custom String(
@@ -441,6 +442,40 @@ rule("Player HUD & Sphere initialize")
 		"Green Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Event Player, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
 			Event Player.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+	}
+}
+
+rule("Controls HUD")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0}", Ability Icon String(Hero(Hanzo), Button(Ability 1))), Custom String("View Next Checkpoint"), Custom String(
+			"Interact + Left Click"), Left, 1, Color(White), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0}", Ability Icon String(Hero(Soldier: 76), Button(Ultimate))), Custom String("Spectate"), Custom String("Interact + Melee"),
+			Left, 1.100, Color(White), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0}", Ability Icon String(Hero(Tracer), Button(Ability 1))), Custom String("Skip Level (After {0}sec)", Global.SkipTimeLimit),
+			Custom String("Interact + Jump"), Left, 1.200, Color(White), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0}", Ability Icon String(Hero(Sombra), Button(Ability 1))), Custom String("Toggle Invisibility", Global.SkipTimeLimit),
+			Custom String("Crouch + Jump"), Left, 1.300, Color(White), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0}", Ability Icon String(Hero(Echo), Button(Ultimate))), Custom String("Switch Hero", Global.SkipTimeLimit), Custom String(
+			"Interact + Ultimate Status"), Left, 1.400, Color(White), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0}", Ability Icon String(Hero(Tracer), Button(Ability 2))), Custom String("Replay Pioneer Route", Global.SkipTimeLimit),
+			Custom String("Interact + Thanks Voiceline"), Left, 1.500, Color(White), Color(Orange), Color(White), Visible To,
+			Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0}", Ability Icon String(Hero(Sombra), Button(Ability 2))), Custom String("Teleport"), Custom String("Left Click + Melee"),
+			Left, 1.900, Color(White), Color(Orange), Color(White), Visible To, Default Visibility);
 	}
 }
 
@@ -579,6 +614,10 @@ rule("Pioneer Create Point")
 		Modify Global Variable(CPHeroList, Append To Array, Hero Of(Event Player));
 		Modify Global Variable(CPGreenSphereArray, Append To Array, Event Player.GreenSphereLocation);
 		Modify Global Variable(CPKillSphereArray, Append To Array, Event Player.KillSphereLocation);
+		"Don't allow effect locks on teleport points"
+		If(Y Component Of(Event Player.CountUltimateTeleportPrimary) > 0);
+			Event Player.EffectLockSphereLocation = Null;
+		End;
 		Modify Global Variable(CPEffectLockSphereArray, Append To Array, Event Player.EffectLockSphereLocation);
 		Global.ReplayPioneerPositionArray[Event Player.CurrentCP] = Event Player.ReplayPosition;
 		Global.ReplayPioneerFacingArray[Event Player.CurrentCP] = Event Player.ReplayFacing;
@@ -770,9 +809,9 @@ rule("Set Non-Pioneer Visible")
 	{
 		Allow Button(Event Player, Button(Melee));
 		If(Event Player.Invisible);
-			Set Invisible(Event Player, None);
+			Set Invisible(Event Player, All);
 		Else;
-			Small Message(Event Player, Custom String("Invisible"));
+			Set Invisible(Event Player, None);
 		End;
 	}
 }
@@ -858,7 +897,7 @@ rule("Reload - Quick Reset")
 		"So player can't R and get teleported outside map before origin point is selected"
 		Global.GameStarted == True;
 		"Quick Reset Disabled for Ana, so you can reload - modify the array here for additional disable"
-		Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) < 0;
+		disabled Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) < 0;
 	}
 
 	actions
@@ -937,16 +976,17 @@ rule("Interact + Left Click: Camera To See Next Point (or the effect lock sphere
 				Global.CPLocations[Event Player.CurrentCP + 1] + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player,
 				True), Global.CPLocations[Event Player.CurrentCP + 1], 30);
 		End;
-		While(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact)));
-			Wait(0.033, Ignore Condition);
-		End;
+		Wait Until(!(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact))), 20);
+		disabled While(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact)));
+		disabled Wait(0.033, Ignore Condition);
+		disabled End;
 		Stop Camera(Event Player);
 		Set Primary Fire Enabled(Event Player, True);
 		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
 	}
 }
 
-rule("Interact + Jump -> Go Forward a Checkpoint")
+rule("Interact + Jump -> Skip Checkpoint")
 {
 	event
 	{
@@ -969,20 +1009,66 @@ rule("Interact + Jump -> Go Forward a Checkpoint")
 			Small Message(Event Player, Custom String("Can't change level while pioneer! Make a checkpoint!"));
 			Abort;
 		End;
-		If(Global.DevModeEngaged);
-			Event Player.MaxUnlockedCP = Count Of(Global.CPLocations) - 1;
-		End;
-		"If player is not on last CP"
+		"If player is not on last unlocked CP"
 		If(Event Player.CurrentCP < Event Player.MaxUnlockedCP);
 			Event Player.CurrentCP += 1;
 		Else;
-			"If haven't unlocked next CP yet, go back to CP 0"
-			Event Player.CurrentCP = 0;
+			If(Global.DevModeEngaged || Event Player.TimeSpentOnCP > Global.SkipTimeLimit);
+				Event Player.CurrentCP += 1;
+				Event Player.MaxUnlockedCP = Event Player.CurrentCP;
+				Event Player.BlockArriveNextPoint = True;
+				Call Subroutine(RespawnPlayer);
+				"Allow player to pioneer using CP skip"
+				If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
+					If(Global.CurrentPioneer == Null);
+						Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
+						Global.CurrentPioneer = Event Player;
+					End;
+				End;
+				Event Player.BlockArriveNextPoint = False;
+				Call Subroutine(HandleSkipTimer);
+				Abort;
+			Else;
+				"If haven't unlocked next CP yet, go back to CP 0"
+				Event Player.CurrentCP = 0;
+			End;
 		End;
 		Call Subroutine(HandleSkipTimer);
-		disabled Event Player.BlockArriveNextPoint = True;
 		Call Subroutine(RespawnPlayer);
-		disabled Event Player.BlockArriveNextPoint = False;
+	}
+}
+
+rule("Interact + Need Healing Voiceline = Skip CP if you have spent enough time")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating(Event Player, Need Healing) == True;
+		Event Player.TimeSpentOnCP > Global.SkipTimeLimit;
+	}
+
+	actions
+	{
+		Event Player.BlockArriveNextPoint = True;
+		Event Player.CurrentCP += 1;
+		Event Player.MaxUnlockedCP = Event Player.CurrentCP;
+		Call Subroutine(RespawnPlayer);
+		"Allow player to pioneer using CP skip"
+		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
+			If(Global.CurrentPioneer == Null);
+				Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
+				Global.CurrentPioneer = Event Player;
+			End;
+		End;
+		Call Subroutine(HandleSkipTimer);
+		Event Player.BlockArriveNextPoint = False;
 	}
 }
 
@@ -1041,40 +1127,6 @@ rule("Melee + Left Click = Teleport")
 		Teleport(Event Player, Ray Cast Hit Position(Position Of(Event Player), Position Of(Event Player) + Facing Direction Of(
 			Event Player) * 60, All Players(All Teams), Event Player, True));
 		Event Player.CountUltimateTeleportPrimary += Up;
-	}
-}
-
-rule("Interact + Need Healing Voiceline = Skip CP if you have spent enough time")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating(Event Player, Need Healing) == True;
-		Event Player.TimeSpentOnCP > Global.SkipTimeLimit;
-	}
-
-	actions
-	{
-		Event Player.BlockArriveNextPoint = True;
-		Event Player.CurrentCP += 1;
-		Event Player.MaxUnlockedCP = Event Player.CurrentCP;
-		Call Subroutine(RespawnPlayer);
-		"Allow player to pioneer using CP skip"
-		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
-			If(Global.CurrentPioneer == Null);
-				Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
-				Global.CurrentPioneer = Event Player;
-			End;
-		End;
-		Call Subroutine(HandleSkipTimer);
-		Event Player.BlockArriveNextPoint = False;
 	}
 }
 
@@ -2753,7 +2805,10 @@ rule("Pioneer Save Replay")
 	conditions
 	{
 		Global.CurrentPioneer == Event Player;
-		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
+		"Has left starting CP or is using an ability"
+		(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius || Is Firing Secondary(
+			Event Player) || Is Using Ability 1(Event Player) || Is Using Ability 2(Event Player) || Is Using Ultimate(Event Player))
+			== True;
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
 		Event Player.CancelPointTimer == 0;
@@ -2792,13 +2847,13 @@ rule("Interact + Thanks: View Replay")
 			Small Message(Event Player, Custom String("Replays Disabled (Host Can Turn It On In Workshop Settings)"));
 			Abort;
 		End;
+		Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
+			Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
+			30);
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
-			Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
-				Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
-				30);
 			Wait(0.070, Ignore Condition);
 		End;
-		Wait(1, Ignore Condition);
+		Wait(0.500, Ignore Condition);
 		Stop Camera(Event Player);
 	}
 }
