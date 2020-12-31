@@ -18,18 +18,16 @@ settings
 			enabled maps
 			{
 				Blizzard World Winter
-				Busan
+				Dorado
 				Eichenwalde
 				Eichenwalde Halloween
 				Hanamura Winter
-				Havana
 				Hollywood
 				Ilios
 				Junkertown
 				King's Row Winter
 				Lijiang Tower
 				Nepal
-				Paris
 				Rialto
 			}
 		}
@@ -110,7 +108,6 @@ settings
 
 	workshop
 	{
-		Green Sphere Radius: 3.500
 		Multi-Hero Mode Enabled: On
 	}
 }
@@ -260,15 +257,15 @@ rule("Initialize Globals")
 		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True, 0);
 		Global.SlamBuffEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Slam Buff Enabled (Slam resets bhop)"),
 			False, 0);
-		Global.GreenSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String("Green Sphere Radius"), 3,
-			1, 5, 0);
+		Global.GreenSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
+			"Environmental Collision Sphere Radius"), 3.500, 1, 5, 0);
 		Global.EffectLockSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Effect Lock (White) Sphere Radius"), 2, 1, 5, 0);
 		Global.DevModeEngaged = False;
 		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Pioneer Settings"), Custom String(
 			"Ultimate Abilites Enabled"), True, 0);
 		Global.ReplaysEnabledConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
-			"Pioneer Replays Saved and Viewable"), True, 0);
+			"Enable Pioneer Replays (Can cause large server load if >50 CP's)"), True, 0);
 	}
 }
 
