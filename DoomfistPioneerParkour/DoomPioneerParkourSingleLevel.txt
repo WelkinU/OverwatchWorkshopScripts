@@ -584,7 +584,7 @@ rule("Pioneer Create Point")
 		End;
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Event Player.TempVariable2 = Position Of(Event Player);
-		Start Forcing Player Position(Event Player, Position Of(Event Player), False);
+		Start Forcing Player Position(Event Player, Event Player.TempVariable2, True);
 		Call Subroutine(CancelMomentum);
 		"Allow player 3 sec to cancel the CP"
 		Event Player.CancelPointTimer = 3;
