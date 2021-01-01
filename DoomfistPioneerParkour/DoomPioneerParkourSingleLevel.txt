@@ -1265,6 +1265,79 @@ rule("Close Hero Select Menu")
 	}
 }
 
+disabled rule("Replay Saving / Watching Code")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Pioneer Save Replay")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer == Event Player;
+		"Has left starting CP or is using an ability"
+		(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius || Is Firing Secondary(
+			Event Player) || Is Using Ability 1(Event Player) || Is Using Ability 2(Event Player) || Is Using Ultimate(Event Player))
+			== True;
+		Global.GameStarted == True;
+		Has Spawned(Event Player) == True;
+		Event Player.CancelPointTimer == 0;
+		Global.ReplaysEnabledConstant == True;
+	}
+
+	actions
+	{
+		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
+		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
+		Wait(0.100, Ignore Condition);
+		Loop If Condition Is True;
+		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
+		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
+	}
+}
+
+rule("Interact + Thanks: View Replay")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating(Event Player, Thanks) == True;
+	}
+
+	actions
+	{
+		If(!Global.ReplaysEnabledConstant);
+			Small Message(Event Player, Custom String("Replays Disabled (Host Can Turn It On In Workshop Settings)"));
+			Abort;
+		End;
+		Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
+			Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
+			30);
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
+			Wait(0.070, Ignore Condition);
+		End;
+		Wait(0.500, Ignore Condition);
+		Stop Camera(Event Player);
+	}
+}
+
 disabled rule("Handle Ability Counts")
 {
 	event
@@ -1824,11 +1897,9 @@ rule("Sub0: RespawnPlayer")
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ability Cooldown(Event Player, Button(Crouch), 0);
-		"Set to (0,0,0) without creating new object"
-		Event Player.Count360Slam125 -= Event Player.Count360Slam125;
 		disabled Event Player.Count360Slam125 = Vector(0, 0, 0);
 		Set Move Speed(Event Player, Global.PlayerMoveSpeedConstant);
-		If(Event Player.PunchFixStore && Is Button Held(Event Player, Button(Secondary Fire)));
+		If(Event Player.PunchFixStore && Hero Of(Event Player) == Hero(Doomfist) && Is Button Held(Event Player, Button(Secondary Fire)));
 			Start Holding Button(Event Player, Button(Secondary Fire));
 		End;
 		If(Hero Of(Event Player) == Hero(Junkrat));
@@ -1846,6 +1917,7 @@ rule("Sub0: RespawnPlayer")
 		Event Player.WinstonWallClimbEnabled = True;
 		Event Player.ReplayPosition = Empty Array;
 		Event Player.ReplayFacing = Empty Array;
+		Set Gravity(Event Player, 100);
 	}
 }
 
@@ -1929,10 +2001,9 @@ rule("Pioneer Create Green Sphere with Melee")
 	conditions
 	{
 		Global.CurrentPioneer == Event Player;
-		disabled Is Communicating(Event Player, Need Healing) == True;
-		disabled Is In Air(Event Player) == True;
 		Is Button Held(Event Player, Button(Crouch)) == True;
 		Hero Of(Event Player) != Hero(Wrecking Ball);
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -2045,8 +2116,8 @@ rule("Pioneer Create Effect Lock Sphere with Group Up Voiceline")
 	conditions
 	{
 		Global.CurrentPioneer == Event Player;
-		disabled Is Communicating(Event Player, Group Up) == True;
 		Is Button Held(Event Player, Button(Melee)) == True;
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -2096,6 +2167,7 @@ rule("Pioneer Create Kill Sphere With Group Up")
 	{
 		Global.CurrentPioneer == Event Player;
 		Is Communicating(Event Player, Group Up) == True;
+		Event Player.CancelPointTimer == 0;
 	}
 
 	actions
@@ -2302,10 +2374,13 @@ rule("Vortex Drag {By default, using vortex makes you glide across the ground wi
 	actions
 	{
 		Set Gravity(Event Player, 0);
-		Set Move Speed(Event Player, 0);
-		Wait(2, Restart When True);
+		disabled Set Move Speed(Event Player, 0);
+		Start Forcing Throttle(Event Player, 0, 0, 0, 0, 0, 0);
+		Wait Until(Is Button Held(Event Player, Button(Reload)), 2);
+		disabled Wait(2, Restart When True);
 		Set Gravity(Event Player, 100);
-		Set Move Speed(Event Player, 100);
+		disabled Set Move Speed(Event Player, 100);
+		Stop Forcing Throttle(Event Player);
 	}
 }
 
@@ -2779,78 +2854,5 @@ rule("Limit Roadhog Ultimate Duration")
 		"Set Ult Duration to 3 sec, then cancel it"
 		Wait(3, Ignore Condition);
 		Cancel Primary Action(Event Player);
-	}
-}
-
-disabled rule("Replay Saving / Watching Code")
-{
-	event
-	{
-		Ongoing - Global;
-	}
-}
-
-rule("Pioneer Save Replay")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Global.CurrentPioneer == Event Player;
-		"Has left starting CP or is using an ability"
-		(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius || Is Firing Secondary(
-			Event Player) || Is Using Ability 1(Event Player) || Is Using Ability 2(Event Player) || Is Using Ultimate(Event Player))
-			== True;
-		Global.GameStarted == True;
-		Has Spawned(Event Player) == True;
-		Event Player.CancelPointTimer == 0;
-		Global.ReplaysEnabledConstant == True;
-	}
-
-	actions
-	{
-		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
-		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-		Wait(0.100, Ignore Condition);
-		Loop If Condition Is True;
-		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
-		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-	}
-}
-
-rule("Interact + Thanks: View Replay")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating(Event Player, Thanks) == True;
-	}
-
-	actions
-	{
-		If(!Global.ReplaysEnabledConstant);
-			Small Message(Event Player, Custom String("Replays Disabled (Host Can Turn It On In Workshop Settings)"));
-			Abort;
-		End;
-		Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
-			Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
-			30);
-		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
-			Wait(0.070, Ignore Condition);
-		End;
-		Wait(0.500, Ignore Condition);
-		Stop Camera(Event Player);
 	}
 }
