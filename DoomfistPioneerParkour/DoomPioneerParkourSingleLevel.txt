@@ -17,16 +17,13 @@ settings
 		{
 			enabled maps
 			{
-				Blizzard World Winter
 				Dorado
 				Eichenwalde
 				Eichenwalde Halloween
-				Hanamura Winter
+				Hanamura
 				Hollywood
 				Ilios
-				Junkertown
 				King's Row Winter
-				Lijiang Tower
 				Nepal
 				Rialto
 			}
@@ -109,6 +106,7 @@ settings
 	workshop
 	{
 		Multi-Hero Mode Enabled: On
+		Ultimate Abilites Enabled: On
 	}
 }
 
@@ -183,6 +181,7 @@ variables
 		32: Grace
 		33: WinstonLeapGrace
 		34: Count360Slam125
+		35: BlockPioneerPass
 		36: WinstonWallClimbEnabled
 		37: WinstonWallClimbTimer
 		38: WinstonBubbleLocation
@@ -247,7 +246,7 @@ rule("Initialize Globals")
 		Global.PlayerScaleConstant = Workshop Setting Real(Custom String("Gameplay"), Custom String(
 			"Player Size (Tiny Doom = 0.1, Normal = 1, Massive Doom = 6)"), 1, 0.100, 6, 0);
 		Global.PioneerTimeLimitConstant = Workshop Setting Integer(Custom String("Pioneer Settings"), Custom String(
-			"Pioneer Time Limit in Seconds"), 180, 90, 600, 0);
+			"Pioneer Time Limit in Seconds"), 180, 30, 420, 0);
 		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Player Move Speed Scale Factor"), 100, 10, 1000, 0);
 		Global.PioneerMinDistanceConstant = 6;
@@ -285,8 +284,8 @@ rule("Global HUD")
 		"Only show pioneer info to players within 1-2 CP's of final CP"
 		Create HUD Text(Filtered Array(All Players(All Teams),
 			Global.GameStarted && !Global.UsingMemoryRecall && Current Array Element.CurrentCP + 2 >= Count Of(Global.CPLocations)),
-			Custom String("Pioneer: {0}\r\nTime Remaining: {1}/{2}", Global.CurrentPioneer, Global.PioneerTimer,
-			Global.PioneerTimeLimitConstant), Null, Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String,
+			Custom String("Pioneer: {0}\r\nTime: {1}", Global.CurrentPioneer != Null ? Global.CurrentPioneer : Custom String("None"),
+			Global.PioneerTimer), Null, Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
 		"Controls HUD"
 		disabled Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
@@ -360,6 +359,7 @@ rule("Initialize player")
 			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Color(Yellow), True);
 		Event Player.Invisible = True;
 		Set Invisible(Event Player, All);
+		Event Player.BlockPioneerPass = False;
 	}
 }
 
@@ -581,6 +581,7 @@ rule("Pioneer Create Point")
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
+		Event Player.BlockPioneerPass = True;
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Event Player.TempVariable2 = Position Of(Event Player);
 		Start Forcing Player Position(Event Player, Event Player.TempVariable2, True);
@@ -594,6 +595,7 @@ rule("Pioneer Create Point")
 			If(Is Button Held(Event Player, Button(Reload)));
 				Stop Forcing Player Position(Event Player);
 				Call Subroutine(RespawnPlayer);
+				Event Player.BlockPioneerPass = False;
 				Abort;
 			End;
 		End;
@@ -629,6 +631,7 @@ rule("Pioneer Create Point")
 		Enable Inspector Recording;
 		Log To Inspector(Custom String("Created Checkpoint {0}", Count Of(Global.CPLocations)));
 		Disable Inspector Recording;
+		Event Player.BlockPioneerPass = False;
 	}
 }
 
@@ -755,11 +758,11 @@ rule("Handle ForceRespawn")
 	{
 		Event Player.BlockPioneerNewPoint = True;
 		Call Subroutine(RespawnPlayer);
-		Event Player.BlockPioneerNewPoint = False;
 		Event Player.ForceRespawn = False;
-		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
 		Wait(0.100, Ignore Condition);
+		Event Player.BlockPioneerNewPoint = False;
+		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(HandleSkipTimer);
 	}
 }
@@ -830,12 +833,12 @@ rule("Pioneer runs out of time")
 		Global.PioneerTimer == 0;
 		Has Spawned(Event Player) == True;
 		Global.CurrentPioneer == Event Player;
+		Event Player.BlockPioneerPass == False;
 	}
 
 	actions
 	{
-		"To prevent this rule from conflicting with the \"start pioneer timer\" rule"
-		Wait(4, Abort When False);
+		Event Player.BlockPioneerNewPoint = True;
 		"Is there a player on final checkpoint waiting for pioneer"
 		If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
 			== Current Array Element.CurrentCP + 1)) > 0);
@@ -850,6 +853,7 @@ rule("Pioneer runs out of time")
 			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 			Big Message(All Players(All Teams), Custom String("No one to pass pioneer to"));
 		End;
+		Event Player.BlockPioneerNewPoint = False;
 	}
 }
 
@@ -2864,7 +2868,7 @@ rule("Limit Roadhog Ultimate Duration")
 	}
 }
 
-rule("Rule 96")
+rule("Q + F to start again from cp0")
 {
 	event
 	{
