@@ -299,12 +299,6 @@ rule("Global HUD")
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
 			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
-		Create HUD Text(Filtered Array(Host Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
-			"-------- HOST ONLY CONTROLS --------\r\nUpdate Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Hello\r\n{0}\r\n{1}",
-			Custom String(
-			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
-			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(Aqua), Color(White), Color(
-			Aqua), Visible To, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
 		"Pioneer special controls HUD"
@@ -393,9 +387,6 @@ rule("Player HUD & Sphere initialize")
 			Ability 1)), Y Component Of(Event Player.CPAbilityCounts)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player),
 			Button(Ability 2)), Z Component Of(Event Player.CPAbilityCounts))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(
 			White), Visible To and String, Default Visibility);
-		disabled Create HUD Text(Filtered Array(Event Player, Event Player.TimeSpentOnCP > Global.SkipTimeLimit), Null, Null, Custom String(
-			"Have spent more than {0}sec on CP\r\nUse Interact + Jump to skip CP", Global.SkipTimeLimit), Right, 0, Color(Red), Color(
-			White), Color(White), Visible To, Default Visibility);
 		"Game Settings HUD"
 		disabled Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"--------------------------Game Settings--------------------------\r\n{0}\r\n{1}\r\n{2}", Custom String(
@@ -453,6 +444,12 @@ rule("Controls HUD")
 
 	actions
 	{
+		Create HUD Text(Filtered Array(Host Player, Is Button Held(Current Array Element, Button(Interact))), Null, Custom String(
+			"Host Only Controls"), Custom String(
+			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Hello\r\n{0}\r\n{1}", Custom String(
+			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
+			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(Aqua), Color(Orange), Color(
+			Aqua), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
 			Custom String("View Next Checkpoint"), Custom String("Interact + Left Click"), Left, 1, Color(White), Color(Orange), Color(
 			White), Visible To, Default Visibility);
@@ -1306,7 +1303,7 @@ rule("Pioneer Save Replay")
 	{
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-		Wait(0.100, Ignore Condition);
+		Wait(0.150, Ignore Condition);
 		Loop If Condition Is True;
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
@@ -1338,7 +1335,7 @@ rule("Interact + Thanks: View Replay")
 			Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
 			30);
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
-			Wait(0.070, Ignore Condition);
+			Wait(0.100, Ignore Condition);
 		End;
 		Wait(0.500, Ignore Condition);
 		Stop Camera(Event Player);
@@ -2813,7 +2810,7 @@ rule("Add Knockback When Secondary Fire Used")
 	}
 }
 
-rule("Roadhog Ultimate")
+disabled rule("Roadhog Ultimate")
 {
 	event
 	{
@@ -2846,7 +2843,7 @@ rule("Roadhog Ultimate")
 	}
 }
 
-rule("Limit Roadhog Ultimate Duration")
+disabled rule("Limit Roadhog Ultimate Duration")
 {
 	event
 	{
