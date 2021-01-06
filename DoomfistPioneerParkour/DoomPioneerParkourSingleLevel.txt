@@ -816,44 +816,6 @@ rule("Set Non-Pioneer Visible")
 	}
 }
 
-rule("Pioneer runs out of time")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Global.PioneerTimer == 0;
-		Has Spawned(Event Player) == True;
-		Global.CurrentPioneer == Event Player;
-		Event Player.BlockPioneerPass == False;
-	}
-
-	actions
-	{
-		Event Player.BlockPioneerNewPoint = True;
-		"Is there a player on final checkpoint waiting for pioneer"
-		If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
-			== Current Array Element.CurrentCP + 1)) > 0);
-			Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
-				Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1));
-			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
-			Event Player.TempVariable.ForceRespawn = True;
-			Global.CurrentPioneer = Event Player.TempVariable;
-			Wait(0.100, Ignore Condition);
-			Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
-		Else;
-			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
-			Big Message(All Players(All Teams), Custom String("No one to pass pioneer to"));
-		End;
-		Event Player.BlockPioneerNewPoint = False;
-	}
-}
-
 rule("Set Pioneer Timer to Zero if there isn't a pioneer")
 {
 	event
@@ -1731,6 +1693,44 @@ rule("Save CP Facing Direction when leaving the CP (for both pioneer and non-pio
 	}
 }
 
+rule("Pioneer runs out of time")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.PioneerTimer == 0;
+		Has Spawned(Event Player) == True;
+		Global.CurrentPioneer == Event Player;
+		Event Player.BlockPioneerPass == False;
+	}
+
+	actions
+	{
+		Event Player.BlockPioneerNewPoint = True;
+		"Is there a player on final checkpoint waiting for pioneer"
+		If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
+			== Current Array Element.CurrentCP + 1)) > 0);
+			Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
+				Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1));
+			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+			Event Player.TempVariable.ForceRespawn = True;
+			Global.CurrentPioneer = Event Player.TempVariable;
+			Wait(0.100, Ignore Condition);
+			Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
+		Else;
+			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+			Big Message(All Players(All Teams), Custom String("No one to pass pioneer to"));
+		End;
+		Event Player.BlockPioneerNewPoint = False;
+	}
+}
+
 rule("Pioneer Left Match")
 {
 	event
@@ -1740,36 +1740,29 @@ rule("Pioneer Left Match")
 		All;
 	}
 
+	conditions
+	{
+		Global.CurrentPioneer != Null;
+	}
+
 	actions
 	{
-		If(Global.CurrentPioneer != Null);
-			"Pioneer is not in game"
-			If(Count Of(Filtered Array(All Players(All Teams), Current Array Element == Global.CurrentPioneer)) == 0);
-				"Is there a player on final checkpoint waiting for pioneer"
-				If(Count Of(Filtered Array(All Players(All Teams), True && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1))
-					> 0);
-					Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
-						== Current Array Element.CurrentCP + 1));
-					Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed", Event Player.TempVariable));
-					Global.PioneerTimer = Global.PioneerTimeLimitConstant;
-					Event Player.TempVariable.ForceRespawn = True;
-					Global.CurrentPioneer = Event Player.TempVariable;
-				End;
-			End;
-		Else;
-			If(Count Of(All Living Players(All Teams)) == 1);
-				"Is there a player on final checkpoint waiting for pioneer"
-				If(Count Of(Filtered Array(All Players(All Teams), True && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1))
-					> 0);
-					Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
-						== Current Array Element.CurrentCP + 1));
-					Big Message(All Players(All Teams), Custom String("Pioneer left match. Pioneer passed to {0}", Event Player.TempVariable));
-					Global.PioneerTimer = Global.PioneerTimeLimitConstant;
-					Event Player.TempVariable.ForceRespawn = True;
-					Global.CurrentPioneer = Event Player.TempVariable;
-				End;
+		Event Player.BlockPioneerNewPoint = True;
+		"Pioneer is not in game"
+		If(Count Of(Filtered Array(All Players(All Teams), Current Array Element == Global.CurrentPioneer)) == 0);
+			"Is there a player on final checkpoint waiting for pioneer"
+			If(Count Of(Filtered Array(All Players(All Teams), True && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1))
+				> 0);
+				Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations)
+					== Current Array Element.CurrentCP + 1));
+				Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+				Event Player.TempVariable.ForceRespawn = True;
+				Global.CurrentPioneer = Event Player.TempVariable;
+				Wait(0.100, Ignore Condition);
+				Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
 			End;
 		End;
+		Event Player.BlockPioneerNewPoint = False;
 	}
 }
 
