@@ -448,7 +448,7 @@ rule("Controls HUD")
 			"Host Only Controls"), Custom String(
 			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Hello\r\n{0}\r\n{1}", Custom String(
 			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
-			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(Aqua), Color(Orange), Color(
+			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(Aqua), Color(Red), Color(
 			Aqua), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
 			Custom String("View Next Checkpoint"), Custom String("Interact + Left Click"), Left, 1, Color(White), Color(Orange), Color(
