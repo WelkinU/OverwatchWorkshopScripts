@@ -5,34 +5,24 @@ settings
 		Description: "Doomfist Pioneering Parkour - Special Edition. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 5, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
-	lobby
-	{
-		Max Team 1 Players: 12
-		Max Team 2 Players: 0
-	}
-
 	modes
 	{
-		Skirmish
+		Deathmatch
 		{
 			enabled maps
 			{
-				Dorado
-				Eichenwalde
-				Eichenwalde Halloween
-				Hanamura
-				Hollywood
-				Ilios
-				King's Row Winter
-				Nepal
-				Rialto
+				Kanezaka
 			}
 		}
 
-		General
+		Skirmish
 		{
 			Hero Limit: Off
 			Kill Feed: Off
+
+			enabled maps
+			{
+			}
 		}
 	}
 
@@ -62,6 +52,7 @@ settings
 
 			Doomfist
 			{
+				No Ammunition Requirement: On
 				Seismic Slam Cooldown Time: 50%
 			}
 
