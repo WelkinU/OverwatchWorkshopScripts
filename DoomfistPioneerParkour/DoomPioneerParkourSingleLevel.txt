@@ -2,19 +2,17 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Special Edition. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 5, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Bringing Hax Framework to Doomfist Pioneer. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 19, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+	}
+
+	lobby
+	{
+		Max Team 1 Players: 12
+		Max Team 2 Players: 0
 	}
 
 	modes
 	{
-		Deathmatch
-		{
-			enabled maps
-			{
-				Kanezaka
-			}
-		}
-
 		Skirmish
 		{
 			Hero Limit: Off
@@ -22,6 +20,7 @@ settings
 
 			enabled maps
 			{
+				Dorado
 			}
 		}
 	}
@@ -117,7 +116,6 @@ variables
 		10: SkipTimeLimit
 		11: InfiniteModeEnabledConstant
 		12: AbilityCountsEnabledConstant
-		13: PlayerScaleConstant
 		14: PioneerTimeLimitConstant
 		15: PlayerMoveSpeedConstant
 		16: NonInfiniteModeWinTime
@@ -138,6 +136,8 @@ variables
 		31: ReplayPioneerPositionArray
 		32: ReplayPioneerFacingArray
 		33: UsingMemoryRecall
+		34: CPPlayerScaleArray
+		35: AllowedPlayerScalesArray
 
 	player:
 		0: CurrentCP
@@ -160,6 +160,7 @@ variables
 		18: KillSphereLocation
 		19: ReplayPosition
 		20: ReplayFacing
+		21: PlayerScale
 		22: TempVariable
 		23: TempVariable2
 		24: CancelPointTimer
@@ -192,6 +193,7 @@ subroutines
 	2: CancelMomentum
 	3: HandleSkipTimer
 	4: MemoryRecall
+	5: UpdatePlayerScale
 }
 
 rule("--------MEMORY: PASTE VARIABLES HERE -------------------")
@@ -225,6 +227,7 @@ rule("Initialize Globals")
 		"These are the allowed heros for multi-hero mode"
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
 			Hero(Junkrat), Hero(Ana));
+		Global.AllowedPlayerScalesArray = Array(0.100, 1, 2, 5);
 		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
 		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False, 0);
 		Global.NonInfiniteModeWinTime = Workshop Setting Integer(Custom String("Infinite Mode"), Custom String(
@@ -234,8 +237,6 @@ rule("Initialize Globals")
 			"Infinite Mode Enabled"), True, 0);
 		Global.AbilityCountsEnabledConstant = Workshop Setting Toggle(Custom String("Pioneer Settings"), Custom String(
 			"Ability Count Limits Enabled"), True, 0);
-		Global.PlayerScaleConstant = Workshop Setting Real(Custom String("Gameplay"), Custom String(
-			"Player Size (Tiny Doom = 0.1, Normal = 1, Massive Doom = 6)"), 1, 0.100, 6, 0);
 		Global.PioneerTimeLimitConstant = Workshop Setting Integer(Custom String("Pioneer Settings"), Custom String(
 			"Pioneer Time Limit in Seconds"), 180, 30, 420, 0);
 		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
@@ -278,25 +279,11 @@ rule("Global HUD")
 			Custom String("Pioneer: {0}\r\nTime: {1}", Global.CurrentPioneer != Null ? Global.CurrentPioneer : Custom String("None"),
 			Global.PioneerTimer), Null, Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
-		"Controls HUD"
-		disabled Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
-			Custom String(
-			"-------------------------- Controls --------------------------\r\nQuick Reset: Reload\r\nPrev CP: Interact + Crouch\r\n{0}\r\n{1}\r\n{2}",
-			Custom String("Teleport: Melee + Left Click\r\nView Next CP Location: Interact + Left Click"), Custom String(
-			"Spectate Mode: Interact + Melee \r\nSkip Level (after {0}sec) Interact + Need Healing Voiceline", Global.SkipTimeLimit),
-			Custom String(
-			"Switch Hero: Interact + Ultimate Status\r\nToggle Invisible: Crouch + Jump\r\nView CP Replay: Interact + Thanks Voiceline")),
-			Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
 			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
-		"Pioneer special controls HUD"
-		disabled Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))
-			&& Global.CurrentPioneer == Current Array Element), Custom String(
-			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\nChange Hero: Interact + Ultimate Status"), Null,
-			Null, Right, 0, Color(Red), Color(White), Color(White), Visible To, Default Visibility);
 	}
 }
 
@@ -311,7 +298,7 @@ rule("Initialize player")
 
 	actions
 	{
-		Start Scaling Player(Event Player, Global.PlayerScaleConstant, False);
+		Event Player.PlayerScale = 1;
 		"Punch grace from Hax framework"
 		Chase Player Variable At Rate(Event Player, Grace, Is Firing Secondary(Event Player) ? 0.500 : False, Is Firing Secondary(
 			Event Player) ? 0.260 : True, Destination and Rate);
@@ -326,11 +313,6 @@ rule("Initialize player")
 		Disable Game Mode In-World UI(Event Player);
 		Disable Game Mode HUD(Event Player);
 		Event Player.TimeSpentOnCP = 0;
-		If(Global.PlayerScaleConstant < 0.700);
-			Start Modifying Hero Voice Lines(Event Player, 4, False);
-		Else If(Global.PlayerScaleConstant > 1.500);
-			Start Modifying Hero Voice Lines(Event Player, 0.650, False);
-		End;
 		"Create Ring, Text and Icon Effects"
 		Create Effect(Event Player, Ring, Color(White), Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
 			Visible To Position and Radius);
@@ -383,7 +365,7 @@ rule("Player HUD & Sphere initialize")
 			"--------------------------Game Settings--------------------------\r\n{0}\r\n{1}\r\n{2}", Custom String(
 			"Infinite Mode Enabled: {0}\r\nMulti-Hero Enabled: {1}\r\nAbility Limits Enabled: {2}", Global.InfiniteModeEnabledConstant,
 			Global.MultiHeroEnabled, Global.AbilityCountsEnabledConstant), Custom String(
-			"Player Scale Constant: {0}\r\nPunch Grace Enabled: {1}\r\nPlayer Move Speed Constant: {2}", Global.PlayerScaleConstant,
+			"Player Scale Constant: {0}\r\nPunch Grace Enabled: {1}\r\nPlayer Move Speed Constant: {2}", Global.N,
 			Global.PunchGraceEnabled, Global.PlayerMoveSpeedConstant), Custom String(
 			"Pioneer Time Limit: {0}\r\nPlayer CP Skip Time Limit: {1}\r\n{2}", Global.PioneerTimeLimitConstant, Global.SkipTimeLimit,
 			Custom String("CP Radius: {0}", Global.CPRadius))), Right, 9, Color(White), Color(White), Color(White), Visible To and String,
@@ -400,8 +382,8 @@ rule("Player HUD & Sphere initialize")
 		"Effect Lock Sphere Create Non-Pioneer"
 		Create Effect(Filtered Array(Event Player,
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained), Sphere,
-			Color(White), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Global.EffectLockSphereRadiusConstant + -0.900,
-			Visible To Position and Radius);
+			Custom Color(128, 128, 128, 128), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Evaluate Once(
+			Global.EffectLockSphereRadiusConstant + -1), Visible To Position and Radius);
 		"Effect Lock Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Event Player, Current Array Element.EffectLockSphereLocation != Null), Sphere, Color(White),
 			Event Player.EffectLockSphereLocation, Global.EffectLockSphereRadiusConstant, Visible To Position and Radius);
@@ -420,7 +402,7 @@ rule("Player HUD & Sphere initialize")
 		"Kill Sphere Create"
 		Create Effect(Filtered Array(Event Player, Global.CPKillSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(Red),
 			Global.CPKillSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
-		"Green Sphere Create Pioneer Only"
+		"Kill Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Event Player, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
 			Event Player.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 	}
@@ -466,8 +448,9 @@ rule("Controls HUD")
 		"Pioneer special controls HUD"
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))
 			&& Global.CurrentPioneer == Current Array Element), Custom String(
-			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\nChange Hero: Interact + Ultimate Status"), Null,
-			Null, Right, 0, Color(Red), Color(White), Color(White), Visible To, Default Visibility);
+			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\n{0}", Custom String(
+			"Change Size: Interact + W/S\r\nChange Hero: Interact + Ultimate Status")), Null, Null, Right, 0, Color(Red), Color(White),
+			Color(White), Visible To, Default Visibility);
 		disabled Create HUD Text(Filtered Array(Global.CurrentPioneer, Is Button Held(Current Array Element, Button(Interact))), Null,
 			Custom String("Pioneer Only Controls"), Custom String(
 			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\nChange Hero: Interact + Ultimate Status"), Right,
@@ -517,6 +500,7 @@ rule("Create Origin Point")
 		Global.CPKillSphereArray = Empty Array;
 		Global.ReplayPioneerPositionArray = Empty Array;
 		Global.ReplayPioneerFacingArray = Empty Array;
+		Global.CPPlayerScaleArray = Empty Array;
 	}
 }
 
@@ -620,6 +604,7 @@ rule("Pioneer Create Point")
 		Global.ReplayPioneerPositionArray[Event Player.CurrentCP] = Event Player.ReplayPosition;
 		Global.ReplayPioneerFacingArray[Event Player.CurrentCP] = Event Player.ReplayFacing;
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
+		Modify Global Variable(CPPlayerScaleArray, Append To Array, Event Player.PlayerScale);
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
 		Event Player.TimeSpentOnCP = 0;
@@ -756,9 +741,9 @@ rule("Handle ForceRespawn")
 		Event Player.BlockPioneerNewPoint = True;
 		Call Subroutine(RespawnPlayer);
 		Event Player.ForceRespawn = False;
+		Event Player.BlockPioneerNewPoint = False;
 		"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
 		Wait(0.100, Ignore Condition);
-		Event Player.BlockPioneerNewPoint = False;
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(HandleSkipTimer);
 	}
@@ -1265,7 +1250,7 @@ rule("Pioneer Save Replay")
 	{
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-		Wait(0.150, Ignore Condition);
+		Wait(0.200, Ignore Condition);
 		Loop If Condition Is True;
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
@@ -1298,6 +1283,10 @@ rule("Interact + Thanks: View Replay")
 			30);
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
 			Wait(0.100, Ignore Condition);
+			If(Is Button Held(Event Player, Button(Reload)));
+				Stop Camera(Event Player);
+				Abort;
+			End;
 		End;
 		Wait(0.500, Ignore Condition);
 		Stop Camera(Event Player);
@@ -1700,6 +1689,7 @@ rule("Pioneer runs out of time")
 	actions
 	{
 		Event Player.BlockPioneerNewPoint = True;
+		Wait(0.100, Ignore Condition);
 		"Is there a player on final checkpoint waiting for pioneer"
 		If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
 			== Current Array Element.CurrentCP + 1)) > 0);
@@ -1867,6 +1857,8 @@ rule("Sub0: RespawnPlayer")
 					Set Primary Fire Enabled(Event Player, True);
 				End;
 			End;
+			Event Player.PlayerScale = Global.CPPlayerScaleArray[Event Player.CurrentCP];
+			Call Subroutine(UpdatePlayerScale);
 		"Is beginning of match, or player is pioneer, or player is waiting for pioneer"
 		Else;
 			Set Secondary Fire Enabled(Event Player, True);
@@ -1950,6 +1942,27 @@ rule("Sub3: HandleSkipTimer")
 	}
 }
 
+rule("Sub5: Update Player Scale")
+{
+	event
+	{
+		Subroutine;
+		UpdatePlayerScale;
+	}
+
+	actions
+	{
+		Start Scaling Player(Event Player, Event Player.PlayerScale, False);
+		If(Event Player.PlayerScale < 0.700);
+			Start Modifying Hero Voice Lines(Event Player, 4, False);
+		Else If(Event Player.PlayerScale > 1.500);
+			Start Modifying Hero Voice Lines(Event Player, 0.650, False);
+		Else;
+			Start Modifying Hero Voice Lines(Event Player, 1, False);
+		End;
+	}
+}
+
 rule("Punch Grace")
 {
 	event
@@ -1970,11 +1983,41 @@ rule("Punch Grace")
 	}
 }
 
-disabled rule("Pioneer Effect Lock And Environment Collision Spheres")
+disabled rule("Pioneer Effect Lock And Environment Collision Spheres + Player Scaling")
 {
 	event
 	{
 		Ongoing - Global;
+	}
+}
+
+rule("Interact + W/S to increase/decrease pioneer player size")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer == Event Player;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Absolute Value(Z Component Of(Throttle Of(Event Player))) == 1;
+		Is On Ground(Event Player) == True;
+		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) < Global.CPRadius;
+		Global.GameStarted == True;
+	}
+
+	actions
+	{
+		"Cycle through allowed player scales"
+		Event Player.PlayerScale = Global.AllowedPlayerScalesArray[(Index Of Array Value(Global.AllowedPlayerScalesArray,
+			Event Player.PlayerScale) + Z Component Of(Throttle Of(Event Player))) % Count Of(Global.AllowedPlayerScalesArray)];
+		Call Subroutine(UpdatePlayerScale);
+		Wait(0.100, Ignore Condition);
+		Small Message(Event Player, Custom String("Setting player scale to {0}", Event Player.PlayerScale));
 	}
 }
 
