@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Bringing Hax Framework to Doomfist Pioneer. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 19, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Bringing Hax Framework to Doomfist Pioneer. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 20, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -164,6 +164,7 @@ variables
 		22: TempVariable
 		23: TempVariable2
 		24: CancelPointTimer
+		25: TempMenuIDStoreArray
 		26: sigma_barrier_ready_to_destroy
 		27: sigma_barrier_ON
 		28: sigma_barrier_direction
@@ -185,6 +186,7 @@ variables
 		44: TempIterator
 		45: AnaSleepDartTeleLocation
 		46: RoadhogHookPosition
+		47: TempIterator2
 }
 
 subroutines
@@ -275,7 +277,7 @@ rule("Global HUD")
 			Visible To and String, Default Visibility);
 		"Only show pioneer info to players within 1-2 CP's of final CP"
 		Create HUD Text(Filtered Array(All Players(All Teams),
-			Global.GameStarted && !Global.UsingMemoryRecall && Current Array Element.CurrentCP + 2 >= Count Of(Global.CPLocations)),
+			Global.GameStarted && Global.CurrentPioneer != Null && Current Array Element.CurrentCP + 2 >= Count Of(Global.CPLocations)),
 			Custom String("Pioneer: {0}\r\nTime: {1}", Global.CurrentPioneer != Null ? Global.CurrentPioneer : Custom String("None"),
 			Global.PioneerTimer), Null, Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
@@ -284,6 +286,12 @@ rule("Global HUD")
 			Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
+		disabled Create HUD Text(Global.CurrentPioneer, Custom String("Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
+			Hero Of(Global.CurrentPioneer), Button(Secondary Fire)), X Component Of(Global.CurrentPioneer.CPAbilityCounts)), Custom String(
+			"{0} {1}", Ability Icon String(Hero Of(Global.CurrentPioneer), Button(Ability 1)), Y Component Of(
+			Global.CurrentPioneer.CPAbilityCounts)), Custom String("{0} {1}", Ability Icon String(Hero Of(Global.CurrentPioneer), Button(
+			Ability 2)), Z Component Of(Global.CurrentPioneer.CPAbilityCounts))), Null, Null, Top, -1.400, Color(Blue), Color(White),
+			Color(White), Visible To and String, Default Visibility);
 	}
 }
 
@@ -354,25 +362,13 @@ rule("Player HUD & Sphere initialize")
 			Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(
 			Global.CPAbilityCounts[Event Player.CurrentCP]) - Z Component Of(Event Player.CPAbilityCounts))), Null, Null, Top, -1.400,
 			Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
-		Create HUD Text(Filtered Array(Event Player, Global.CurrentPioneer == Current Array Element), Custom String(
-			"Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Secondary Fire)),
-			X Component Of(Event Player.CPAbilityCounts)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(
-			Ability 1)), Y Component Of(Event Player.CPAbilityCounts)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player),
-			Button(Ability 2)), Z Component Of(Event Player.CPAbilityCounts))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(
-			White), Visible To and String, Default Visibility);
-		"Game Settings HUD"
-		disabled Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
-			"--------------------------Game Settings--------------------------\r\n{0}\r\n{1}\r\n{2}", Custom String(
-			"Infinite Mode Enabled: {0}\r\nMulti-Hero Enabled: {1}\r\nAbility Limits Enabled: {2}", Global.InfiniteModeEnabledConstant,
-			Global.MultiHeroEnabled, Global.AbilityCountsEnabledConstant), Custom String(
-			"Player Scale Constant: {0}\r\nPunch Grace Enabled: {1}\r\nPlayer Move Speed Constant: {2}", Global.N,
-			Global.PunchGraceEnabled, Global.PlayerMoveSpeedConstant), Custom String(
-			"Pioneer Time Limit: {0}\r\nPlayer CP Skip Time Limit: {1}\r\n{2}", Global.PioneerTimeLimitConstant, Global.SkipTimeLimit,
-			Custom String("CP Radius: {0}", Global.CPRadius))), Right, 9, Color(White), Color(White), Color(White), Visible To and String,
-			Default Visibility);
-		Create HUD Text(Filtered Array(Event Player, !Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
-			"Hold Interact Key ({0}) For Controls / Game Settings", Input Binding String(Button(Interact))), Left, 1, Color(White), Color(
-			White), Color(Red), Visible To and String, Default Visibility);
+		disabled Create HUD Text(Global.CurrentPioneer, Custom String("Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
+			Hero Of(Event Player), Button(Secondary Fire)), X Component Of(Event Player.CPAbilityCounts)), Custom String("{0} {1}",
+			Ability Icon String(Hero Of(Event Player), Button(Ability 1)), Y Component Of(Event Player.CPAbilityCounts)), Custom String(
+			"{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(Event Player.CPAbilityCounts))), Null,
+			Null, Top, -1.400, Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, Null, Null, Custom String("Hold {0} For Controls / Game Settings", Input Binding String(Button(
+			Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
 		"Green Sphere Create"
 		Create Effect(Filtered Array(Event Player, Global.CPGreenSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(
 			Green), Global.CPGreenSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
@@ -408,7 +404,73 @@ rule("Player HUD & Sphere initialize")
 	}
 }
 
-rule("Controls HUD")
+rule("Controls HUD - NEW")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+	}
+
+	actions
+	{
+		Enable Inspector Recording;
+		Event Player.TempMenuIDStoreArray = Empty Array;
+		Create HUD Text(Event Player, Null, Custom String("Host Only Controls"), Custom String(
+			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Hello\r\n{0}\r\n{1}", Custom String(
+			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
+			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(White), Color(Red), Color(
+			Aqua), None, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("View Next Checkpoint"), Custom String("{0} + {1}", Input Binding String(Button(
+			Interact)), Input Binding String(Button(Primary Fire))), Left, 1, Color(White), Color(Orange), Color(White), String,
+			Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Spectate"), Custom String("{0} + {1}", Input Binding String(Button(Interact)),
+			Input Binding String(Button(Melee))), Left, 1.100, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		"Will need modification!"
+		Create HUD Text(Event Player, Null, Custom String("Skip Level (After {0}sec)", Global.SkipTimeLimit), Custom String("{0} + {1}",
+			Input Binding String(Button(Interact)), Input Binding String(Button(Jump))), Left, 1.200, Color(White), Color(Orange), Color(
+			White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Toggle Invisibility", Global.SkipTimeLimit), Custom String("{0} + {1}",
+			Input Binding String(Button(Crouch)), Input Binding String(Button(Jump))), Left, 1.300, Color(White), Color(Orange), Color(
+			White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Switch Hero", Global.SkipTimeLimit), Custom String("{0} + Ultimate Status",
+			Input Binding String(Button(Interact))), Left, 1.400, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Replay Pioneer Route", Global.SkipTimeLimit), Custom String("{0} + Thanks",
+			Input Binding String(Button(Interact))), Left, 1.500, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Teleport"), Custom String("{0} + {1}", Input Binding String(Button(
+			Primary Fire)), Input Binding String(Button(Melee))), Left, 1.900, Color(White), Color(Orange), Color(White), String,
+			Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		"Pioneer special controls HUD"
+		Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Button(Interact))
+			&& Global.CurrentPioneer == Current Array Element), Custom String(
+			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\n{0}", Custom String(
+			"Change Size: Interact + W/S\r\nChange Hero: Interact + Ultimate Status")), Null, Null, Right, 0, Color(Red), Color(White),
+			Color(White), Visible To, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Wait Until(!Is Button Held(Event Player, Button(Interact)), 60);
+		For Player Variable(Event Player, TempIterator2, 0, Count Of(Event Player.TempMenuIDStoreArray), 1);
+			Destroy HUD Text(Event Player.TempMenuIDStoreArray[Event Player.TempIterator2]);
+		End;
+		Event Player.TempMenuIDStoreArray = Empty Array;
+		Disable Inspector Recording;
+	}
+}
+
+disabled rule("Controls HUD - OLD")
 {
 	event
 	{
@@ -1250,7 +1312,7 @@ rule("Pioneer Save Replay")
 	{
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-		Wait(0.200, Ignore Condition);
+		Wait(0.150, Ignore Condition);
 		Loop If Condition Is True;
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
@@ -1281,6 +1343,7 @@ rule("Interact + Thanks: View Replay")
 		Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
 			Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
 			30);
+		disabled Wait(0.100, Ignore Condition);
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
 			Wait(0.100, Ignore Condition);
 			If(Is Button Held(Event Player, Button(Reload)));
