@@ -1751,6 +1751,7 @@ rule("Pioneer runs out of time")
 
 	actions
 	{
+		Wait(0.100, Abort When False);
 		Event Player.BlockPioneerNewPoint = True;
 		Wait(0.100, Ignore Condition);
 		"Is there a player on final checkpoint waiting for pioneer"
