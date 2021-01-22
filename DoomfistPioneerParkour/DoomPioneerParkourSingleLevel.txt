@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Bringing Hax Framework to Doomfist Pioneer. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 21, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 22, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -447,8 +447,9 @@ rule("Controls HUD - NEW")
 		Create HUD Text(Event Player, Null, Custom String("Switch Hero", Global.SkipTimeLimit), Custom String("{0} + Ultimate Status",
 			Input Binding String(Button(Interact))), Left, 1.400, Color(White), Color(Orange), Color(White), String, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Replay Pioneer Route", Global.SkipTimeLimit), Custom String("{0} + Thanks",
-			Input Binding String(Button(Interact))), Left, 1.500, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Create HUD Text(Event Player, Null, Custom String("Replay Pioneer Route", Global.SkipTimeLimit), Custom String(
+			"{0} + Need Healing", Input Binding String(Button(Interact))), Left, 1.500, Color(White), Color(Orange), Color(White), String,
+			Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("Teleport"), Custom String("{0} + {1}", Input Binding String(Button(
 			Primary Fire)), Input Binding String(Button(Melee))), Left, 1.900, Color(White), Color(Orange), Color(White), String,
@@ -1048,40 +1049,6 @@ rule("Interact + Jump -> Skip Checkpoint")
 	}
 }
 
-rule("Interact + Need Healing Voiceline = Skip CP if you have spent enough time")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating(Event Player, Need Healing) == True;
-		Event Player.TimeSpentOnCP > Global.SkipTimeLimit;
-	}
-
-	actions
-	{
-		Event Player.BlockArriveNextPoint = True;
-		Event Player.CurrentCP += 1;
-		Event Player.MaxUnlockedCP = Event Player.CurrentCP;
-		Call Subroutine(RespawnPlayer);
-		"Allow player to pioneer using CP skip"
-		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
-			If(Global.CurrentPioneer == Null);
-				Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
-				Global.CurrentPioneer = Event Player;
-			End;
-		End;
-		Call Subroutine(HandleSkipTimer);
-		Event Player.BlockArriveNextPoint = False;
-	}
-}
-
 rule("Interact + Melee : Spectate Other Players")
 {
 	event
@@ -1319,7 +1286,7 @@ rule("Pioneer Save Replay")
 	}
 }
 
-rule("Interact + Thanks: View Replay")
+rule("Interact + Need Healing: View Replay")
 {
 	event
 	{
@@ -1331,7 +1298,7 @@ rule("Interact + Thanks: View Replay")
 	conditions
 	{
 		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating(Event Player, Thanks) == True;
+		(Is Communicating(Event Player, Need Healing) || Is Communicating(Event Player, Thanks)) == True;
 	}
 
 	actions
@@ -1343,16 +1310,22 @@ rule("Interact + Thanks: View Replay")
 		Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
 			Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
 			30);
-		disabled Wait(0.100, Ignore Condition);
+		Create Progress Bar HUD Text(Event Player, 100 * ((Event Player.TempIterator + 1) / Count Of(
+			Global.ReplayPioneerPositionArray[Event Player.CurrentCP])), Custom String("Press R to cancel replay"), Top, 5, Color(White),
+			Color(White), Values, Default Visibility);
+		"This can POTENTIALLY conflict with the pioneering of a point location variable"
+		Event Player.TempVariable2 = Last Text ID;
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, 1);
 			Wait(0.100, Ignore Condition);
 			If(Is Button Held(Event Player, Button(Reload)));
 				Stop Camera(Event Player);
+				Destroy Progress Bar HUD Text(Event Player.TempVariable2);
 				Abort;
 			End;
 		End;
 		Wait(0.500, Ignore Condition);
 		Stop Camera(Event Player);
+		Destroy Progress Bar HUD Text(Event Player.TempVariable2);
 	}
 }
 
