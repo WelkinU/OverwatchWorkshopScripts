@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Bringing Hax Framework to Doomfist Pioneer. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 20, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Bringing Hax Framework to Doomfist Pioneer. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 21, 2021. Code Commit History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -801,11 +801,11 @@ rule("Handle ForceRespawn")
 	actions
 	{
 		Event Player.BlockPioneerNewPoint = True;
+		"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
+		Wait(0.200, Ignore Condition);
 		Call Subroutine(RespawnPlayer);
 		Event Player.ForceRespawn = False;
 		Event Player.BlockPioneerNewPoint = False;
-		"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
-		Wait(0.100, Ignore Condition);
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(HandleSkipTimer);
 	}
@@ -1994,6 +1994,7 @@ rule("Sub3: HandleSkipTimer")
 
 	actions
 	{
+		Wait(0.200, Ignore Condition);
 		"If Player is pioneer or waiting for pioneer"
 		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1 || False);
 			Stop Chasing Player Variable(Event Player, TimeSpentOnCP);
