@@ -10,21 +10,48 @@ settings
 		Assault
 		{
 			Limit Roles: 2 Of Each Role Per Team
+
+			enabled maps
+			{
+				Hanamura
+				Temple of Anubis
+			}
 		}
 
 		Control
 		{
 			Limit Roles: 2 Of Each Role Per Team
+
+			disabled maps
+			{
+				Lijiang Tower
+				Lijiang Tower Lunar New Year
+				Oasis
+			}
 		}
 
 		Escort
 		{
 			Limit Roles: 2 Of Each Role Per Team
+
+			enabled maps
+			{
+				Havana
+				Rialto
+			}
 		}
 
 		Hybrid
 		{
 			Limit Roles: 2 Of Each Role Per Team
+
+			enabled maps
+			{
+				Blizzard World
+				Eichenwalde
+				Hollywood
+				Numbani
+			}
 		}
 	}
 }
@@ -80,8 +107,8 @@ rule("Init Player")
 		Event Player.KeyboardTextIDSave = Empty Array;
 		Event Player.KeyboardFullTextExtry = Custom String("");
 		Create HUD Text(Filtered Array(Event Player, Event Player.KeyboardFullTextExtry != Custom String("")), Custom String(
-			"Entered: {0}", Event Player.KeyboardFullTextExtry), Null, Null, Top, 1, White, White, White, Visible To and String,
-			Default Visibility);
+			"Entered: {0}", Event Player.KeyboardFullTextExtry), Null, Null, Top, 1, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 	}
 }
 
@@ -97,7 +124,8 @@ rule("Interact to show keyboard")
 	conditions
 	{
 		Has Spawned(Event Player) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Event Player.KeyboardTextIDSave == Empty Array;
 	}
 
 	actions
@@ -115,7 +143,7 @@ rule("Interact to show keyboard")
 			For Player Variable(Event Player, ColIterator, 0, Count Of(Global.KeyboardLayout[Event Player.RowIterator]), 1);
 				Create In-World Text(Event Player, Global.KeyboardLayout[Event Player.RowIterator][Event Player.ColIterator],
 					Event Player.KeyboardWorldPositionSave[Event Player.TempIterator] + World Vector Of(Vector(0, -0.250, 0), Event Player,
-					Rotation), 2, Do Not Clip, Visible To, Purple, Default Visibility);
+					Rotation), 2, Do Not Clip, Visible To, Color(Purple), Default Visibility);
 				Modify Player Variable(Event Player, KeyboardTextIDSave, Append To Array, Last Text ID);
 				Wait(0.016, Ignore Condition);
 				Event Player.TempIterator += 1;
@@ -136,7 +164,7 @@ rule("R to remove keyboard")
 	conditions
 	{
 		Has Spawned(Event Player) == True;
-		Is Button Held(Event Player, Reload) == True;
+		Is Button Held(Event Player, Button(Reload)) == True;
 	}
 
 	actions
@@ -160,7 +188,7 @@ rule("Left Click To Click Letters")
 	conditions
 	{
 		Has Spawned(Event Player) == True;
-		Is Button Held(Event Player, Primary Fire) == True;
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
 		Count Of(Event Player.KeyboardTextIDSave) > 0;
 	}
 
