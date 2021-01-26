@@ -448,7 +448,7 @@ rule("Controls HUD - NEW")
 			Input Binding String(Button(Interact))), Left, 1.400, Color(White), Color(Orange), Color(White), String, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("Replay Pioneer Route", Global.SkipTimeLimit), Custom String(
-			"{0} + Need Healing", Input Binding String(Button(Interact))), Left, 1.500, Color(White), Color(Orange), Color(White), String,
+			"Need Healing/Help"), Left, 1.500, Color(White), Color(Orange), Color(White), String,
 			Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("Teleport"), Custom String("{0} + {1}", Input Binding String(Button(
@@ -1279,14 +1279,14 @@ rule("Pioneer Save Replay")
 	{
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-		Wait(0.150, Ignore Condition);
+		Wait(Speed Of(Event Player) <= 2.75 ? .48 : .16, Ignore Condition);
 		Loop If Condition Is True;
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
 	}
 }
 
-rule("Interact + Need Healing: View Replay")
+rule("Need Healing/Help: View Replay")
 {
 	event
 	{
@@ -1297,8 +1297,7 @@ rule("Interact + Need Healing: View Replay")
 
 	conditions
 	{
-		Is Button Held(Event Player, Button(Interact)) == True;
-		(Is Communicating(Event Player, Need Healing) || Is Communicating(Event Player, Thanks)) == True;
+		(Is Communicating(Event Player, Need Healing) || Is Communicating(Event Player, Need Help)) == True;
 	}
 
 	actions
