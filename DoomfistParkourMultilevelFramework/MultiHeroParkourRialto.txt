@@ -299,7 +299,7 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			0), Vector(1, 0, 0), Vector(0, 2, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(3, 1, 1), Vector(2, 0, 0), Vector(0, 3, 0),
 			Vector(1, 0, 0), Vector(1, 2, 0), Vector(9, 9, 0), Vector(0, 3, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 19 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[19] = Array(Null, Vector(-53.273, 1.566, -61.560), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
+		Global.CPLocations[19] = Array(Null, Vector(59.074, 1.580, -8.073), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
 			-133.650), Vector(-27.110, 3.250, -133.603), Vector(-15.738, 4.250, -86.475), Vector(-4.372, 18.247, 0.788), Vector(25.515,
 			-0.896, 27.851), Vector(-10.232, 0.889, 48.579), Vector(82.594, 2.925, 52.756), Vector(-42.306, -0.459, -7.170), Vector(13.890,
 			-0.433, 39.303), Vector(-42.089, -0.506, -6.698), Vector(-1.840, 17.344, -20.191), Vector(-42.384, -0.516, -5.926), Vector(
@@ -475,102 +475,102 @@ rule("Initialize Global HUD and Effects")
 		Wait(0.200, Ignore Condition);
 		"Workshop Code HUD"
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: VP3H4\r\nServer Load {0} | Avg {1} | Peak {2} ",
-			Server Load, Server Load Average, Server Load Peak), Right, -9, Green, White, White, Visible To and String,
-			Default Visibility);
+			Server Load, Server Load Average, Server Load Peak), Right, -9, Color(Green), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		"Create Origin Point Ring"
-		Create Effect(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Ring, Purple, Global.CPLocations[0][0],
-			Global.CPRadii[0][0], Visible To);
+		Create Effect(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Ring, Color(Purple),
+			Global.CPLocations[0][0], Global.CPRadii[0][0], Visible To);
 		"Create Level Entry Rings, Icons, Text"
 		For Global Variable(LevelIterator, 1, Count Of(Global.CPLocations), 1);
 			If(Index Of Array Value(Global.UniqueHeroRoster, Global.LevelHeros[Global.LevelIterator]) == 0);
 				"Create Level Entry Rings"
 				Create Effect(Filtered Array(All Players(All Teams),
-					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 0 && True), Ring, Purple,
+					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 0 && True), Ring, Color(Purple),
 					Global.CPLocations[Global.LevelIterator][1], Global.CPRadii[Global.LevelIterator][1], Visible To);
 				Create In-World Text(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 0), Custom String("{0} ({1})",
 					Global.LevelNames[Global.LevelIterator], Global.LevelDescriptions[Global.LevelIterator]),
-					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Orange, Default Visibility);
+					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Color(Orange), Default Visibility);
 				Create Icon(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 0),
-					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Yellow, True);
+					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Color(Yellow), True);
 			Else If(Index Of Array Value(Global.UniqueHeroRoster, Global.LevelHeros[Global.LevelIterator]) == 1);
 				"Create Level Entry Rings"
 				Create Effect(Filtered Array(All Players(All Teams),
-					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 1 && True), Ring, Purple,
+					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 1 && True), Ring, Color(Purple),
 					Global.CPLocations[Global.LevelIterator][1], Global.CPRadii[Global.LevelIterator][1], Visible To);
 				Create In-World Text(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 1), Custom String("{0} ({1})",
 					Global.LevelNames[Global.LevelIterator], Global.LevelDescriptions[Global.LevelIterator]),
-					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Orange, Default Visibility);
+					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Color(Orange), Default Visibility);
 				Create Icon(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 1),
-					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Yellow, True);
+					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Color(Yellow), True);
 			Else If(Index Of Array Value(Global.UniqueHeroRoster, Global.LevelHeros[Global.LevelIterator]) == 2);
 				"Create Level Entry Rings"
 				Create Effect(Filtered Array(All Players(All Teams),
-					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 2 && True), Ring, Purple,
+					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 2 && True), Ring, Color(Purple),
 					Global.CPLocations[Global.LevelIterator][1], Global.CPRadii[Global.LevelIterator][1], Visible To);
 				Create In-World Text(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 2), Custom String("{0} ({1})",
 					Global.LevelNames[Global.LevelIterator], Global.LevelDescriptions[Global.LevelIterator]),
-					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Orange, Default Visibility);
+					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Color(Orange), Default Visibility);
 				Create Icon(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 2),
-					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Yellow, True);
+					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Color(Yellow), True);
 			Else If(Index Of Array Value(Global.UniqueHeroRoster, Global.LevelHeros[Global.LevelIterator]) == 3);
 				"Create Level Entry Rings"
 				Create Effect(Filtered Array(All Players(All Teams),
-					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 3 && True), Ring, Purple,
+					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 3 && True), Ring, Color(Purple),
 					Global.CPLocations[Global.LevelIterator][1], Global.CPRadii[Global.LevelIterator][1], Visible To);
 				Create In-World Text(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 3), Custom String("{0} ({1})",
 					Global.LevelNames[Global.LevelIterator], Global.LevelDescriptions[Global.LevelIterator]),
-					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Orange, Default Visibility);
+					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Color(Orange), Default Visibility);
 				Create Icon(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 3),
-					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Yellow, True);
+					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Color(Yellow), True);
 			Else If(Index Of Array Value(Global.UniqueHeroRoster, Global.LevelHeros[Global.LevelIterator]) == 4);
 				"Create Level Entry Rings"
 				Create Effect(Filtered Array(All Players(All Teams),
-					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 4 && True), Ring, Purple,
+					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 4 && True), Ring, Color(Purple),
 					Global.CPLocations[Global.LevelIterator][1], Global.CPRadii[Global.LevelIterator][1], Visible To);
 				Create In-World Text(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 4), Custom String("{0} ({1})",
 					Global.LevelNames[Global.LevelIterator], Global.LevelDescriptions[Global.LevelIterator]),
-					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Orange, Default Visibility);
+					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Color(Orange), Default Visibility);
 				Create Icon(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 4),
-					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Yellow, True);
+					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Color(Yellow), True);
 			Else If(Index Of Array Value(Global.UniqueHeroRoster, Global.LevelHeros[Global.LevelIterator]) == 5);
 				"Create Level Entry Rings"
 				Create Effect(Filtered Array(All Players(All Teams),
-					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 5 && True), Ring, Purple,
+					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 5 && True), Ring, Color(Purple),
 					Global.CPLocations[Global.LevelIterator][1], Global.CPRadii[Global.LevelIterator][1], Visible To);
 				Create In-World Text(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 5), Custom String("{0} ({1})",
 					Global.LevelNames[Global.LevelIterator], Global.LevelDescriptions[Global.LevelIterator]),
-					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Orange, Default Visibility);
+					Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Color(Orange), Default Visibility);
 				Create Icon(Filtered Array(All Players(All Teams),
 					Current Array Element.CurrentCP == 0 && Current Array Element.HeroSelectMenuIndex == 5),
-					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Yellow, True);
+					Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Color(Yellow), True);
 			End;
 		End;
 		"Controls HUD"
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Press Interact To View Controls & Hero Help"), Left, -2, White,
-			White, Sky Blue, Visible To and String, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Interact) && True), Null, Null,
-			Custom String("Quick Reset - R\r\nSkip Checkpoint - Jump + Interact\r\n{0}\r\n{1}", Custom String(
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Press Interact To View Controls & Hero Help"), Left, -2, Color(
+			White), Color(White), Color(Sky Blue), Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact)) && True), Null,
+			Null, Custom String("Quick Reset - R\r\nSkip Checkpoint - Jump + Interact\r\n{0}\r\n{1}", Custom String(
 			"Previous Checkpoint - Crouch + Interact\r\nChoose New Level - Ultimate + Interact"), Custom String(
 			"View Level Entry / CP Location - Left Click + Interact\r\nSpectate - Need Healing Voiceline\r\nFree Roam - Hello + Interact")),
-			Left, 0, White, White, White, Visible To and String, Default Visibility);
+			Left, 0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Seperator at end of controls block"
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String(" \r\n "), Left, 1, White, White, White, Visible To and String,
-			Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String(" \r\n "), Left, 1, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
-			"{0}", Global.TopScoreString), Right, 1, White, White, Green, Visible To and String, Default Visibility);
+			"{0}", Global.TopScoreString), Right, 1, Color(White), Color(White), Color(Green), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Null, Null, Custom String(
-			"{0}", Global.AllScoreString), Right, 5, White, White, White, Visible To and String, Default Visibility);
+			"{0}", Global.AllScoreString), Right, 5, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 	}
 }
 
@@ -617,26 +617,26 @@ rule("Initialize Player HUD and Effects")
 	{
 		Create HUD Text(Event Player, Null, Null, Custom String("{0} Checkpoint {1} - Time {2}",
 			Global.LevelNames[Event Player.CurrentLevel], Custom String("{0}/{1}", Event Player.CurrentCP, Count Of(
-			Global.CPLocations[Event Player.CurrentLevel]) - 1), Event Player.LevelTimer), Top, -2, White, White, White,
-			Visible To and String, Default Visibility);
+			Global.CPLocations[Event Player.CurrentLevel]) - 1), Event Player.LevelTimer), Top, -2, Color(White), Color(White), Color(
+			White), Visible To and String, Default Visibility);
 		"Create Current Checkpoint Ring"
 		Create Effect(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
-			Global.CPLocations[Event Player.CurrentLevel])), Ring, Purple,
+			Global.CPLocations[Event Player.CurrentLevel])), Ring, Color(Purple),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP],
 			Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP], Visible To Position and Radius);
 		"Next Checkpoint Ring"
-		Create Effect(Filtered Array(Event Player, Current Array Element.CurrentCP > 0), Ring, Purple,
+		Create Effect(Filtered Array(Event Player, Current Array Element.CurrentCP > 0), Ring, Color(Purple),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1],
 			Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1], Visible To Position and Radius);
 		"Create Next Checkpoint Text"
 		Create In-World Text(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
 			Global.CPLocations[Event Player.CurrentLevel])), Custom String("Come Here!"),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1], 1.300, Do Not Clip, Visible To Position and String,
-			Yellow, Default Visibility);
+			Color(Yellow), Default Visibility);
 		"Create Next Checkpoint Icon"
 		Create Icon(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
 			Global.CPLocations[Event Player.CurrentLevel])), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1],
-			Flag, Visible To and Position, Yellow, True);
+			Flag, Visible To and Position, Color(Yellow), True);
 		"Level 3 HUD: Ability Limits "
 		Create HUD Text(Filtered Array(Event Player, Index Of Array Value(Global.LevelsWithLimitedAbilityCounts, Event Player.CurrentLevel)
 			>= 0 && Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel])), Custom String(
@@ -646,18 +646,19 @@ rule("Initialize Player HUD and Effects")
 			Ability 1)), Y Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
 			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
 			Z Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
-			Event Player.PunchUpperSlamUsed))), Null, Null, Top, -1.400, Blue, White, White, Visible To and String, Default Visibility);
+			Event Player.PunchUpperSlamUsed))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(White), Visible To and String,
+			Default Visibility);
 		"360 Required HUD"
 		Create HUD Text(Filtered Array(Event Player, Y Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0), Custom String(
 			"360's Required: {0}", Y Component Of(Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])),
-			Null, Null, Top, -1, Red, White, White, Visible To and String, Default Visibility);
+			Null, Null, Top, -1, Color(Red), Color(White), Color(White), Visible To and String, Default Visibility);
 		"125Slam Required HUD"
 		Create HUD Text(Filtered Array(Event Player, Z Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0), Custom String(
 			"125 Charge Slams Required: {0}", Z Component Of(
-			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])), Null, Null, Top, -1, Red, White, White,
-			Visible To and String, Default Visibility);
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])), Null, Null, Top, -1, Color(Red), Color(
+			White), Color(White), Visible To and String, Default Visibility);
 		"Dev Mode HUD"
 		Create HUD Text(Filtered Array(Event Player, Global.DevModeEngaged), Null, Null, Custom String(
 			"--------------Player Variables------------------\r\n{0}\r\n--------------Checkpoint Variables--------------\r\n{1}\r\n{2}\r\n-------------",
@@ -673,15 +674,16 @@ rule("Initialize Player HUD and Effects")
 			"Checkpoint Ultimate Enabled: {0}\r\nCheckpoint 360 Req'd: {1}\r\nCheckpoint 125 Slam Req'd: {2}", X Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]), Y Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]), Z Component Of(
-			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]))), Left, 9, White, White, White,
-			Visible To and String, Default Visibility);
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]))), Left, 9, Color(White), Color(White),
+			Color(White), Visible To and String, Default Visibility);
 		"Free Roam Notification HUD"
 		Create HUD Text(Filtered Array(Event Player, Event Player.FreeRoamEnabled), Custom String(
-			"Free Roam Enabled! Hello + Interact to exit Free Roam!"), Null, Null, Top, -2, Red, White, White, Visible To,
-			Default Visibility);
+			"Free Roam Enabled! Hello + Interact to exit Free Roam!"), Null, Null, Top, -2, Color(Red), Color(White), Color(White),
+			Visible To, Default Visibility);
 		"Hero Select Menu Text Display"
 		Create HUD Text(Filtered Array(Event Player, Event Player.CurrentLevel == 0 && Event Player.CurrentCP == 0), Custom String("{0}",
-			Event Player.HeroSelectMenuString), Null, Null, Top, 1, White, White, White, Visible To and String, Default Visibility);
+			Event Player.HeroSelectMenuString), Null, Null, Top, 1, Color(White), Color(White), Color(White), Visible To and String,
+			Default Visibility);
 	}
 }
 
@@ -696,45 +698,45 @@ rule("Initialize Hero Help HUD")
 
 	actions
 	{
-		Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Interact)), Custom String("{0} Hero Help",
-			Hero Icon String(Hero Of(Event Player))), Null, Null, Left, 10, White, White, White, Visible To and String,
-			Default Visibility);
+		Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Button(Interact))), Custom String(
+			"{0} Hero Help", Hero Icon String(Hero Of(Event Player))), Null, Null, Left, 10, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		"Right Click Help"
 		Create HUD Text(Filtered Array(Event Player, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][0] != Null && Is Button Held(Event Player, Interact)), Custom String("{0}", Ability Icon String(Hero Of(
-			Event Player), Button(Secondary Fire))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][0], Left, 11, White, White, White, Visible To and String, Default Visibility);
+			Event Player))][0] != Null && Is Button Held(Event Player, Button(Interact))), Custom String("{0}", Ability Icon String(
+			Hero Of(Event Player), Button(Secondary Fire))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster,
+			Hero Of(Event Player))][0], Left, 11, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Ability 1 Help"
 		Create HUD Text(Filtered Array(Event Player, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][1] != Null && Is Button Held(Event Player, Interact)), Custom String("{0}", Ability Icon String(Hero Of(
-			Event Player), Button(Ability 1))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][1], Left, 12, White, White, White, Visible To and String, Default Visibility);
+			Event Player))][1] != Null && Is Button Held(Event Player, Button(Interact))), Custom String("{0}", Ability Icon String(
+			Hero Of(Event Player), Button(Ability 1))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster,
+			Hero Of(Event Player))][1], Left, 12, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Ability 2 Help"
 		Create HUD Text(Filtered Array(Event Player, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][2] != Null && Is Button Held(Event Player, Interact)), Custom String("{0}", Ability Icon String(Hero Of(
-			Event Player), Button(Ability 2))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][2], Left, 13, White, White, White, Visible To and String, Default Visibility);
+			Event Player))][2] != Null && Is Button Held(Event Player, Button(Interact))), Custom String("{0}", Ability Icon String(
+			Hero Of(Event Player), Button(Ability 2))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster,
+			Hero Of(Event Player))][2], Left, 13, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Ultimate Help"
 		Create HUD Text(Filtered Array(Event Player, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][3] != Null && Is Button Held(Event Player, Interact)), Custom String("{0}", Ability Icon String(Hero Of(
-			Event Player), Button(Ultimate))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][3], Left, 14, White, White, White, Visible To and String, Default Visibility);
+			Event Player))][3] != Null && Is Button Held(Event Player, Button(Interact))), Custom String("{0}", Ability Icon String(
+			Hero Of(Event Player), Button(Ultimate))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster,
+			Hero Of(Event Player))][3], Left, 14, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Primary Fire Help"
 		Create HUD Text(Filtered Array(Event Player, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][4] != Null && Is Button Held(Event Player, Interact)), Custom String("{0}", Ability Icon String(Hero Of(
-			Event Player), Button(Primary Fire))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][4], Left, 15, White, White, White, Visible To and String, Default Visibility);
+			Event Player))][4] != Null && Is Button Held(Event Player, Button(Interact))), Custom String("{0}", Ability Icon String(
+			Hero Of(Event Player), Button(Primary Fire))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster,
+			Hero Of(Event Player))][4], Left, 15, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Passive Help"
 		Create HUD Text(Filtered Array(Event Player, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(
-			Event Player))][5] != Null && Is Button Held(Event Player, Interact)), Custom String("{0}", Ability Icon String(Hero(Pharah),
-			Button(Jump))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(Event Player))][5], Left,
-			16, White, White, White, Visible To and String, Default Visibility);
+			Event Player))][5] != Null && Is Button Held(Event Player, Button(Interact))), Custom String("{0}", Ability Icon String(Hero(
+			Pharah), Button(Jump))), Null, Global.HeroHelpDescriptions[Index Of Array Value(Global.HeroHelpRoster, Hero Of(Event Player))
+			][5], Left, 16, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Seperator at end of help text block"
-		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n "), Left, 18, White, White, White, Visible To and String,
-			Default Visibility);
+		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n "), Left, 18, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		"Seperator at end of help text block"
 		disabled Create HUD Text(Event Player, Null, Null, Custom String(" \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n"), Left, 18,
-			White, White, White, Visible To and String, Default Visibility);
+			Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 	}
 }
 
@@ -757,7 +759,7 @@ rule("Update Hero Select Menu via Melee Key")
 
 	conditions
 	{
-		Is Button Held(Event Player, Melee) == True;
+		Is Button Held(Event Player, Button(Melee)) == True;
 		Event Player.CurrentCP == 0;
 		Event Player.CurrentLevel == 0;
 	}
@@ -795,7 +797,7 @@ rule("Enter Into Level")
 			Distance Between(Current Array Element, Position Of(Event Player))
 			< 2 && Global.LevelHeros[Current Array Index + 1] == Global.UniqueHeroRoster[Event Player.HeroSelectMenuIndex]))) + 1;
 		Event Player.CurrentCP = 1;
-		Play Effect(Event Player, Buff Explosion Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Explosion Sound, Color(White), Event Player, 60);
 		If(Global.CPTeleport[Event Player.CurrentLevel][Event Player.CurrentCP] != Null);
 			Event Player.CurrentCP += 1;
 		End;
@@ -826,7 +828,6 @@ rule("Respawn If Touched Ground Not On Level Entry Point")
 			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
-		disabled Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player)) < 2)) == 0;
 		Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player))
 			< 2 && Global.LevelHeros[Current Array Index + 1] == Global.UniqueHeroRoster[Event Player.HeroSelectMenuIndex] && True)) == 0;
 	}
@@ -848,11 +849,11 @@ rule("Start Timer When Player Leaves Origin Point")
 
 	conditions
 	{
-		Distance Between(Position Of(Event Player), Global.CPLocations[0][0]) > Global.CPRadii[0][0];
 		Event Player.CurrentCP <= 0;
 		Has Spawned(Event Player) == True;
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
+		Distance Between(Position Of(Event Player), Global.CPLocations[0][0]) > Global.CPRadii[0][0];
 	}
 
 	actions
@@ -875,18 +876,18 @@ rule("Arrived At Next Checkpoint")
 
 	conditions
 	{
-		"Within range of next checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
-			< Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		"Player has selected a level"
 		Event Player.CurrentCP > 0;
 		Is On Ground(Event Player) == True;
-		"Is not on last checkpoint in level"
-		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		Event Player.CurrentLevel > 0;
 		Event Player.BlockArriveAtNextPoint != True;
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
+		"Is not on last checkpoint in level"
+		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
+		"Within range of next checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
+			< Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 	}
 
 	actions
@@ -911,7 +912,7 @@ rule("Arrived At Next Checkpoint")
 			Abort;
 		End;
 		Event Player.CurrentCP += 1;
-		Play Effect(Event Player, Buff Explosion Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Explosion Sound, Color(White), Event Player, 60);
 		If(Global.CPTeleport[Event Player.CurrentLevel][Event Player.CurrentCP] != Null);
 			Event Player.CurrentCP += 1;
 		End;
@@ -933,12 +934,6 @@ rule("Respawn If Touched Ground Not On Checkpoints")
 
 	conditions
 	{
-		"Not on current checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
-			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
-		"Not within range of next checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
-			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		"Player has selected a level"
 		Event Player.CurrentCP > 0;
 		Is On Ground(Event Player) == True;
@@ -947,6 +942,12 @@ rule("Respawn If Touched Ground Not On Checkpoints")
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
 		(Hero Of(Event Player) == Hero(Roadhog) && Is Using Ability 2(Event Player)) == False;
+		"Not on current checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
+			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
+		"Not within range of next checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
+			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 	}
 
 	actions
@@ -971,11 +972,11 @@ rule("Finished Level")
 
 	conditions
 	{
-		"Is on last checkpoint in level"
-		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		Event Player.CurrentCP > 0;
 		Event Player.CurrentLevel > 0;
 		Event Player.LevelTimer > 0;
+		"Is on last checkpoint in level"
+		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 	}
 
 	actions
@@ -1060,7 +1061,7 @@ rule("R -> Quick Reset")
 
 	conditions
 	{
-		Is Button Held(Event Player, Reload) == True;
+		Is Button Held(Event Player, Button(Reload)) == True;
 	}
 
 	actions
@@ -1082,8 +1083,8 @@ rule("Ultimate + Interact -> Reset to Origin Point")
 
 	conditions
 	{
-		Is Button Held(Event Player, Ultimate) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Ultimate)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Has Spawned(Event Player) == True;
 		"Don't allow this in free roam because otherwise the Doomfist Ultimate cancel bug will happen leaving residual stuff on player's HUD"
 		Event Player.FreeRoamEnabled == False;
@@ -1111,12 +1112,12 @@ rule("Jump + Interact -> Skip Level")
 
 	conditions
 	{
-		Is Button Held(Event Player, Jump) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Jump)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Event Player.CurrentLevel > 0;
 		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		"To mitigate conflict with other button combos"
-		Is Button Held(Event Player, Crouch) == False;
+		Is Button Held(Event Player, Button(Crouch)) == False;
 		Has Spawned(Event Player) == True;
 	}
 
@@ -1140,12 +1141,12 @@ rule("Crouch + Interact -> Go Back A Level")
 
 	conditions
 	{
-		Is Button Held(Event Player, Crouch) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Crouch)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Event Player.CurrentLevel > 0;
 		Event Player.CurrentCP + 0 > 1;
 		"To mitigate conflict with other button combos"
-		Is Button Held(Event Player, Jump) == False;
+		Is Button Held(Event Player, Button(Jump)) == False;
 		Has Spawned(Event Player) == True;
 	}
 
@@ -1171,8 +1172,8 @@ rule("Left Click + Interact -> Camera To See Next Point or Level Entry Location"
 
 	conditions
 	{
-		Is Button Held(Event Player, Primary Fire) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		"Make sure next point exists"
 		(Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1 || Event Player.CurrentLevel == 0) == True;
 	}
@@ -1190,7 +1191,7 @@ rule("Left Click + Interact -> Camera To See Next Point or Level Entry Location"
 		Start Camera(Event Player, Ray Cast Hit Position(Event Player.TempViewNextPointPosition,
 			Event Player.TempViewNextPointPosition + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
 			Event Player.TempViewNextPointPosition, 30);
-		While(Is Button Held(Event Player, Primary Fire) && Is Button Held(Event Player, Interact));
+		While(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact)));
 			Wait(0.033, Ignore Condition);
 		End;
 		Stop Camera(Event Player);
@@ -1210,8 +1211,8 @@ rule("Need Healing Voiceline -> Spectate Other Players")
 	conditions
 	{
 		Is Communicating(Event Player, Need Healing) == True;
-		disabled Is Button Held(Event Player, Melee) == True;
-		disabled Is Button Held(Event Player, Interact) == True;
+		disabled Is Button Held(Event Player, Button(Melee)) == True;
+		disabled Is Button Held(Event Player, Button(Interact)) == True;
 	}
 
 	actions
@@ -1246,10 +1247,10 @@ rule("Hello + Interact -> Free Roam")
 	conditions
 	{
 		Is Communicating(Event Player, Hello) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Has Spawned(Event Player) == True;
 		"To prevent Q+F from triggering this while Hello still counting as being used"
-		Is Button Held(Event Player, Ultimate) == False;
+		Is Button Held(Event Player, Button(Ultimate)) == False;
 	}
 
 	actions
@@ -1311,7 +1312,7 @@ rule("Ultimate Status + Interact -> Dev Mode (Host Only)")
 
 	conditions
 	{
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Is Communicating(Event Player, Ultimate Status) == True;
 		Event Player == Host Player;
 		Has Spawned(Event Player) == True;
@@ -1334,8 +1335,8 @@ rule("Teleport Enabled with Melee + Left Click if done with level, free roam ena
 
 	conditions
 	{
-		Is Button Held(Event Player, Primary Fire) == True;
-		Is Button Held(Event Player, Melee) == True;
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Button Held(Event Player, Button(Melee)) == True;
 		disabled Event Player.CurrentLevel > 0;
 		(Event Player.FreeRoamEnabled || Global.DevModeEngaged || Event Player.CurrentCP + 1 >= Count Of(
 			Global.CPLocations[Event Player.CurrentLevel])) == True;
@@ -1371,7 +1372,7 @@ rule("Subroutine 0: RespawnPlayer")
 		"Sigma Barrier Reset"
 		If(Hero Of(Event Player) == Hero(Sigma));
 			If(Event Player.sigma_barrier_ready_to_destroy);
-				Press Button(Event Player, Secondary Fire);
+				Press Button(Event Player, Button(Secondary Fire));
 				Wait(0.100, Ignore Condition);
 			End;
 			Event Player.sigma_barrier_ON = False;
@@ -1382,11 +1383,11 @@ rule("Subroutine 0: RespawnPlayer")
 			Stop Chasing Player Variable(Event Player, MoiraOrbTimer);
 		End;
 		Call Subroutine(CancelMomentum);
-		Disallow Button(Event Player, Interact);
-		disabled Disallow Button(Event Player, Secondary Fire);
-		Disallow Button(Event Player, Ultimate);
-		Disallow Button(Event Player, Ability 1);
-		Disallow Button(Event Player, Ability 2);
+		Disallow Button(Event Player, Button(Interact));
+		disabled Disallow Button(Event Player, Button(Secondary Fire));
+		Disallow Button(Event Player, Button(Ultimate));
+		Disallow Button(Event Player, Button(Ability 1));
+		Disallow Button(Event Player, Button(Ability 2));
 		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
 		"Safety check in case rules execute out of order, ie Reset to Origin (Q + Interact) pressed same time and get next level"
@@ -1444,11 +1445,11 @@ rule("Subroutine 0: RespawnPlayer")
 		"Redundant, but just in case"
 		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
 		Event Player.Count360Slam125 = Vector(0, 0, 0);
-		Allow Button(Event Player, Secondary Fire);
-		Allow Button(Event Player, Ability 1);
-		Allow Button(Event Player, Ability 2);
-		Allow Button(Event Player, Ultimate);
-		Allow Button(Event Player, Interact);
+		Allow Button(Event Player, Button(Secondary Fire));
+		Allow Button(Event Player, Button(Ability 1));
+		Allow Button(Event Player, Button(Ability 2));
+		Allow Button(Event Player, Button(Ultimate));
+		Allow Button(Event Player, Button(Interact));
 		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
 		Event Player.WinstonBouncyBubbleCooldown = 0;
 		Destroy Effect(Event Player.WinstonBubbleEffect);
@@ -1507,10 +1508,10 @@ rule("Subroutine 1: AutogenerateMapVariables")
 				Modify Global Variable At Index(CPUltimate360MaxSlamCounts, Global.LevelIterator, Append To Array, Vector(0, 0, 0));
 			End;
 		End;
-		For Global Variable(LevelIterator, 1, Count Of(Global.CPLocations), 1);
-			Global.LevelNames[Global.LevelIterator] = Custom String("{0} {1}", Hero Icon String(Global.LevelHeros[Global.LevelIterator]),
-				Global.LevelNames[Global.LevelIterator]);
-		End;
+		disabled For Global Variable(LevelIterator, 1, Count Of(Global.CPLocations), 1);
+		disabled Global.LevelNames[Global.LevelIterator] = Custom String("{0} {1}", Hero Icon String(Global.LevelHeros[Global.LevelIterator]),
+			Global.LevelNames[Global.LevelIterator]);
+		disabled End;
 		Global.UniqueHeroRoster = Empty Array;
 		For Global Variable(LevelIterator, 1, Count Of(Global.LevelHeros), 1);
 			"Hero is not in unique hero list, add to unique hero list"
@@ -1736,7 +1737,7 @@ rule("Successful 360 Detected")
 	{
 		Small Message(Event Player, Custom String("360"));
 		Event Player.Count360Slam125 += Left;
-		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
 		Event Player.Array360 = Array(False, False, False, False);
 	}
 }
@@ -1880,14 +1881,14 @@ rule("125 Slam Detection")
 		Event Player.SlamTimer >= 1.220;
 		Is Using Ability 2(Event Player) == True;
 		"To prevent player from just holding down slam at invalid slam angle to get a 125 slam"
-		Is Button Held(Event Player, Ability 2) == False;
+		Is Button Held(Event Player, Button(Ability 2)) == False;
 	}
 
 	actions
 	{
 		Event Player.Count360Slam125 += Up;
 		Small Message(Event Player, Custom String("125 Slam"));
-		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
 	}
 }
 
@@ -2038,7 +2039,7 @@ rule("Remove Barrier")
 	conditions
 	{
 		Event Player.sigma_barrier_ready_to_destroy == True;
-		Is Button Held(Event Player, Secondary Fire) == True;
+		Is Button Held(Event Player, Button(Secondary Fire)) == True;
 	}
 
 	actions
@@ -2189,7 +2190,7 @@ rule("Create Bubble")
 			Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 			Abort;
 		End;
-		Create Effect(Event Player, Sphere, Blue, Event Player.WinstonBubbleLocation, 5, Visible To Position and Radius);
+		Create Effect(Event Player, Sphere, Color(Blue), Event Player.WinstonBubbleLocation, 5, Visible To Position and Radius);
 		Event Player.WinstonBubbleEffect = Last Created Entity;
 		Event Player.WinstonBouncyBubbleCooldown = 9;
 		Chase Player Variable At Rate(Event Player, WinstonBouncyBubbleCooldown, 0, 1, Destination and Rate);
@@ -2235,7 +2236,7 @@ rule("Winston Wall Climb")
 
 	conditions
 	{
-		Is Button Held(Event Player, Jump) == True;
+		Is Button Held(Event Player, Button(Jump)) == True;
 		"Make this so a player can't use wall climb multiple times in a row."
 		Event Player.WinstonWallClimbEnabled == True;
 	}
@@ -2246,9 +2247,10 @@ rule("Winston Wall Climb")
 		"Set Wall Climb to have a max of 4 sec duration. This prevents you from wall climing against a roof/skybox for indefinite stall."
 		Chase Player Variable Over Time(Event Player, WinstonWallClimbTimer, 0, 4, Destination and Duration);
 		"Wall Climb while Jump is held, have been wall climbing less than 4 sec, are within 0.5m of wall"
-		While(Is Button Held(Event Player, Jump) && Event Player.WinstonWallClimbTimer > 0 && Distance Between(Ray Cast Hit Position(
-			Eye Position(Event Player), Eye Position(Event Player) + Direction From Angles(Horizontal Angle From Direction(
-			Facing Direction Of(Event Player)), 0) * 10, All Players(All Teams), Event Player, True), Eye Position(Event Player)) < 3);
+		While(Is Button Held(Event Player, Button(Jump)) && Event Player.WinstonWallClimbTimer > 0 && Distance Between(
+			Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player) + Direction From Angles(
+			Horizontal Angle From Direction(Facing Direction Of(Event Player)), 0) * 10, All Players(All Teams), Event Player, True),
+			Eye Position(Event Player)) < 3);
 			Wait(0.033, Ignore Condition);
 			Set Move Speed(Event Player, 0);
 			Apply Impulse(Event Player, Up, 7, To World, Cancel Contrary Motion);
@@ -2506,7 +2508,7 @@ rule("Roadhog Ultimate")
 	{
 		Disable Movement Collision With Environment(Event Player, False);
 		Small Message(Event Player, Custom String("Hold Melee to Cancel Ultimate"));
-		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Melee));
+		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Button(Melee)));
 			Wait(0.033, Ignore Condition);
 			"Cause knockback on player"
 			disabled Apply Impulse(Event Player, Facing Direction Of(Event Player), -10, To World, Cancel Contrary Motion);
@@ -2563,7 +2565,7 @@ rule("Camera follow orb position model")
 	conditions
 	{
 		Is Using Ability 2(Event Player) == True;
-		(Is Button Held(Event Player, Primary Fire) || Is Button Held(Event Player, Secondary Fire)) == True;
+		(Is Button Held(Event Player, Button(Primary Fire)) || Is Button Held(Event Player, Button(Secondary Fire))) == True;
 	}
 
 	actions
@@ -2575,7 +2577,7 @@ rule("Camera follow orb position model")
 		Start Camera(Event Player, Event Player.MoiraOrbPosition, Event Player.MoiraOrbPosition + Facing Direction Of(Event Player), 30);
 		Event Player.MoiraOrbTimer = 7;
 		Chase Player Variable At Rate(Event Player, MoiraOrbTimer, 0, 1, Destination and Rate);
-		While(Event Player.MoiraOrbTimer > 0 && !Is Button Held(Event Player, Melee) && True);
+		While(Event Player.MoiraOrbTimer > 0 && !Is Button Held(Event Player, Button(Melee)) && True);
 			If(Distance Between(Event Player.MoiraOrbPosition, Ray Cast Hit Position(Event Player.MoiraOrbPosition,
 				Event Player.MoiraOrbPosition + Event Player.MoiraOrbFacing, Null, Null, False)) < 0.750);
 				"Bounce detected - set new direction of orb as r = d - 2(d dot n)n where d is current direction, n is normal vector, r is new vector"
