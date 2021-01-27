@@ -263,6 +263,8 @@ rule("Initialize Globals")
 		Global.EffectLockSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Effect Lock (White) Sphere Radius"), 2, 1, 5, 0);
 		Global.DevModeEngaged = False;
+		Global.ReplayPioneerPositionArray = Empty Array;
+		Global.ReplayPioneerFacingArray = Empty Array;
 	}
 }
 
@@ -275,19 +277,20 @@ rule("Global HUD")
 
 	actions
 	{
-		Create HUD Text(Filtered Array(All Players(All Teams), Global.GameStarted == False), Custom String(
-			"{0} Press R to Create Origin Point!", Host Player), Null, Null, Top, 0, Color(Green), Color(White), Color(White),
-			Visible To and String, Default Visibility);
 		"Only show pioneer info to players within 1-2 CP's of final CP"
 		Create HUD Text(Filtered Array(All Players(All Teams),
 			Global.GameStarted && Global.CurrentPioneer != Null && Current Array Element.CurrentCP + 2 >= Count Of(Global.CPLocations)),
 			Custom String("Pioneer: {0}\r\nTime: {1}", Global.CurrentPioneer != Null ? Global.CurrentPioneer : Custom String("None"),
-			Global.PioneerTimer), Null, Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String,
+			Global.PioneerTimer), Null, Null, Left, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.GameStarted == False), Custom String(
+			"{0} Press R to Create Origin Point!", Host Player), Null, Null, Top, 0, Color(Green), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load {0} | Avg {1} | Peak {2}", Server Load, Server Load Average,
 			Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
+		"Create HUD showing abilities the pioneer has used"
 		disabled Create HUD Text(Global.CurrentPioneer, Custom String("Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
 			Hero Of(Global.CurrentPioneer), Button(Secondary Fire)), X Component Of(Global.CurrentPioneer.CPAbilityCounts)), Custom String(
 			"{0} {1}", Ability Icon String(Hero Of(Global.CurrentPioneer), Button(Ability 1)), Y Component Of(
@@ -364,11 +367,6 @@ rule("Player HUD & Sphere initialize")
 			Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(
 			Global.CPAbilityCounts[Event Player.CurrentCP]) - Z Component Of(Event Player.CPAbilityCounts))), Null, Null, Top, -1.400,
 			Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
-		disabled Create HUD Text(Global.CurrentPioneer, Custom String("Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
-			Hero Of(Event Player), Button(Secondary Fire)), X Component Of(Event Player.CPAbilityCounts)), Custom String("{0} {1}",
-			Ability Icon String(Hero Of(Event Player), Button(Ability 1)), Y Component Of(Event Player.CPAbilityCounts)), Custom String(
-			"{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(Event Player.CPAbilityCounts))), Null,
-			Null, Top, -1.400, Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Event Player, Null, Null, Custom String("Hold {0} For Controls / Game Settings", Input Binding String(Button(
 			Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
 		"Green Sphere Create"
@@ -423,11 +421,11 @@ rule("Controls HUD - NEW")
 	actions
 	{
 		Event Player.TempMenuIDStoreArray = Empty Array;
-		Create HUD Text(Event Player, Null, Custom String("Save Map (Host Only)"), Custom String("{0}\r\n{1}\r\n{2}", Custom String(
+		Create HUD Text(Event Player, Null, Custom String("Save Map (Host Only)"), Custom String("{0}\r\n{1}", Custom String(
 			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
 			Custom String(
-			"3. Open Workshop Editor, open first rule & paste. May have to delete the 2 \"ReplayPioneer\" variables (giant arrays)")),
-			Left, 10, Color(White), Color(Red), Color(Aqua), None, Default Visibility);
+			"3. Open Workshop Editor, open first rule & paste. \r\nDelete the two \"ReplayPioneer\" variables (giant arrays)")), Right, 10,
+			Color(White), Color(Red), Color(Aqua), None, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("View Next Checkpoint"), Custom String("{0} + {1}", Input Binding String(Button(
 			Interact)), Input Binding String(Button(Primary Fire))), Left, 1, Color(White), Color(Orange), Color(White), String,
@@ -634,8 +632,8 @@ rule("Pioneer Create Point")
 		Event Player.BlockPioneerPass = True;
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Event Player.TempVariable2 = Position Of(Event Player);
-		Start Forcing Player Position(Event Player, Event Player.TempVariable2, True);
-		Call Subroutine(CancelMomentum);
+		Start Forcing Player Position(Event Player, Evaluate Once(Event Player.TempVariable2), True);
+		disabled Call Subroutine(CancelMomentum);
 		"Allow player 3 sec to cancel the CP"
 		Event Player.CancelPointTimer = 3;
 		Chase Player Variable At Rate(Event Player, CancelPointTimer, 0, 1, Destination and Rate);
@@ -1312,6 +1310,11 @@ rule("Need Healing/Help: View Replay")
 			Small Message(Event Player, Custom String("Replays Disabled (Host Can Turn It On In Workshop Settings)"));
 			Abort;
 		End;
+		If(Global.ReplayPioneerPositionArray[Event Player.CurrentCP] == Null);
+			Small Message(Event Player, Custom String(
+				"Pioneer replay not saved for this CP (saving CP's in workshop rules can exceed workshop size limit)"));
+			Abort;
+		End;
 		Start Camera(Event Player, Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator],
 			Global.ReplayPioneerPositionArray[Event Player.CurrentCP][Event Player.TempIterator] + Global.ReplayPioneerFacingArray[Event Player.CurrentCP][Event Player.TempIterator],
 			30);
@@ -1794,12 +1797,23 @@ rule("Handle Memory Recall")
 
 	actions
 	{
+		"To make sure this rule executes after global initialize"
 		Wait(0.500, Ignore Condition);
 		Call Subroutine(MemoryRecall);
-		"something in memory"
+		"If something in memory"
 		If(Count Of(Global.CPLocations) > 0);
 			Global.GameStarted = True;
 			Global.UsingMemoryRecall = True;
+			"In case dev mode was on when vars were saved"
+			Global.DevModeEngaged = False;
+			"If pioneer replays were deleted (most likely to be true), initialize replays to be arrays of NULL"
+			If(Count Of(Global.CPLocations) != Count Of(Global.ReplayPioneerPositionArray) || Count Of(Global.CPLocations) != Count Of(
+				Global.ReplayPioneerFacingArray));
+				"I think this should initialize whole array to NULL"
+				Global.ReplayPioneerPositionArray[Count Of(Global.CPLocations) - 1] = Null;
+				"I think this should initialize whole array to NULL"
+				Global.ReplayPioneerFacingArray[Count Of(Global.CPLocations) - 1] = Null;
+			End;
 			Enable Inspector Recording;
 			Log To Inspector(Custom String("Memory Recall Initialize Snapshot"));
 			Disable Inspector Recording;
