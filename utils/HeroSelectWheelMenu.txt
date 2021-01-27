@@ -1,0 +1,127 @@
+settings
+{
+	modes
+	{
+		Assault
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+
+		Control
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+
+		Escort
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+
+		Hybrid
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+	}
+}
+
+variables
+{
+	global:
+		7: HeroRoster
+
+	player:
+		22: MenuInWorldLocationTempStore
+		23: MenuTextIDTempStore
+		25: TempIterator
+}
+
+rule("Initialize Globals and HUD")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Roadhog), Hero(Winston), Hero(Ana));
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact)) && True),
+			Custom String("Release Interact Over The Hero You Want To Select"), Null, Null, Top, 0, Color(Red), Color(White), Color(White),
+			Visible To, Default Visibility);
+	}
+}
+
+rule("Initialize Player")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Disable Game Mode HUD(Event Player);
+	}
+}
+
+rule("Hero Select Menu: Interact + Reload")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.MenuInWorldLocationTempStore = Empty Array;
+		Event Player.MenuTextIDTempStore = Empty Array;
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
+			Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
+				+ Facing Direction Of(Event Player) * 1 + 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (
+				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
+				Global.HeroRoster))), 0), Event Player, Rotation));
+			Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
+				Event Player.MenuInWorldLocationTempStore[Event Player.TempIterator], 3, Do Not Clip, None, Color(White), Default Visibility);
+			Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
+			Wait(0.016, Ignore Condition);
+		End;
+	}
+}
+
+rule("Close Hero Select Menu")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == False;
+		Has Spawned(Event Player) == True;
+		Count Of(Event Player.MenuTextIDTempStore) > 1;
+	}
+
+	actions
+	{
+		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
+			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
+			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
+		"Destroy In World Text"
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
+			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+		End;
+	}
+}
