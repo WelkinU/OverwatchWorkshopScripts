@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, Last Updated: Jan 22, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, contributions from khandescension. Last Updated: Jan 26, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -15,13 +15,16 @@ settings
 	{
 		Skirmish
 		{
-			Hero Limit: Off
-			Kill Feed: Off
-
 			enabled maps
 			{
 				Dorado
 			}
+		}
+
+		General
+		{
+			Hero Limit: Off
+			Kill Feed: Off
 		}
 	}
 
@@ -230,36 +233,36 @@ rule("Initialize Globals")
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
 			Hero(Junkrat), Hero(Ana));
 		Global.AllowedPlayerScalesArray = Array(0.100, 1, 2, 5);
-		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
-		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False, 0);
+		Global.AbilityCountsEnabledConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+			"Ability Count Limits Enabled"), True, 0);
+		Global.PioneerTimeLimitConstant = Workshop Setting Integer(Custom String("Important Settings"), Custom String(
+			"Pioneer Time Limit in Seconds"), 180, 30, 420, 0);
+		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Important Settings"), Custom String(
+			"Seconds Before Player Can Skip Level"), 240, 60, 9999, 0);
+		Global.ReplaysEnabledConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
+			"Enable Pioneer Replays (Can cause large server load)"), True, 0);
+		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
+			"Ultimate Abilites Enabled"), False, 0);
+		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True, 0);
+		Global.SlamBuffEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Slam Buff Enabled (Slam resets bhop)"),
+			False, 0);
 		Global.NonInfiniteModeWinTime = Workshop Setting Integer(Custom String("Infinite Mode"), Custom String(
 			"Time Limit Before Victory in Non-Infinite Mode"), 300, 90, 1200, 0);
 		"Set up workshop toggle/int/real variables"
 		Global.InfiniteModeEnabledConstant = Workshop Setting Toggle(Custom String("Infinite Mode"), Custom String(
 			"Infinite Mode Enabled"), True, 0);
-		Global.AbilityCountsEnabledConstant = Workshop Setting Toggle(Custom String("Pioneer Settings"), Custom String(
-			"Ability Count Limits Enabled"), True, 0);
-		Global.PioneerTimeLimitConstant = Workshop Setting Integer(Custom String("Pioneer Settings"), Custom String(
-			"Pioneer Time Limit in Seconds"), 180, 30, 420, 0);
+		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
+		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False, 0);
 		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Player Move Speed Scale Factor"), 100, 10, 1000, 0);
 		Global.PioneerMinDistanceConstant = 6;
-		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Game Constants"), Custom String(
-			"Time Before Player Can Skip Level"), 240, 60, 9999, 0);
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		Global.GameStarted = False;
-		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True, 0);
-		Global.SlamBuffEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Slam Buff Enabled (Slam resets bhop)"),
-			False, 0);
 		Global.GreenSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Environmental Collision Sphere Radius"), 3.500, 1, 5, 0);
 		Global.EffectLockSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Effect Lock (White) Sphere Radius"), 2, 1, 5, 0);
 		Global.DevModeEngaged = False;
-		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Pioneer Settings"), Custom String(
-			"Ultimate Abilites Enabled"), False, 0);
-		Global.ReplaysEnabledConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
-			"Enable Pioneer Replays (Can cause large server load if >50 CP's)"), True, 0);
 	}
 }
 
@@ -281,9 +284,8 @@ rule("Global HUD")
 			Custom String("Pioneer: {0}\r\nTime: {1}", Global.CurrentPioneer != Null ? Global.CurrentPioneer : Custom String("None"),
 			Global.PioneerTimer), Null, Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
-		Create HUD Text(Host Player, Null, Null, Custom String("Server Load | Average | Peak\r\n{0} | {1} | {2}", Server Load,
-			Server Load Average, Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String,
-			Default Visibility);
+		Create HUD Text(Host Player, Null, Null, Custom String("Server Load {0} | Avg {1} | Peak {2}", Server Load, Server Load Average,
+			Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
 		disabled Create HUD Text(Global.CurrentPioneer, Custom String("Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
@@ -420,13 +422,12 @@ rule("Controls HUD - NEW")
 
 	actions
 	{
-		Enable Inspector Recording;
 		Event Player.TempMenuIDStoreArray = Empty Array;
-		Create HUD Text(Event Player, Null, Custom String("Host Only Controls"), Custom String(
-			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Hello\r\n{0}\r\n{1}", Custom String(
+		Create HUD Text(Event Player, Null, Custom String("Save Map (Host Only)"), Custom String("{0}\r\n{1}\r\n{2}", Custom String(
 			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
-			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(White), Color(Red), Color(
-			Aqua), None, Default Visibility);
+			Custom String(
+			"3. Open Workshop Editor, open first rule & paste. May have to delete the 2 \"ReplayPioneer\" variables (giant arrays)")),
+			Left, 10, Color(White), Color(Red), Color(Aqua), None, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("View Next Checkpoint"), Custom String("{0} + {1}", Input Binding String(Button(
 			Interact)), Input Binding String(Button(Primary Fire))), Left, 1, Color(White), Color(Orange), Color(White), String,
@@ -448,8 +449,7 @@ rule("Controls HUD - NEW")
 			Input Binding String(Button(Interact))), Left, 1.400, Color(White), Color(Orange), Color(White), String, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("Replay Pioneer Route", Global.SkipTimeLimit), Custom String(
-			"Need Healing/Help"), Left, 1.500, Color(White), Color(Orange), Color(White), String,
-			Default Visibility);
+			"Need Healing/Help"), Left, 1.500, Color(White), Color(Orange), Color(White), String, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("Teleport"), Custom String("{0} + {1}", Input Binding String(Button(
 			Primary Fire)), Input Binding String(Button(Melee))), Left, 1.900, Color(White), Color(Orange), Color(White), String,
@@ -459,15 +459,21 @@ rule("Controls HUD - NEW")
 		Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Button(Interact))
 			&& Global.CurrentPioneer == Current Array Element), Custom String(
 			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\n{0}", Custom String(
-			"Change Size: Interact + W/S\r\nChange Hero: Interact + Ultimate Status")), Null, Null, Right, 0, Color(Red), Color(White),
-			Color(White), Visible To, Default Visibility);
+			"Change Size: Interact + W/S\r\nChange Hero: Interact + Ultimate Status\r\nReset Spheres: Interact + R")), Null, Null, Right,
+			0, Color(Red), Color(White), Color(White), Visible To, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Dev Mode (Players can insta-skip CP's, and use teleport)"), Custom String(
+			"{0} + Hello", Input Binding String(Button(Interact))), Left, 9, Color(White), Color(Red), Color(Aqua), String,
+			Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Update Game Settings / Parameters"), Custom String(
+			"Lobby -> Settings -> Workshop Settings"), Left, 9.500, Color(White), Color(Red), Color(Aqua), String, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Wait Until(!Is Button Held(Event Player, Button(Interact)), 60);
 		For Player Variable(Event Player, TempIterator2, 0, Count Of(Event Player.TempMenuIDStoreArray), 1);
 			Destroy HUD Text(Event Player.TempMenuIDStoreArray[Event Player.TempIterator2]);
 		End;
 		Event Player.TempMenuIDStoreArray = Empty Array;
-		Disable Inspector Recording;
 	}
 }
 
@@ -936,6 +942,7 @@ rule("Crouch + Interact - Move Back A Checkpoint")
 
 	actions
 	{
+		Event Player.BlockArriveNextPoint = True;
 		If(Global.CurrentPioneer == Event Player);
 			Small Message(Event Player, Custom String("Can't move back a level while pioneer! Make a checkpoint!"));
 			Abort;
@@ -947,7 +954,6 @@ rule("Crouch + Interact - Move Back A Checkpoint")
 			Event Player.CurrentCP = Event Player.MaxUnlockedCP;
 		End;
 		Call Subroutine(HandleSkipTimer);
-		Event Player.BlockArriveNextPoint = True;
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
 	}
@@ -1279,7 +1285,7 @@ rule("Pioneer Save Replay")
 	{
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-		Wait(Speed Of(Event Player) <= 2.75 ? .48 : .16, Ignore Condition);
+		Wait(Speed Of(Event Player) <= 2.750 ? 0.480 : 0.160, Ignore Condition);
 		Loop If Condition Is True;
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
