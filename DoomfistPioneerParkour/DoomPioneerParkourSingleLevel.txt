@@ -1717,9 +1717,13 @@ rule("Pioneer runs out of time")
 			Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
 				Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1));
 			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+			Event Player.TempVariable.BlockPioneerNewPoint = True;
 			Event Player.TempVariable.ForceRespawn = True;
+			"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
+			Wait(0.200, Ignore Condition);
 			Global.CurrentPioneer = Event Player.TempVariable;
 			Wait(0.100, Ignore Condition);
+			Event Player.TempVariable.BlockPioneerNewPoint = False;
 			Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
 		Else;
 			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
