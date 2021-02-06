@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. Made by WelkinTern, contributions from khandescension. Last Updated: Jan 26, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.  --------------------------------------------------------  Made by WelkinTern, contributions from khandescension.   --------------------------------------------------------  Last Updated: Feb 6, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
@@ -404,7 +404,7 @@ rule("Player HUD & Sphere initialize")
 	}
 }
 
-rule("Controls HUD - NEW")
+rule("Controls HUD")
 {
 	event
 	{
@@ -421,37 +421,18 @@ rule("Controls HUD - NEW")
 	actions
 	{
 		Event Player.TempMenuIDStoreArray = Empty Array;
+		Create HUD Text(Event Player, Null, Custom String("Dev Mode (Players can insta-skip CP's, and use teleport)"), Custom String(
+			"{0} + Hello", Input Binding String(Button(Interact))), Right, 9, Color(White), Color(Red), Color(Aqua), String,
+			Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Custom String("Update Game Settings / Parameters"), Custom String(
+			"Lobby -> Settings -> Workshop Settings"), Right, 9.500, Color(White), Color(Red), Color(Aqua), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		Create HUD Text(Event Player, Null, Custom String("Save Map (Host Only)"), Custom String("{0}\r\n{1}", Custom String(
 			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
 			Custom String(
 			"3. Open Workshop Editor, open first rule & paste. \r\nDelete the two \"ReplayPioneer\" variables (giant arrays)")), Right, 10,
 			Color(White), Color(Red), Color(Aqua), None, Default Visibility);
-		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("View Next Checkpoint"), Custom String("{0} + {1}", Input Binding String(Button(
-			Interact)), Input Binding String(Button(Primary Fire))), Left, 1, Color(White), Color(Orange), Color(White), String,
-			Default Visibility);
-		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Spectate"), Custom String("{0} + {1}", Input Binding String(Button(Interact)),
-			Input Binding String(Button(Melee))), Left, 1.100, Color(White), Color(Orange), Color(White), String, Default Visibility);
-		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		"Will need modification!"
-		Create HUD Text(Event Player, Null, Custom String("Skip Level (After {0}sec)", Global.SkipTimeLimit), Custom String("{0} + {1}",
-			Input Binding String(Button(Interact)), Input Binding String(Button(Jump))), Left, 1.200, Color(White), Color(Orange), Color(
-			White), String, Default Visibility);
-		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Toggle Invisibility", Global.SkipTimeLimit), Custom String("{0} + {1}",
-			Input Binding String(Button(Crouch)), Input Binding String(Button(Jump))), Left, 1.300, Color(White), Color(Orange), Color(
-			White), String, Default Visibility);
-		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Switch Hero", Global.SkipTimeLimit), Custom String("{0} + Ultimate Status",
-			Input Binding String(Button(Interact))), Left, 1.400, Color(White), Color(Orange), Color(White), String, Default Visibility);
-		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Replay Pioneer Route", Global.SkipTimeLimit), Custom String(
-			"Need Healing/Help"), Left, 1.500, Color(White), Color(Orange), Color(White), String, Default Visibility);
-		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Teleport"), Custom String("{0} + {1}", Input Binding String(Button(
-			Primary Fire)), Input Binding String(Button(Melee))), Left, 1.900, Color(White), Color(Orange), Color(White), String,
-			Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
 		"Pioneer special controls HUD"
 		Create HUD Text(Filtered Array(Event Player, Is Button Held(Current Array Element, Button(Interact))
@@ -460,68 +441,63 @@ rule("Controls HUD - NEW")
 			"Change Size: Interact + W/S\r\nChange Hero: Interact + Ultimate Status\r\nReset Spheres: Interact + R")), Null, Null, Right,
 			0, Color(Red), Color(White), Color(White), Visible To, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Dev Mode (Players can insta-skip CP's, and use teleport)"), Custom String(
-			"{0} + Hello", Input Binding String(Button(Interact))), Left, 9, Color(White), Color(Red), Color(Aqua), String,
+		Create HUD Text(Event Player, Null, Null, Custom String("View Next Checkpoint"), Left, 0.950, Color(White), Color(White), Color(
+			Orange), None, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Null, Custom String("{0} + {1}\r\n", Input Binding String(Button(Interact)),
+			Input Binding String(Button(Primary Fire))), Left, 1, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Wait(0.016, Ignore Condition);
+		Create HUD Text(Event Player, Null, Null, Custom String("Spectate"), Left, 1.050, Color(White), Color(White), Color(Orange), None,
 			Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
-		Create HUD Text(Event Player, Null, Custom String("Update Game Settings / Parameters"), Custom String(
-			"Lobby -> Settings -> Workshop Settings"), Left, 9.500, Color(White), Color(Red), Color(Aqua), String, Default Visibility);
+		Create HUD Text(Event Player, Null, Null, Custom String("{0} + {1}\r\n", Input Binding String(Button(Interact)),
+			Input Binding String(Button(Melee))), Left, 1.100, Color(White), Color(Orange), Color(White), String, Default Visibility);
 		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Wait(0.016, Ignore Condition);
+		Create HUD Text(Event Player, Null, Null, Custom String("Skip Level (After {0} sec)", Global.SkipTimeLimit), Left, 1.150, Color(
+			White), Color(White), Color(Orange), None, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		"Will need modification!"
+		Create HUD Text(Event Player, Null, Null, Custom String("{0} + {1}\r\n", Input Binding String(Button(Interact)),
+			Input Binding String(Button(Jump))), Left, 1.200, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Wait(0.016, Ignore Condition);
+		Create HUD Text(Event Player, Null, Null, Custom String("Toggle Invisibility"), Left, 1.250, Color(White), Color(White), Color(
+			Orange), None, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Null, Custom String("{0} + {1}\r\n", Input Binding String(Button(Crouch)),
+			Input Binding String(Button(Jump))), Left, 1.300, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Wait(0.016, Ignore Condition);
+		If(Global.MultiHeroEnabled);
+			Create HUD Text(Event Player, Null, Null, Custom String("Switch Hero"), Left, 1.350, Color(White), Color(White), Color(Orange),
+				None, Default Visibility);
+			Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+			Create HUD Text(Event Player, Null, Null, Custom String("{0} + Ultimate Status\r\n", Input Binding String(Button(Interact))), Left,
+				1.400, Color(White), Color(Orange), Color(White), String, Default Visibility);
+			Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+			Wait(0.016, Ignore Condition);
+		End;
+		Create HUD Text(Event Player, Null, Null, Custom String("Replay Pioneer Route"), Left, 1.450, Color(White), Color(White), Color(
+			Orange), None, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Null, Custom String("Need Healing / Need Help\r\n"), Left, 1.500, Color(White), Color(Orange),
+			Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Wait(0.016, Ignore Condition);
+		Create HUD Text(Event Player, Null, Null, Custom String("Teleport"), Left, 1.850, Color(White), Color(White), Color(Orange), None,
+			Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Null, Custom String("{0} + {1}", Input Binding String(Button(Primary Fire)),
+			Input Binding String(Button(Melee))), Left, 1.900, Color(White), Color(Orange), Color(White), String, Default Visibility);
+		Modify Player Variable(Event Player, TempMenuIDStoreArray, Append To Array, Last Text ID);
+		Wait(0.016, Ignore Condition);
 		Wait Until(!Is Button Held(Event Player, Button(Interact)), 60);
 		For Player Variable(Event Player, TempIterator2, 0, Count Of(Event Player.TempMenuIDStoreArray), 1);
 			Destroy HUD Text(Event Player.TempMenuIDStoreArray[Event Player.TempIterator2]);
 		End;
 		Event Player.TempMenuIDStoreArray = Empty Array;
-	}
-}
-
-disabled rule("Controls HUD - OLD")
-{
-	event
-	{
-		Ongoing - Global;
-	}
-
-	actions
-	{
-		Create HUD Text(Filtered Array(Host Player, Is Button Held(Current Array Element, Button(Interact))), Null, Custom String(
-			"Host Only Controls"), Custom String(
-			"Update Map Settings: Settings -> Workshop Settings\r\nDev Mode: Interact + Hello\r\n{0}\r\n{1}", Custom String(
-			"Save Map:\r\n1. Open Workshop Inspector, set \"variable target\" to Global\r\n2. Press button [X] on bottom to copy all variables"),
-			Custom String("3. Open Workshop Editor, open first rule & paste. Map now saved")), Left, 10, Color(White), Color(Red), Color(
-			Aqua), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
-			Custom String("View Next Checkpoint"), Custom String("Interact + Left Click"), Left, 1, Color(White), Color(Orange), Color(
-			White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
-			Custom String("Spectate"), Custom String("Interact + Melee"), Left, 1.100, Color(White), Color(Orange), Color(White),
-			Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))
-			|| Current Array Element.TimeSpentOnCP > Global.SkipTimeLimit), Null, Custom String("Skip Level (After {0}sec)",
-			Global.SkipTimeLimit), Custom String("Interact + Jump"), Left, 1.200, Color(White), Color(Orange), Color(White), Visible To,
-			Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
-			Custom String("Toggle Invisibility", Global.SkipTimeLimit), Custom String("Crouch + Jump"), Left, 1.300, Color(White), Color(
-			Orange), Color(White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
-			Custom String("Switch Hero", Global.SkipTimeLimit), Custom String("Interact + Ultimate Status"), Left, 1.400, Color(White),
-			Color(Orange), Color(White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
-			Custom String("Replay Pioneer Route", Global.SkipTimeLimit), Custom String("Interact + Thanks Voiceline"), Left, 1.500, Color(
-			White), Color(Orange), Color(White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null,
-			Custom String("Teleport (Only for pioneer/waiting for pioneer)"), Custom String("Left Click + Melee"), Left, 1.900, Color(
-			White), Color(Orange), Color(White), Visible To, Default Visibility);
-		"Pioneer special controls HUD"
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))
-			&& Global.CurrentPioneer == Current Array Element), Custom String(
-			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\n{0}", Custom String(
-			"Change Size: Interact + W/S\r\nChange Hero: Interact + Ultimate Status")), Null, Null, Right, 0, Color(Red), Color(White),
-			Color(White), Visible To, Default Visibility);
-		disabled Create HUD Text(Filtered Array(Global.CurrentPioneer, Is Button Held(Current Array Element, Button(Interact))), Null,
-			Custom String("Pioneer Only Controls"), Custom String(
-			"Effect Lock: Melee\r\nEnv (Green) Sphere: Crouch\r\nKill Sphere: Group Up\r\nChange Hero: Interact + Ultimate Status"), Right,
-			0, Color(White), Color(Orange), Color(White), Visible To and String, Default Visibility);
 	}
 }
 
