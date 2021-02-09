@@ -174,7 +174,7 @@ variables
 		29: sigma_barrier_init_position
 		30: sigma_barrier_chase
 		31: sigma_barrier_position
-		32: Grace
+		32: PunchGrace
 		33: WinstonLeapGrace
 		34: Count360Slam125
 		35: BlockPioneerPass
