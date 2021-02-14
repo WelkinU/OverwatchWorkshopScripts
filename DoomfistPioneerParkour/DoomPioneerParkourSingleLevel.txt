@@ -405,7 +405,7 @@ rule("Player HUD & Sphere initialize")
 		"Effect Lock Sphere Create Non-Pioneer"
 		Create Effect(Filtered Array(Event Player,
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained), Sphere,
-			Custom Color(128, 128, 128, 128), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Evaluate Once(
+			Custom Color(192, 192, 192, 192), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Evaluate Once(
 			Global.EffectLockSphereRadiusConstant + -1), Visible To Position and Radius);
 		"Effect Lock Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Event Player, Current Array Element.EffectLockSphereLocation != Null), Sphere, Color(White),
