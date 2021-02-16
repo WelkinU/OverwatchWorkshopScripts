@@ -661,7 +661,8 @@ rule("Non-Pioneer Arrive At CP")
 		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
 			If(Global.CurrentPioneer == Null);
 				"So you can't pioneer your own point unless you are the only player alive (aka not spectating)"
-				If(Count Of(All Living Players(All Teams)) == 1 || Last Of(Global.PioneerList) != Custom String("{0}", Event Player));
+				If(Count Of(Filtered Array(All Players(All Teams), !Is Dummy Bot(Current Array Element))) == 1 || Last Of(Global.PioneerList)
+					!= Custom String("{0}", Event Player));
 					Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
 					Global.CurrentPioneer = Event Player;
 				End;
