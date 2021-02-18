@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Feb 7, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Feb 17, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
 	}
 
 	lobby
