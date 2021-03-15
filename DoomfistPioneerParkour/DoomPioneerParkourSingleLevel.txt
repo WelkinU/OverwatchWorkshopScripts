@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Mar 7, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Mar 14, 2021. Code Update History: https:/"
 	}
 
 	lobby
@@ -17,7 +17,7 @@ settings
 		{
 			enabled maps
 			{
-				Ilios
+				Eichenwalde Halloween
 			}
 		}
 
@@ -191,6 +191,8 @@ variables
 		45: AnaSleepDartTeleLocation
 		46: RoadhogHookPosition
 		47: AbilitiesForEffectLock
+		48: TextIDTempStore
+		49: AbilityLimitsDisplayVar
 }
 
 subroutines
@@ -201,6 +203,7 @@ subroutines
 	4: MemoryRecall
 	5: UpdatePlayerScale
 	6: CheckAbilityCounts
+	7: CreateEffectLocks
 }
 
 rule("--------MEMORY: PASTE VARIABLES HERE -------------------")
@@ -290,6 +293,9 @@ rule("Global HUD + Controls HUD")
 			Visible To and String, Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load {0} | Avg {1} | Peak {2}", Server Load, Server Load Average,
 			Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null,
+			Null, Custom String("Hold {0} For Controls / Game Settings", Input Binding String(Button(Interact))), Left, -1, Color(White),
+			Color(White), Color(Red), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
 		"Create HUD showing abilities the pioneer has used"
@@ -391,49 +397,25 @@ rule("Player HUD & Sphere initialize")
 			100 - Event Player.MaxUnlockedCP, Color(White), Color(White), Color(Green), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, Global.AbilityCountsEnabledConstant && Current Array Element.CurrentCP + 1 < Count Of(
 			Global.CPLocations)), Custom String("Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
-			Hero Of(Event Player), Button(Secondary Fire)), X Component Of(Global.CPAbilityCounts[Event Player.CurrentCP])
-			- X Component Of(Event Player.CPAbilityCounts)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(
-			Ability 1)), Y Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]) - Y Component Of(Event Player.CPAbilityCounts)),
+			Hero Of(Event Player), Button(Secondary Fire)), X Component Of(Event Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}",
+			Ability Icon String(Hero Of(Event Player), Button(Ability 1)), Y Component Of(Event Player.AbilityLimitsDisplayVar)),
 			Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(
-			Global.CPAbilityCounts[Event Player.CurrentCP]) - Z Component Of(Event Player.CPAbilityCounts))), Null, Null, Top, -1.400,
-			Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
-		Create HUD Text(Event Player, Null, Null, Custom String("Hold {0} For Controls / Game Settings", Input Binding String(Button(
-			Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
+			Event Player.AbilityLimitsDisplayVar))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(White),
+			Visible To and String, Default Visibility);
+		disabled Create HUD Text(Filtered Array(All Living Players(All Teams), !Is Button Held(Event Player, Button(Interact))), Null, Null,
+			Custom String("Hold {0} For Controls / Game Settings", Input Binding String(Button(Interact))), Left, -1, Color(White), Color(
+			White), Color(Red), Visible To and String, Default Visibility);
 		"Green Sphere Create"
-		Create Effect(Filtered Array(Event Player, Global.CPGreenSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(
+		disabled Create Effect(Filtered Array(Event Player, Global.CPGreenSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(
 			Green), Global.CPGreenSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 		"Green Sphere Create Pioneer Only"
-		Create Effect(Filtered Array(Event Player, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
+		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
 			Event Player.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
-		"Effect Lock Sphere Create Non-Pioneer"
-		Create Effect(Filtered Array(Event Player,
-			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained), Sphere,
-			Custom Color(192, 192, 192, 192), Global.CPEffectLockSphereArray[Event Player.CurrentCP], Evaluate Once(
-			Global.EffectLockSphereRadiusConstant + -1), Visible To Position and Radius);
-		"Effect Lock Sphere Create Pioneer Only"
-		Create Effect(Filtered Array(Event Player, Current Array Element.EffectLockSphereLocation != Null), Sphere, Color(White),
-			Event Player.EffectLockSphereLocation, Global.EffectLockSphereRadiusConstant, Visible To Position and Radius);
-		Create HUD Text(Filtered Array(Event Player, (
-			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && Current Array Element.EffectLockObtained != True && True)
-			== True), Custom String("Effect Lock Required!"), Null, Null, Top, 0, Color(Red), Color(White), Color(White), Visible To,
-			Default Visibility);
-		"Effect Lock Flag Icon Create Non-Pioneer"
-		Create Icon(Filtered Array(Event Player,
-			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained),
-			Global.CPEffectLockSphereArray[Event Player.CurrentCP], Flag, Visible To and Position, Color(Yellow), True);
-		Create In-World Text(Filtered Array(Event Player,
-			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP] != Null && !Current Array Element.EffectLockObtained),
-			Custom String("{0}{1}{2}", X Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP]) > 0 ? Ability Icon String(
-			Hero Of(Event Player), Button(Secondary Fire)) : String(""), Y Component Of(
-			Global.EffectLockAbilitiesArray[Event Player.CurrentCP]) > 0 ? Ability Icon String(Hero Of(Event Player), Button(Ability 1))
-			: String(""), Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP]) > 0 ? Ability Icon String(Hero Of(
-			Event Player), Button(Ability 2)) : String("")), Global.CPEffectLockSphereArray[Event Player.CurrentCP], 1.300, Do Not Clip,
-			Visible To Position and String, Color(Yellow), Default Visibility);
 		"Kill Sphere Create"
-		Create Effect(Filtered Array(Event Player, Global.CPKillSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(Red),
+		disabled Create Effect(Filtered Array(Event Player, Global.CPKillSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(Red),
 			Global.CPKillSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 		"Kill Sphere Create Pioneer Only"
-		Create Effect(Filtered Array(Event Player, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
+		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
 			Event Player.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 	}
 }
@@ -553,18 +535,18 @@ rule("Pioneer Create Point")
 		Create Progress Bar HUD Text(Event Player, Event Player.CancelPointTimer / 0.030, Custom String(
 			"Press R within {0} sec to cancel checkpoint", Event Player.CancelPointTimer), Top, 0, Color(White), Color(Red),
 			Visible To and Values, Visible Never);
-		Event Player.TempMenuIDStore = Last Text ID;
+		Event Player.MenuTextIDTempStore = Last Text ID;
 		"Wait for player to cancel point with R, or let the CP complete"
 		Wait Until(Is Button Held(Event Player, Button(Reload)), 3);
 		If(Event Player.CancelPointTimer > 0);
 			Stop Forcing Player Position(Event Player);
 			Call Subroutine(RespawnPlayer);
-			Destroy Progress Bar HUD Text(Event Player.TempMenuIDStore);
+			Destroy Progress Bar HUD Text(Event Player.MenuTextIDTempStore);
 			Event Player.BlockPioneerPass = False;
 			Abort;
 		End;
 		Stop Forcing Player Position(Event Player);
-		Destroy Progress Bar HUD Text(Event Player.TempMenuIDStore);
+		Destroy Progress Bar HUD Text(Event Player.MenuTextIDTempStore);
 		"Hopefully tempvariable doesn't conflict with \"Pioneer runs out of time\" rule"
 		For Player Variable(Event Player, TempVariable, 0, Count Of(All Living Players(All Teams)), 1);
 			If(All Living Players(All Teams)[Event Player.TempVariable].CurrentCP == Count Of(Global.CPLocations) - 1);
@@ -584,10 +566,10 @@ rule("Pioneer Create Point")
 		If(Y Component Of(Event Player.CountUltimateTeleportPrimary) > 0);
 			Event Player.EffectLockSphereLocation = Null;
 		End;
-		Modify Global Variable(CPEffectLockSphereArray, Append To Array, Event Player.EffectLockSphereLocation);
+		Global.CPEffectLockSphereArray[Count Of(Global.CPEffectLockSphereArray)] = Event Player.EffectLockSphereLocation;
 		Global.ReplayPioneerPositionArray[Event Player.CurrentCP] = Event Player.ReplayPosition;
+		Global.EffectLockAbilitiesArray[Count Of(Global.EffectLockAbilitiesArray)] = Event Player.AbilitiesForEffectLock;
 		Global.ReplayPioneerFacingArray[Event Player.CurrentCP] = Event Player.ReplayFacing;
-		Modify Global Variable(EffectLockAbilitiesArray, Append To Array, Event Player.AbilitiesForEffectLock);
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Modify Global Variable(CPPlayerScaleArray, Append To Array, Event Player.PlayerScale);
 		Call Subroutine(RespawnPlayer);
@@ -598,6 +580,7 @@ rule("Pioneer Create Point")
 		Enable Inspector Recording;
 		Log To Inspector(Custom String("Created Checkpoint {0}", Count Of(Global.CPLocations)));
 		Disable Inspector Recording;
+		Call Subroutine(CreateEffectLocks);
 		Event Player.BlockPioneerPass = False;
 	}
 }
@@ -658,7 +641,7 @@ rule("Non-Pioneer Arrive At CP")
 	actions
 	{
 		"Check if player got effect lock obtained, if they haven't respawn them"
-		If(Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Null && Event Player.EffectLockObtained != True);
+		If(Count Of(Event Player.EffectLockObtained) < Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP]));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to get the effect lock!"));
 			Call Subroutine(RespawnPlayer);
@@ -680,6 +663,7 @@ rule("Non-Pioneer Arrive At CP")
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(RespawnPlayer);
 		Call Subroutine(HandleSkipTimer);
+		Call Subroutine(CreateEffectLocks);
 	}
 }
 
@@ -705,6 +689,7 @@ rule("If player joins after origin point created, start them at origin point")
 		Call Subroutine(HandleSkipTimer);
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(RespawnPlayer);
+		Call Subroutine(CreateEffectLocks);
 	}
 }
 
@@ -893,6 +878,7 @@ rule("Crouch + Interact - Move Back A Checkpoint")
 		Call Subroutine(HandleSkipTimer);
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
+		Call Subroutine(CreateEffectLocks);
 	}
 }
 
@@ -981,6 +967,7 @@ rule("Interact + Jump -> Skip Checkpoint")
 				End;
 				Event Player.BlockArriveNextPoint = False;
 				Call Subroutine(HandleSkipTimer);
+				Call Subroutine(CreateEffectLocks);
 				Abort;
 			Else;
 				"If haven't unlocked next CP yet, go back to CP 0"
@@ -989,6 +976,7 @@ rule("Interact + Jump -> Skip Checkpoint")
 		End;
 		Call Subroutine(HandleSkipTimer);
 		Call Subroutine(RespawnPlayer);
+		Call Subroutine(CreateEffectLocks);
 	}
 }
 
@@ -1219,6 +1207,31 @@ rule("Interact + Up/Down to increase/decrease pioneer player size")
 	}
 }
 
+rule("Q + F to start again from cp0")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Button Held(Event Player, Button(Ultimate)) == True;
+		Global.UltimateAbilitiesEnabledConstant == False;
+	}
+
+	actions
+	{
+		Event Player.CurrentCP = 0;
+		Call Subroutine(RespawnPlayer);
+		Call Subroutine(HandleSkipTimer);
+		Call Subroutine(CreateEffectLocks);
+	}
+}
+
 disabled rule("Replay Saving / Watching Code")
 {
 	event
@@ -1329,6 +1342,7 @@ rule("Handle Ability Count Limits (if enabled)")
 		Global.AbilityCountsEnabledConstant == True;
 		(Is Using Ability 1(Event Player) || Is Using Ability 2(Event Player) || Is Firing Secondary(Event Player)) == True;
 		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations);
+		Global.GameStarted == True;
 	}
 
 	actions
@@ -1336,19 +1350,6 @@ rule("Handle Ability Count Limits (if enabled)")
 		Wait(0.016, Ignore Condition);
 		Loop If Condition Is True;
 		Call Subroutine(CheckAbilityCounts);
-		disabled If(Y Component Of(Event Player.CPAbilityCounts) >= Y Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]));
-		disabled Set Ability 1 Enabled(Event Player, False);
-		disabled End;
-		disabled If(Z Component Of(Event Player.CPAbilityCounts) >= Z Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]));
-		disabled Set Ability 2 Enabled(Event Player, False);
-		disabled End;
-		disabled If(X Component Of(Event Player.CPAbilityCounts) >= X Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]));
-		"Have to wait to disable punch because otherwise it would disable immediately after using preventing punch from working properly."
-		disabled Wait(0.400, Ignore Condition);
-		"This is to fix interaction with the Quick Reset (R) right after using punch, so this doesn't disable punch after you respawn. Can have slight bug where player is punching through the start location, and doesn't set cooldown properly."
-		disabled Abort If(True && Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentCP]) < Global.CPRadius);
-		disabled Set Secondary Fire Enabled(Event Player, False);
-		disabled End;
 	}
 }
 
@@ -1414,10 +1415,11 @@ rule("Used Secondary (Rocket Punch)")
 
 	actions
 	{
-		If(Event Player.EffectLockSphereLocation == Null);
+		disabled Wait Until(!Is Firing Secondary(Event Player), 2);
+		If(Event Player.EffectLockSphereLocation == Empty Array);
 			Event Player.CPAbilityCounts += Left;
 		Else;
-			Event Player.AbilitiesForEffectLock += Left;
+			Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Left;
 		End;
 	}
 }
@@ -1440,10 +1442,10 @@ rule("Used Ability 1 (Uppercut)")
 
 	actions
 	{
-		If(Event Player.EffectLockSphereLocation == Null);
+		If(Event Player.EffectLockSphereLocation == Empty Array);
 			Event Player.CPAbilityCounts += Up;
 		Else;
-			Event Player.AbilitiesForEffectLock += Up;
+			Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Up;
 		End;
 	}
 }
@@ -1466,10 +1468,10 @@ rule("Used Ability 2 - NON DOOMFIST")
 
 	actions
 	{
-		If(Event Player.EffectLockSphereLocation == Null);
+		If(Event Player.EffectLockSphereLocation == Empty Array);
 			Event Player.CPAbilityCounts += Forward;
 		Else;
-			Event Player.AbilitiesForEffectLock += Forward;
+			Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Forward;
 		End;
 	}
 }
@@ -1541,10 +1543,10 @@ rule("Increment Slam Counter")
 
 	actions
 	{
-		If(Event Player.EffectLockSphereLocation == Null);
+		If(Event Player.EffectLockSphereLocation == Empty Array);
 			Event Player.CPAbilityCounts += Forward;
 		Else;
-			Event Player.AbilitiesForEffectLock += Forward;
+			Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Forward;
 		End;
 		If(Is On Ground(Event Player));
 			Stop Chasing Player Variable(Event Player, SlamTimer);
@@ -1924,7 +1926,6 @@ rule("Sub0: RespawnPlayer")
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ability Cooldown(Event Player, Button(Crouch), 0);
-		disabled Event Player.Count360Slam125 = Vector(0, 0, 0);
 		Set Move Speed(Event Player, Global.PlayerMoveSpeedConstant);
 		If(Event Player.PunchFixStore && Hero Of(Event Player) == Hero(Doomfist) && Is Button Held(Event Player, Button(Secondary Fire)));
 			Start Holding Button(Event Player, Button(Secondary Fire));
@@ -1933,8 +1934,6 @@ rule("Sub0: RespawnPlayer")
 			Set Ability Charge(Event Player, Button(Ability 1), 2);
 		End;
 		Enable Movement Collision With Environment(Event Player);
-		Event Player.EffectLockSphereLocation = Null;
-		Event Player.EffectLockObtained = False;
 		"Don't reset env collision / kill sphere locations if you're the pioneer"
 		If(Global.CurrentPioneer != Event Player || (Is Button Held(Event Player, Button(Interact)) && Is Button Held(Event Player, Button(
 			Reload))));
@@ -1945,7 +1944,10 @@ rule("Sub0: RespawnPlayer")
 		Event Player.ReplayPosition = Empty Array;
 		Event Player.ReplayFacing = Empty Array;
 		Set Gravity(Event Player, 100);
-		Event Player.AbilitiesForEffectLock = Vector(0, 0, 0);
+		Event Player.EffectLockSphereLocation = Empty Array;
+		Event Player.EffectLockObtained = Empty Array;
+		Event Player.AbilitiesForEffectLock = Empty Array;
+		Event Player.AbilityLimitsDisplayVar = Global.CPAbilityCounts[Event Player.CurrentCP];
 	}
 }
 
@@ -2021,26 +2023,32 @@ rule("Sub6: CheckAbilityCounts")
 
 	actions
 	{
-		disabled If(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player));
-		disabled Small Message(Event Player, Custom String("cancelling"));
-		disabled Cancel Primary Action(Event Player);
-		disabled End;
-		If(Event Player.EffectLockObtained);
-			If(Y Component Of(Event Player.CPAbilityCounts) >= Y Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP]));
+		If(Count Of(Event Player.EffectLockObtained) > 0);
+			Event Player.AbilityLimitsDisplayVar = Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
+				Event Player.EffectLockObtained)] - Event Player.CPAbilityCounts;
+			"Round the Z component (it gets set to a non-integer to tell game to cancel slam when you hit that orb, but don't display the 0.9, just round it)"
+			Event Player.AbilityLimitsDisplayVar = Vector(X Component Of(Event Player.AbilityLimitsDisplayVar), Y Component Of(
+				Event Player.AbilityLimitsDisplayVar), Round To Integer(Z Component Of(Event Player.AbilityLimitsDisplayVar), Up));
+			If(Y Component Of(Event Player.CPAbilityCounts) >= Y Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
+				Event Player.EffectLockObtained)]));
 				Set Ability 1 Enabled(Event Player, False);
 			Else;
 				Set Ability 1 Enabled(Event Player, True);
 			End;
-			If(Z Component Of(Event Player.CPAbilityCounts) >= Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP]));
+			If(Z Component Of(Event Player.CPAbilityCounts) >= Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
+				Event Player.EffectLockObtained)]));
+				Wait Until(!Is Using Ability 2(Event Player), 5);
 				Set Ability 2 Enabled(Event Player, False);
 			Else;
 				Set Ability 2 Enabled(Event Player, True);
 			End;
-			If(X Component Of(Event Player.CPAbilityCounts) >= X Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP]));
-				"Have to wait to disable punch because otherwise it would disable immediately after using preventing punch from working properly."
-				Wait(0.400, Ignore Condition);
+			If(X Component Of(Event Player.CPAbilityCounts) >= X Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
+				Event Player.EffectLockObtained)]));
+				"Have to wait to disable punch because otherwise it would disable immediately after using preventing punch from working properly. Timing is like punchgrace"
+				Wait(Event Player.Grace, Ignore Condition);
 				"This is to fix interaction with the Quick Reset (R) right after using punch, so this doesn't disable punch after you respawn. Can have slight bug where player is punching through the start location, and doesn't set cooldown properly."
 				Abort If(True && Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentCP]) < Global.CPRadius);
+				Abort If(Event Player.Grace > 0.120);
 				Set Secondary Fire Enabled(Event Player, False);
 			Else;
 				Set Secondary Fire Enabled(Event Player, True);
@@ -2059,6 +2067,65 @@ rule("Sub6: CheckAbilityCounts")
 				Abort If(True && Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentCP]) < Global.CPRadius);
 				Set Secondary Fire Enabled(Event Player, False);
 			End;
+			Event Player.AbilityLimitsDisplayVar = Global.CPAbilityCounts[Event Player.CurrentCP] - Event Player.CPAbilityCounts;
+		End;
+	}
+}
+
+rule("Sub7: Create Effect Locks and Env / Kill spheres")
+{
+	event
+	{
+		Subroutine;
+		CreateEffectLocks;
+	}
+
+	actions
+	{
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.TempMenuIDStore), 1);
+			Destroy Effect(Event Player.TempMenuIDStore[Event Player.TempIterator]);
+			Destroy In-World Text(Event Player.TextIDTempStore[Event Player.TempIterator]);
+		End;
+		Event Player.TempMenuIDStore = Empty Array;
+		Event Player.TextIDTempStore = Empty Array;
+		If(Global.CurrentPioneer == Event Player);
+			Abort;
+		End;
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP]), 1);
+			"Effect Lock Sphere Create Non-Pioneer"
+			Create Effect(Filtered Array(Event Player, Index Of Array Value(Current Array Element.EffectLockObtained, Evaluate Once(
+				Event Player.TempIterator)) == -1), Sphere, Custom Color(192, 192, 192, 192), Evaluate Once(
+				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), Evaluate Once(
+				Global.EffectLockSphereRadiusConstant + -1), Visible To);
+			"Effect Lock Sphere Create Non-Pioneer"
+			disabled Create Effect(Event Player, Sphere, Custom Color(192, 192, 192, 192), Evaluate Once(
+				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), Evaluate Once(
+				Global.EffectLockSphereRadiusConstant + -1), Visible To);
+			Modify Player Variable(Event Player, TempMenuIDStore, Append To Array, Last Created Entity);
+			Create In-World Text(Filtered Array(Event Player, Index Of Array Value(Current Array Element.EffectLockObtained, Evaluate Once(
+				Event Player.TempIterator)) == -1), Custom String("{0}{1}{2}", X Component Of(
+				Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)]) > 0 ? Ability Icon String(
+				Hero Of(Event Player), Button(Secondary Fire)) : String(""), Y Component Of(
+				Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)]) > 0 ? Ability Icon String(
+				Hero Of(Event Player), Button(Ability 1)) : String(""), Z Component Of(
+				Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)]) > 0 ? Ability Icon String(
+				Hero Of(Event Player), Button(Ability 2)) : String("")), Evaluate Once(
+				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), 1.300, Do Not Clip, None, Color(Yellow),
+				Default Visibility);
+			Modify Player Variable(Event Player, TextIDTempStore, Append To Array, Last Text ID);
+			Wait(0.016, Ignore Condition);
+		End;
+		If(Global.CPGreenSphereArray[Event Player.CurrentCP] != Null);
+			"Green Sphere Create"
+			Create Effect(Event Player, Sphere, Color(Green), Global.CPGreenSphereArray[Event Player.CurrentCP],
+				Global.GreenSphereRadiusConstant, None);
+			Modify Player Variable(Event Player, TempMenuIDStore, Append To Array, Last Created Entity);
+		End;
+		If(Global.CPKillSphereArray[Event Player.CurrentCP] != Null);
+			"Kill Sphere Create"
+			Create Effect(Event Player, Sphere, Color(Red), Global.CPKillSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant,
+				None);
+			Modify Player Variable(Event Player, TempMenuIDStore, Append To Array, Last Created Entity);
 		End;
 	}
 }
@@ -2071,7 +2138,92 @@ disabled rule("Pioneer Effect Lock And Environment Collision Spheres + Player Sc
 	}
 }
 
-rule("Pioneer Create Green Sphere with Melee")
+rule("Pioneer Create Effect Lock Sphere with Melee")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer == Event Player;
+		Is Button Held(Event Player, Button(Melee)) == True;
+		Event Player.CancelPointTimer == 0;
+		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player))
+			> Global.EffectLockSphereRadiusConstant * 2;
+		"No effect lock created yet or distance to last effect lock > effect lock sphere radius"
+		(Event Player.EffectLockSphereLocation == Empty Array || Distance Between(Last Of(Event Player.EffectLockSphereLocation),
+			Eye Position(Event Player)) > Global.EffectLockSphereRadiusConstant) == True;
+	}
+
+	actions
+	{
+		Modify Player Variable(Event Player, AbilitiesForEffectLock, Append To Array, Vector(0, 0, 0));
+		Modify Player Variable(Event Player, EffectLockSphereLocation, Append To Array, Eye Position(Event Player));
+		Small Message(Event Player, Custom String("Effect Lock Sphere Created!"));
+		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
+		"If player starts holding punch before creating effect lock, add punch to effect lock abilities"
+		If(Hero Of(Event Player) == Hero(Doomfist) && Is Firing Secondary(Event Player));
+			Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Left;
+		End;
+		If(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player));
+			If(Speed Of(Event Player) > 8);
+				Cancel Primary Action(Event Player);
+				Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Vector(0, 0, -0.100);
+				"Reset slam timer"
+				Event Player.SlamTimer = 0;
+			End;
+		End;
+		"to stop pioneer from creating spheres too many in a row"
+		Wait(0.250, Ignore Condition);
+	}
+}
+
+rule("Obtain Effect Lock Sphere (Non-Pioneer)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.CurrentPioneer != Event Player;
+		Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Empty Array;
+		Is True For Any(Global.CPEffectLockSphereArray[Event Player.CurrentCP], Distance Between(Eye Position(Event Player),
+			Current Array Element) <= Global.EffectLockSphereRadiusConstant && Index Of Array Value(Event Player.EffectLockObtained,
+			Current Array Index) == -1) == True;
+		Global.GameStarted == True;
+	}
+
+	actions
+	{
+		"Get index of this effect lock sphere"
+		Event Player.TempVariable2 = Index Of Array Value(Global.CPEffectLockSphereArray[Event Player.CurrentCP], First Of(Filtered Array(
+			Global.CPEffectLockSphereArray[Event Player.CurrentCP], Distance Between(Eye Position(Event Player), Current Array Element)
+			< Global.EffectLockSphereRadiusConstant)));
+		Modify Player Variable(Event Player, EffectLockObtained, Append To Array, Event Player.TempVariable2);
+		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
+		Small Message(Event Player, Custom String("Effect Lock Obtained: {0} of {1}", Count Of(Event Player.EffectLockObtained), Count Of(
+			Global.CPEffectLockSphereArray[Event Player.CurrentCP]), Event Player.TempVariable2));
+		If(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player));
+			If(Round To Integer(Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Event Player.TempVariable2]),
+				To Nearest) != Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Event Player.TempVariable2]));
+				Cancel Primary Action(Event Player);
+			End;
+		End;
+		Event Player.CPAbilityCounts = Vector(0, 0, 0);
+		disabled Call Subroutine(CheckAbilityCounts);
+		Start Rule(CheckAbilityCounts, Restart Rule);
+	}
+}
+
+rule("Pioneer Create Green Sphere with Crouch")
 {
 	event
 	{
@@ -2183,72 +2335,6 @@ rule("Green Sphere Rule (Non-Pioneer) - Outside Sphere")
 	{
 		Wait(0.250, Ignore Condition);
 		Enable Movement Collision With Environment(Event Player);
-	}
-}
-
-rule("Pioneer Create Effect Lock Sphere with Melee")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Global.CurrentPioneer == Event Player;
-		Is Button Held(Event Player, Button(Melee)) == True;
-		Event Player.CancelPointTimer == 0;
-		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
-		"No effect lock created yet"
-		Event Player.EffectLockSphereLocation == Null;
-	}
-
-	actions
-	{
-		Event Player.EffectLockSphereLocation = Eye Position(Event Player);
-		Small Message(Event Player, Custom String("Effect Lock Sphere Created!"));
-		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
-		"If player starts holding punch before creating effect lock, add punch to effect lock abilities"
-		If(Hero Of(Event Player) == Hero(Doomfist) && Is Firing Secondary(Event Player));
-			Event Player.AbilitiesForEffectLock += Left;
-		End;
-		If(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player));
-			Cancel Primary Action(Event Player);
-		End;
-	}
-}
-
-rule("Obtain Effect Lock Sphere (Non-Pioneer)")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Global.CurrentPioneer != Event Player;
-		Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Null;
-		Distance Between(Eye Position(Event Player), Global.CPEffectLockSphereArray[Event Player.CurrentCP])
-			< Global.EffectLockSphereRadiusConstant;
-		Event Player.EffectLockObtained != True;
-	}
-
-	actions
-	{
-		Event Player.EffectLockObtained = True;
-		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
-		Small Message(Event Player, Custom String("Effect Lock Obtained!"));
-		If(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player));
-			Small Message(Event Player, Custom String("cancelling"));
-			Cancel Primary Action(Event Player);
-		End;
-		Event Player.CPAbilityCounts = Vector(0, 0, 0);
-		Call Subroutine(CheckAbilityCounts);
 	}
 }
 
@@ -2896,84 +2982,5 @@ rule("Add Knockback When Secondary Fire Used")
 	actions
 	{
 		Apply Impulse(Event Player, Facing Direction Of(Event Player), -12, To World, Cancel Contrary Motion);
-	}
-}
-
-disabled rule("Roadhog Ultimate")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Roadhog;
-	}
-
-	conditions
-	{
-		Is Using Ultimate(Event Player) == True;
-	}
-
-	actions
-	{
-		Disable Movement Collision With Environment(Event Player, False);
-		Small Message(Event Player, Custom String("Hold {0} to Cancel Ultimate", Input Binding String(Button(Primary Fire))));
-		While(Is Using Ultimate(Event Player) && !Is Button Held(Event Player, Button(Primary Fire)));
-			Wait(0.033, Ignore Condition);
-			"Cause knockback on player"
-			disabled Apply Impulse(Event Player, Facing Direction Of(Event Player), -10, To World, Cancel Contrary Motion);
-			"Player Knockback"
-			Apply Impulse(Event Player, Facing Direction Of(Event Player), -8, To World, Cancel Contrary Motion);
-			"\"Drill\" Through Walls, Skyboxes, etc."
-			disabled Teleport(Event Player, Position Of(Event Player) + Facing Direction Of(Event Player) * -1.500);
-		End;
-		"For melee cancel on ult"
-		Cancel Primary Action(Event Player);
-		Enable Movement Collision With Environment(Event Player);
-	}
-}
-
-disabled rule("Limit Roadhog Ultimate Duration")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Roadhog;
-	}
-
-	conditions
-	{
-		Is Using Ultimate(Event Player) == True;
-	}
-
-	actions
-	{
-		"Set Ult Duration to 3 sec, then cancel it"
-		Wait(3, Ignore Condition);
-		Cancel Primary Action(Event Player);
-	}
-}
-
-rule("Q + F to start again from cp0")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Button Held(Event Player, Button(Ultimate)) == True;
-		Global.UltimateAbilitiesEnabledConstant == False;
-	}
-
-	actions
-	{
-		Event Player.CurrentCP = 0;
-		Call Subroutine(RespawnPlayer);
-		Call Subroutine(HandleSkipTimer);
 	}
 }
