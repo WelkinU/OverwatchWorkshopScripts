@@ -99,7 +99,6 @@ settings
 	workshop
 	{
 		Multi-Hero Mode Enabled: On
-		Ultimate Abilites Enabled: On
 	}
 }
 
@@ -193,6 +192,7 @@ variables
 		47: AbilitiesForEffectLock
 		48: TextIDTempStore
 		49: AbilityLimitsDisplayVar
+		50: EffectLockTimerChase
 }
 
 subroutines
@@ -376,6 +376,7 @@ rule("Initialize player")
 		Event Player.Invisible = True;
 		Set Invisible(Event Player, All);
 		Event Player.BlockPioneerPass = False;
+		Chase Player Variable At Rate(Event Player, EffectLockTimerChase, 0, 1, None);
 	}
 }
 
@@ -402,18 +403,9 @@ rule("Player HUD & Sphere initialize")
 			Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(
 			Event Player.AbilityLimitsDisplayVar))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(White),
 			Visible To and String, Default Visibility);
-		disabled Create HUD Text(Filtered Array(All Living Players(All Teams), !Is Button Held(Event Player, Button(Interact))), Null, Null,
-			Custom String("Hold {0} For Controls / Game Settings", Input Binding String(Button(Interact))), Left, -1, Color(White), Color(
-			White), Color(Red), Visible To and String, Default Visibility);
-		"Green Sphere Create"
-		disabled Create Effect(Filtered Array(Event Player, Global.CPGreenSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(
-			Green), Global.CPGreenSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 		"Green Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
 			Event Player.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
-		"Kill Sphere Create"
-		disabled Create Effect(Filtered Array(Event Player, Global.CPKillSphereArray[Current Array Element.CurrentCP] != Null), Sphere, Color(Red),
-			Global.CPKillSphereArray[Event Player.CurrentCP], Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 		"Kill Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
 			Event Player.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
@@ -795,26 +787,6 @@ disabled rule("Other Features / Key Bindings")
 	event
 	{
 		Ongoing - Global;
-	}
-}
-
-rule("Punch Grace")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Doomfist;
-	}
-
-	conditions
-	{
-		Is Firing Secondary(Event Player) == True;
-	}
-
-	actions
-	{
-		Event Player.Grace = 0.119;
 	}
 }
 
@@ -1415,7 +1387,7 @@ rule("Used Secondary (Rocket Punch)")
 
 	actions
 	{
-		disabled Wait Until(!Is Firing Secondary(Event Player), 2);
+		Event Player.Grace = 0.119;
 		If(Event Player.EffectLockSphereLocation == Empty Array);
 			Event Player.CPAbilityCounts += Left;
 		Else;
@@ -2038,17 +2010,21 @@ rule("Sub6: CheckAbilityCounts")
 			If(Z Component Of(Event Player.CPAbilityCounts) >= Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
 				Event Player.EffectLockObtained)]));
 				Wait Until(!Is Using Ability 2(Event Player), 5);
+				Skip If(Z Component Of(Event Player.CPAbilityCounts) < Z Component Of(
+					Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(Event Player.EffectLockObtained)]), 1);
 				Set Ability 2 Enabled(Event Player, False);
 			Else;
 				Set Ability 2 Enabled(Event Player, True);
 			End;
 			If(X Component Of(Event Player.CPAbilityCounts) >= X Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
 				Event Player.EffectLockObtained)]));
-				"Have to wait to disable punch because otherwise it would disable immediately after using preventing punch from working properly. Timing is like punchgrace"
+				"Have to wait to disable punch because otherwise it would disable immediately after using, stopping the punch from continuing."
 				Wait(Event Player.Grace, Ignore Condition);
-				"This is to fix interaction with the Quick Reset (R) right after using punch, so this doesn't disable punch after you respawn. Can have slight bug where player is punching through the start location, and doesn't set cooldown properly."
+				"This is to fix interaction with the Quick Reset (R) right after using punch, so this doesn't disable punch after you respawn"
 				Abort If(True && Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentCP]) < Global.CPRadius);
-				Abort If(Event Player.Grace > 0.120);
+				"So that you can punch through an effect lock without losing momentum"
+				Abort If(Event Player.EffectLockTimerChase > 0 && X Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
+					Event Player.EffectLockObtained)]) > 0);
 				Set Secondary Fire Enabled(Event Player, False);
 			Else;
 				Set Secondary Fire Enabled(Event Player, True);
@@ -2110,8 +2086,8 @@ rule("Sub7: Create Effect Locks and Env / Kill spheres")
 				Hero Of(Event Player), Button(Ability 1)) : String(""), Z Component Of(
 				Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)]) > 0 ? Ability Icon String(
 				Hero Of(Event Player), Button(Ability 2)) : String("")), Evaluate Once(
-				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), 1.300, Do Not Clip, None, Color(Yellow),
-				Default Visibility);
+				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), 1.300, Do Not Clip, Visible To, Color(
+				Yellow), Default Visibility);
 			Modify Player Variable(Event Player, TextIDTempStore, Append To Array, Last Text ID);
 			Wait(0.016, Ignore Condition);
 		End;
@@ -2173,8 +2149,6 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 			If(Speed Of(Event Player) > 8);
 				Cancel Primary Action(Event Player);
 				Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Vector(0, 0, -0.100);
-				"Reset slam timer"
-				Event Player.SlamTimer = 0;
 			End;
 		End;
 		"to stop pioneer from creating spheres too many in a row"
@@ -2199,6 +2173,7 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 			Current Array Element) <= Global.EffectLockSphereRadiusConstant && Index Of Array Value(Event Player.EffectLockObtained,
 			Current Array Index) == -1) == True;
 		Global.GameStarted == True;
+		Event Player.CurrentCP < Count Of(Global.CPLocations);
 	}
 
 	actions
@@ -2218,7 +2193,8 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 			End;
 		End;
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
-		disabled Call Subroutine(CheckAbilityCounts);
+		Wait Until(!Is Using Ability 2(Event Player), 5);
+		Event Player.EffectLockTimerChase = 0.400;
 		Start Rule(CheckAbilityCounts, Restart Rule);
 	}
 }
