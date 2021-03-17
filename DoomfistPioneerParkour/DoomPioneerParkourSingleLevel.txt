@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Mar 14, 2021. Code Update History: https:/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Mar 16, 2021. Code Update History: https:/"
 	}
 
 	lobby
@@ -869,6 +869,8 @@ rule("Interact + Left Click: Camera To See Next Point (or the effect lock sphere
 		Is Button Held(Event Player, Button(Interact)) == True;
 		"Make sure next point exists"
 		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
+		"Is not pioneer"
+		Global.CurrentPioneer != Event Player;
 	}
 
 	actions
@@ -876,22 +878,20 @@ rule("Interact + Left Click: Camera To See Next Point (or the effect lock sphere
 		Set Primary Fire Enabled(Event Player, False);
 		Set Facing(Event Player, Vector(-10, -10, 0), To World);
 		"Look at effect lock sphere if it exists and is within 10 degrees of where the player is looking when pressing left click + interact. Otherwise look at next CP"
-		If(Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Null && Angle Between Vectors(Facing Direction Of(Event Player),
-			Direction Towards(Eye Position(Event Player), Global.CPEffectLockSphereArray[Event Player.CurrentCP]))
-			< 10 && Angle Between Vectors(Facing Direction Of(Event Player), Direction Towards(Eye Position(Event Player),
-			Global.CPLocations[Event Player.CurrentCP + 1])) > 10);
-			Start Camera(Event Player, Ray Cast Hit Position(Global.CPEffectLockSphereArray[Event Player.CurrentCP + 0],
-				Global.CPEffectLockSphereArray[Event Player.CurrentCP + 0] + Facing Direction Of(Event Player) * -15, All Players(All Teams),
-				Event Player, True), Global.CPEffectLockSphereArray[Event Player.CurrentCP + 0], 30);
+		If(Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Empty Array && Is True For Any(
+			Global.CPEffectLockSphereArray[Event Player.CurrentCP], Angle Between Vectors(Direction Towards(Eye Position(Event Player),
+			Current Array Element), Facing Direction Of(Event Player)) < 10) && Angle Between Vectors(Facing Direction Of(Event Player),
+			Direction Towards(Eye Position(Event Player), Global.CPLocations[Event Player.CurrentCP + 1])) > 10);
+			Event Player.TempVariable2 = First Of(Sorted Array(Global.CPEffectLockSphereArray[Event Player.CurrentCP], Angle Between Vectors(
+				Direction Towards(Eye Position(Event Player), Current Array Element), Facing Direction Of(Event Player))));
+			Start Camera(Event Player, Ray Cast Hit Position(Event Player.TempVariable2, Event Player.TempVariable2 + Facing Direction Of(
+				Event Player) * -15, All Players(All Teams), Event Player, True), Event Player.TempVariable2, 30);
 		Else;
 			Start Camera(Event Player, Ray Cast Hit Position(Global.CPLocations[Event Player.CurrentCP + 1],
 				Global.CPLocations[Event Player.CurrentCP + 1] + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player,
 				True), Global.CPLocations[Event Player.CurrentCP + 1], 30);
 		End;
 		Wait Until(!(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact))), 20);
-		disabled While(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact)));
-		disabled Wait(0.033, Ignore Condition);
-		disabled End;
 		Stop Camera(Event Player);
 		Set Primary Fire Enabled(Event Player, True);
 		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
