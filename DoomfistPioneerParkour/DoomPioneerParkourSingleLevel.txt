@@ -2003,6 +2003,7 @@ rule("Sub6: CheckAbilityCounts")
 				Event Player.AbilityLimitsDisplayVar), Round To Integer(Z Component Of(Event Player.AbilityLimitsDisplayVar), Up));
 			If(Y Component Of(Event Player.CPAbilityCounts) >= Y Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Last Of(
 				Event Player.EffectLockObtained)]));
+				Wait Until(!Is Using Ability 1(Event Player), 1);
 				Set Ability 1 Enabled(Event Player, False);
 			Else;
 				Set Ability 1 Enabled(Event Player, True);
