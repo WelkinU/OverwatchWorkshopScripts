@@ -2194,8 +2194,8 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player))
 			> Global.EffectLockSphereRadiusConstant * 2;
 		"No effect lock created yet or distance to last effect lock > effect lock sphere radius"
-		(Event Player.EffectLockSphereLocation == Empty Array || Distance Between(Last Of(Event Player.EffectLockSphereLocation),
-			Eye Position(Event Player)) > Global.EffectLockSphereRadiusConstant) == True;
+		(Event Player.EffectLockSphereLocation == Empty Array || Is True For All(Global.CPEffectLockSphereArray[Event Player.CurrentCP],
+			Distance Between(Eye Position(Event Player), Current Array Element) > Global.EffectLockSphereRadiusConstant * 2)) == True;
 	}
 
 	actions
