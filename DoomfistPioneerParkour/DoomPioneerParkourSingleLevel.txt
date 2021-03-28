@@ -294,8 +294,8 @@ rule("Global HUD + Controls HUD")
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load {0} | Avg {1} | Peak {2}", Server Load, Server Load Average,
 			Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Living Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null,
-			Null, Custom String("Hold {0} For Controls / Game Settings", Input Binding String(Button(Interact))), Left, -1, Color(White),
-			Color(White), Color(Red), Visible To and String, Default Visibility);
+			Null, Custom String("Hold {0} For Controls / Game Settings\r\nNeed Healing/Help | Checkpoint Help", Input Binding String(
+			Button(Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
 		"Create HUD showing abilities the pioneer has used"
@@ -333,6 +333,12 @@ rule("Global HUD + Controls HUD")
 			Custom String(
 			"3. Open Workshop Editor, open first rule & paste. \r\nDelete the two \"ReplayPioneer\" variables (giant arrays)"))), Right, 2,
 			Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+		"Green Sphere Create Pioneer Only"
+		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
+			Global.CurrentPioneer.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+		"Kill Sphere Create Pioneer Only"
+		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
+			Global.CurrentPioneer.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 	}
 }
 
@@ -362,21 +368,15 @@ rule("Initialize player")
 		Disable Game Mode In-World UI(Event Player);
 		Disable Game Mode HUD(Event Player);
 		Event Player.TimeSpentOnCP = 0;
-		"Create Ring, Text and Icon Effects"
-		Create Effect(Event Player, Ring, Color(White), Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
-			Visible To Position and Radius);
-		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Color(
-			Purple), Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
-		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
-			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP + 1]),
-			Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Do Not Clip, Visible To Position and String, Color(Yellow),
-			Default Visibility);
-		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
-			Global.CPLocations[Event Player.CurrentCP + 1], Flag, Visible To and Position, Color(Yellow), True);
 		Event Player.Invisible = True;
 		Set Invisible(Event Player, All);
 		Event Player.BlockPioneerPass = False;
 		Chase Player Variable At Rate(Event Player, EffectLockTimerChase, 0, 1, None);
+		"Create Ring Effects"
+		Create Effect(Event Player, Ring, Color(White), Global.CPLocations[Event Player.CurrentCP], Global.CPRadius,
+			Visible To Position and Radius);
+		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Color(
+			Purple), Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
 	}
 }
 
@@ -403,12 +403,18 @@ rule("Player HUD & Sphere initialize")
 			Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(
 			Event Player.AbilityLimitsDisplayVar))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(White),
 			Visible To and String, Default Visibility);
-		"Green Sphere Create Pioneer Only"
-		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
-			Event Player.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
-		"Kill Sphere Create Pioneer Only"
-		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
-			Event Player.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP + 1]),
+			Global.CPLocations[Event Player.CurrentCP + 1] + Up, 1.300, Do Not Clip, Visible To Position and String, Color(Yellow),
+			Default Visibility);
+		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
+			Global.CPLocations[Event Player.CurrentCP + 1] + Up, Flag, Visible To and Position, Color(Yellow), True);
+		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
+		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])
+			> 0 && Count Of(Current Array Element.EffectLockObtained) < Count Of(
+			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])), Custom String("{0}", Ability Icon String(Hero(Winston),
+			Button(Ability 2))), Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Clip Against Surfaces, Visible To and Position,
+			Color(White), Default Visibility);
 	}
 }
 
@@ -682,6 +688,7 @@ rule("If player joins after origin point created, start them at origin point")
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Call Subroutine(RespawnPlayer);
 		Call Subroutine(CreateEffectLocks);
+		Big Message(Event Player, Custom String("Press Interact ({0}) to see game controls", Input Binding String(Button(Interact))));
 	}
 }
 
@@ -2194,8 +2201,8 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player))
 			> Global.EffectLockSphereRadiusConstant * 2;
 		"No effect lock created yet or distance to last effect lock > effect lock sphere radius"
-		(Event Player.EffectLockSphereLocation == Empty Array || Is True For All(Global.CPEffectLockSphereArray[Event Player.CurrentCP],
-			Distance Between(Eye Position(Event Player), Current Array Element) > Global.EffectLockSphereRadiusConstant * 2)) == True;
+		(Event Player.EffectLockSphereLocation == Empty Array || Is True For All(Event Player.EffectLockSphereLocation, Distance Between(
+			Eye Position(Event Player), Current Array Element) > Global.EffectLockSphereRadiusConstant * 2)) == True;
 	}
 
 	actions
