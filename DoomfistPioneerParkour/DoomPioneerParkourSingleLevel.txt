@@ -141,6 +141,7 @@ variables
 		34: CPPlayerScaleArray
 		35: AllowedPlayerScalesArray
 		36: EffectLockAbilitiesArray
+		37: DisableHUDConstant
 
 	player:
 		0: CurrentCP
@@ -270,6 +271,13 @@ rule("Initialize Globals")
 		Global.DevModeEngaged = False;
 		Global.ReplayPioneerPositionArray = Empty Array;
 		Global.ReplayPioneerFacingArray = Empty Array;
+		Global.DisableHUDConstant = Workshop Setting Toggle(Custom String("Other"), Custom String("Disable HUD"), False, 9);
+		"Green Sphere Create Pioneer Only"
+		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
+			Global.CurrentPioneer.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+		"Kill Sphere Create Pioneer Only"
+		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
+			Global.CurrentPioneer.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 	}
 }
 
@@ -278,6 +286,11 @@ rule("Global HUD + Controls HUD")
 	event
 	{
 		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.DisableHUDConstant == False;
 	}
 
 	actions
@@ -294,8 +307,8 @@ rule("Global HUD + Controls HUD")
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load {0} | Avg {1} | Peak {2}", Server Load, Server Load Average,
 			Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Living Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null,
-			Null, Custom String("Hold {0} For Controls / Game Settings\r\nNeed Healing/Help | Checkpoint Help", Input Binding String(
-			Button(Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
+			Null, Custom String("Hold {0} For Controls / Game Settings\r\nNeed Healing | Checkpoint Help", Input Binding String(Button(
+			Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
 		"Create HUD showing abilities the pioneer has used"
@@ -333,12 +346,29 @@ rule("Global HUD + Controls HUD")
 			Custom String(
 			"3. Open Workshop Editor, open first rule & paste. \r\nDelete the two \"ReplayPioneer\" variables (giant arrays)"))), Right, 2,
 			Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-		"Green Sphere Create Pioneer Only"
-		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
-			Global.CurrentPioneer.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
-		"Kill Sphere Create Pioneer Only"
-		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
-			Global.CurrentPioneer.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+		"Updated to use the \"Local Player\" functionality - Surprisingly it appears to add server load, rather than reduce it."
+		Create HUD Text(All Living Players(All Teams), Null, Null, Custom String("Checkpoint {0}/{1} - Time Spent On CP {2}",
+			Local Player.CurrentCP, Count Of(Global.CPLocations) - 1, Local Player.TimeSpentOnCP), Top, 0, Color(White), Color(White),
+			Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams),
+			Global.AbilityCountsEnabledConstant && Current Array Element.CurrentCP + 1 < Count Of(Global.CPLocations)), Custom String(
+			"Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero Of(Local Player), Button(
+			Secondary Fire)), X Component Of(Local Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}", Ability Icon String(Hero Of(
+			Local Player), Button(Ability 1)), Y Component Of(Local Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}",
+			Ability Icon String(Hero Of(Local Player), Button(Ability 2)), Z Component Of(Local Player.AbilityLimitsDisplayVar))), Null,
+			Null, Top, -1.400, Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create Icon(Filtered Array(All Living Players(All Teams), Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+			Global.CPLocations[Local Player.CurrentCP + 1] + Up, Flag, Visible To and Position, Color(Yellow), True);
+		Create In-World Text(Filtered Array(All Living Players(All Teams), Count Of(Global.CPLocations)
+			> Current Array Element.CurrentCP + 1), Custom String("Come Here\r\nPioneer: {0}",
+			Global.PioneerList[Local Player.CurrentCP + 1]), Global.CPLocations[Local Player.CurrentCP + 1] + Up, 1.300, Do Not Clip,
+			Visible To Position and String, Color(Yellow), Default Visibility);
+		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
+		Create In-World Text(Filtered Array(All Living Players(All Teams), Count Of(
+			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP]) > 0 && Count Of(Current Array Element.EffectLockObtained)
+			< Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])), Custom String("{0}", Ability Icon String(Hero(
+			Winston), Button(Ability 2))), Global.CPLocations[Local Player.CurrentCP + 1], 1.300, Clip Against Surfaces,
+			Visible To and Position, Color(White), Default Visibility);
 	}
 }
 
@@ -389,32 +419,38 @@ rule("Player HUD & Sphere initialize")
 		All;
 	}
 
+	conditions
+	{
+		Global.DisableHUDConstant == False;
+	}
+
 	actions
 	{
-		Create HUD Text(Filtered Array(Event Player, Global.GameStarted), Null, Null, Custom String(
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0} {1}", Evaluate Once(Event Player),
+			Event Player.MaxUnlockedCP), Right, 100 - Event Player.MaxUnlockedCP, Color(White), Color(White), Color(Green),
+			Visible To and String, Default Visibility);
+		disabled Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP + 1]),
+			Global.CPLocations[Event Player.CurrentCP + 1] + Up, 1.300, Do Not Clip, Visible To Position and String, Color(Yellow),
+			Default Visibility);
+		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
+		disabled Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])
+			> 0 && Count Of(Current Array Element.EffectLockObtained) < Count Of(
+			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])), Custom String("{0}", Ability Icon String(Hero(Winston),
+			Button(Ability 2))), Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Clip Against Surfaces, Visible To and Position,
+			Color(White), Default Visibility);
+		disabled Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
+			Global.CPLocations[Event Player.CurrentCP + 1] + Up, Flag, Visible To and Position, Color(Yellow), True);
+		disabled Create HUD Text(Filtered Array(Event Player, Global.GameStarted), Null, Null, Custom String(
 			"Checkpoint {0}/{1} - Time Spent On CP {2}", Event Player.CurrentCP, Count Of(Global.CPLocations) - 1,
 			Event Player.TimeSpentOnCP), Top, 0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0} {1}", Event Player, Event Player.MaxUnlockedCP), Right,
-			100 - Event Player.MaxUnlockedCP, Color(White), Color(White), Color(Green), Visible To and String, Default Visibility);
-		Create HUD Text(Filtered Array(Event Player, Global.AbilityCountsEnabledConstant && Current Array Element.CurrentCP + 1 < Count Of(
+		disabled Create HUD Text(Filtered Array(Event Player, Global.AbilityCountsEnabledConstant && Current Array Element.CurrentCP + 1 < Count Of(
 			Global.CPLocations)), Custom String("Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
 			Hero Of(Event Player), Button(Secondary Fire)), X Component Of(Event Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}",
 			Ability Icon String(Hero Of(Event Player), Button(Ability 1)), Y Component Of(Event Player.AbilityLimitsDisplayVar)),
 			Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)), Z Component Of(
 			Event Player.AbilityLimitsDisplayVar))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(White),
 			Visible To and String, Default Visibility);
-		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
-			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Event Player.CurrentCP + 1]),
-			Global.CPLocations[Event Player.CurrentCP + 1] + Up, 1.300, Do Not Clip, Visible To Position and String, Color(Yellow),
-			Default Visibility);
-		Create Icon(Filtered Array(Event Player, Count Of(Global.CPLocations) > Event Player.CurrentCP + 1),
-			Global.CPLocations[Event Player.CurrentCP + 1] + Up, Flag, Visible To and Position, Color(Yellow), True);
-		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
-		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])
-			> 0 && Count Of(Current Array Element.EffectLockObtained) < Count Of(
-			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])), Custom String("{0}", Ability Icon String(Hero(Winston),
-			Button(Ability 2))), Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Clip Against Surfaces, Visible To and Position,
-			Color(White), Default Visibility);
 	}
 }
 
@@ -530,10 +566,12 @@ rule("Pioneer Create Point")
 		"Allow player 3 sec to cancel the CP"
 		Event Player.CancelPointTimer = 3;
 		Chase Player Variable At Rate(Event Player, CancelPointTimer, 0, 1, Destination and Rate);
-		Create Progress Bar HUD Text(Event Player, Event Player.CancelPointTimer / 0.030, Custom String(
-			"Press R within {0} sec to cancel checkpoint", Event Player.CancelPointTimer), Top, 0, Color(White), Color(Red),
-			Visible To and Values, Visible Never);
-		Event Player.MenuTextIDTempStore = Last Text ID;
+		If(!Global.DisableHUDConstant);
+			Create Progress Bar HUD Text(Event Player, Event Player.CancelPointTimer / 0.030, Custom String(
+				"Press R within {0} sec to cancel checkpoint", Event Player.CancelPointTimer), Top, 0, Color(White), Color(Red),
+				Visible To and Values, Visible Never);
+			Event Player.MenuTextIDTempStore = Last Text ID;
+		End;
 		"Wait for player to cancel point with R, or let the CP complete"
 		Wait Until(Is Button Held(Event Player, Button(Reload)), 3);
 		If(Event Player.CancelPointTimer > 0);
@@ -653,7 +691,9 @@ rule("Non-Pioneer Arrive At CP")
 				"So you can't pioneer your own point unless you are the only player alive (aka not spectating)"
 				If(Count Of(Filtered Array(All Players(All Teams), !Is Dummy Bot(Current Array Element))) == 1 || Last Of(Global.PioneerList)
 					!= Custom String("{0}", Event Player));
-					Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
+					If(!Global.DisableHUDConstant);
+						Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
+					End;
 					Global.CurrentPioneer = Event Player;
 				End;
 			End;
@@ -1262,6 +1302,7 @@ rule("Q + F to start again from cp0")
 		Is Button Held(Event Player, Button(Interact)) == True;
 		Is Button Held(Event Player, Button(Ultimate)) == True;
 		Global.UltimateAbilitiesEnabledConstant == False;
+		Global.CurrentPioneer != Event Player;
 	}
 
 	actions
@@ -2209,7 +2250,9 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 	{
 		Modify Player Variable(Event Player, AbilitiesForEffectLock, Append To Array, Vector(0, 0, 0));
 		Modify Player Variable(Event Player, EffectLockSphereLocation, Append To Array, Eye Position(Event Player));
-		Small Message(Event Player, Custom String("Effect Lock Sphere Created!"));
+		If(!Global.DisableHUDConstant);
+			Small Message(Event Player, Custom String("Effect Lock Sphere Created!"));
+		End;
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		"If player starts holding punch before creating effect lock, add punch to effect lock abilities"
 		If(Hero Of(Event Player) == Hero(Doomfist) && Is Firing Secondary(Event Player));
@@ -2254,8 +2297,10 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 			< Global.EffectLockSphereRadiusConstant)));
 		Modify Player Variable(Event Player, EffectLockObtained, Append To Array, Event Player.TempVariable2);
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
-		Small Message(Event Player, Custom String("Effect Lock Obtained: {0} of {1}", Count Of(Event Player.EffectLockObtained), Count Of(
-			Global.CPEffectLockSphereArray[Event Player.CurrentCP]), Event Player.TempVariable2));
+		If(!Global.DisableHUDConstant);
+			Small Message(Event Player, Custom String("Effect Lock Obtained: {0} of {1}", Count Of(Event Player.EffectLockObtained), Count Of(
+				Global.CPEffectLockSphereArray[Event Player.CurrentCP]), Event Player.TempVariable2));
+		End;
 		If(Hero Of(Event Player) == Hero(Doomfist) && Is Using Ability 2(Event Player));
 			If(Round To Integer(Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Event Player.TempVariable2]),
 				To Nearest) != Z Component Of(Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Event Player.TempVariable2]));
