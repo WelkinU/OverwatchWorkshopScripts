@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Mar 16, 2021. Code Update History: https:/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Mar 28, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt
 	}
 
 	lobby
