@@ -2152,7 +2152,7 @@ rule("Sub6: CheckAbilityCounts")
 			End;
 			If(X Component Of(Event Player.CPAbilityCounts) >= X Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]));
 				"Have to wait to disable punch because otherwise it would disable immediately after using preventing punch from working properly."
-				Wait(0.400, Ignore Condition);
+				Wait(0.800, Ignore Condition);
 				"This is to fix interaction with the Quick Reset (R) right after using punch, so this doesn't disable punch after you respawn. Can have slight bug where player is punching through the start location, and doesn't set cooldown properly."
 				Abort If(True && Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentCP]) < Global.CPRadius);
 				Set Secondary Fire Enabled(Event Player, False);
