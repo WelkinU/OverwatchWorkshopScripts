@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------    Last Updated: Mar 28, 2021. Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/master/DoomfistPioneerParkour/DoomPioneerParkourSingleLevel.txt
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks, setting for forcing effect locks to be obtained in order.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------"
 	}
 
 	lobby
@@ -142,6 +142,7 @@ variables
 		35: AllowedPlayerScalesArray
 		36: EffectLockAbilitiesArray
 		37: DisableHUDConstant
+		38: EffectLocksOrderMatters
 
 	player:
 		0: CurrentCP
@@ -278,6 +279,8 @@ rule("Initialize Globals")
 		"Kill Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
 			Global.CurrentPioneer.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
+		Global.EffectLocksOrderMatters = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+			"Effect Locks Must Be Obtained In Pioneer Order"), True, 9);
 	}
 }
 
@@ -2190,13 +2193,14 @@ rule("Sub7: Create Effect Locks and Env / Kill spheres")
 				Global.EffectLockSphereRadiusConstant + -1), Visible To);
 			Modify Player Variable(Event Player, TempMenuIDStore, Append To Array, Last Created Entity);
 			Create In-World Text(Filtered Array(Event Player, Index Of Array Value(Current Array Element.EffectLockObtained, Evaluate Once(
-				Event Player.TempIterator)) == -1), Custom String("{0}{1}{2}", X Component Of(
+				Event Player.TempIterator)) == -1), Custom String("{0} {1}", Custom String("{0}{1}{2}", X Component Of(
 				Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)]) > 0 ? Ability Icon String(
 				Hero Of(Event Player), Button(Secondary Fire)) : String(""), Y Component Of(
 				Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)]) > 0 ? Ability Icon String(
 				Hero Of(Event Player), Button(Ability 1)) : String(""), Z Component Of(
 				Global.EffectLockAbilitiesArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)]) > 0 ? Ability Icon String(
-				Hero Of(Event Player), Button(Ability 2)) : String("")), Evaluate Once(
+				Hero Of(Event Player), Button(Ability 2)) : String("")), Global.EffectLocksOrderMatters ? Custom String("#{0}",
+				Event Player.TempIterator + 1) : String("")), Evaluate Once(
 				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), 1.300, Do Not Clip, Visible To, Color(
 				Yellow), Default Visibility);
 			Modify Player Variable(Event Player, TextIDTempStore, Append To Array, Last Text ID);
@@ -2295,6 +2299,10 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 		Event Player.TempVariable2 = Index Of Array Value(Global.CPEffectLockSphereArray[Event Player.CurrentCP], First Of(Filtered Array(
 			Global.CPEffectLockSphereArray[Event Player.CurrentCP], Distance Between(Eye Position(Event Player), Current Array Element)
 			< Global.EffectLockSphereRadiusConstant)));
+		If(Global.EffectLocksOrderMatters && Count Of(Event Player.EffectLockObtained) != Event Player.TempVariable2);
+			Small Message(Event Player, Custom String("Effect Locks Must Be Obtained In Order!"));
+			Abort;
+		End;
 		Modify Player Variable(Event Player, EffectLockObtained, Append To Array, Event Player.TempVariable2);
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		If(!Global.DisableHUDConstant);
