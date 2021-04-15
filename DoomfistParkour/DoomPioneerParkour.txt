@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Recently added - multiple effect/ability locks, setting for forcing effect locks to be obtained in order.  Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.    --------------------------------------------------------    Made by WelkinTern, pioneer replay improvments by khandescension.     --------------------------------------------------------"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: Apr 13, 2021  Code Update History: https://github.com/WelkinU/OverwatchWorkshopScripts/commits/"
 	}
 
 	lobby
@@ -284,7 +284,7 @@ rule("Initialize Globals")
 	}
 }
 
-rule("Global HUD + Controls HUD")
+rule("Global HUD + Controls HUD + General Effects / Icons")
 {
 	event
 	{
@@ -375,7 +375,7 @@ rule("Global HUD + Controls HUD")
 	}
 }
 
-rule("Initialize player")
+rule("Initialize player + Ring Effects")
 {
 	event
 	{
@@ -413,7 +413,7 @@ rule("Initialize player")
 	}
 }
 
-rule("Player HUD & Sphere initialize")
+rule("Player-Specific HUD")
 {
 	event
 	{
@@ -975,7 +975,8 @@ rule("Interact + Jump -> Skip Checkpoint")
 		If(Event Player.CurrentCP < Event Player.MaxUnlockedCP);
 			Event Player.CurrentCP += 1;
 		Else;
-			If(Global.DevModeEngaged || Event Player.TimeSpentOnCP > Global.SkipTimeLimit);
+			If((Global.DevModeEngaged || Event Player.TimeSpentOnCP > Global.SkipTimeLimit) && Event Player.CurrentCP + 1 < Count Of(
+				Global.CPLocations));
 				Event Player.CurrentCP += 1;
 				Event Player.MaxUnlockedCP = Event Player.CurrentCP;
 				Event Player.BlockArriveNextPoint = True;
@@ -1275,23 +1276,29 @@ rule("Melee + Emote + Dev Mode Engaged: Delete Last Checkpoint")
 		Modify Global Variable(ReplayPioneerFacingArray, Remove From Array By Index, Count Of(Global.ReplayPioneerFacingArray) - 1);
 		Modify Global Variable(CPFacingDirections, Remove From Array By Index, Count Of(Global.CPFacingDirections) - 1);
 		Modify Global Variable(CPPlayerScaleArray, Remove From Array By Index, Count Of(Global.CPPlayerScaleArray) - 1);
-		Event Player.TimeSpentOnCP = 0;
-		Call Subroutine(CreateEffectLocks);
-		Call Subroutine(HandleSkipTimer);
-		Call Subroutine(CheckAbilityCounts);
 		"Hopefully tempvariable doesn't conflict with \"Pioneer runs out of time\" rule"
 		For Player Variable(Event Player, TempVariable, 0, Count Of(All Living Players(All Teams)), 1);
 			If(All Living Players(All Teams)[Event Player.TempVariable].CurrentCP == Count Of(Global.CPLocations) - 1);
 				All Living Players(All Teams)[Event Player.TempVariable].ForceRespawn = True;
 			End;
 		End;
+		"Hopefully tempvariable doesn't conflict with \"Pioneer runs out of time\" rule"
+		For Player Variable(Event Player, TempVariable, 0, Count Of(All Players(All Teams)), 1);
+			If(All Players(All Teams)[Event Player.TempVariable].CurrentCP == Count Of(Global.CPLocations) - 1);
+				All Players(All Teams)[Event Player.TempVariable].MaxUnlockedCP = Count Of(Global.CPLocations) - 1;
+			End;
+		End;
+		Event Player.TimeSpentOnCP = 0;
+		Call Subroutine(CreateEffectLocks);
+		Call Subroutine(HandleSkipTimer);
+		Call Subroutine(CheckAbilityCounts);
 		Enable Inspector Recording;
 		Log To Inspector(Custom String("Removed Checkpoint {0}", Count Of(Global.CPLocations) + 1));
 		Disable Inspector Recording;
 	}
 }
 
-rule("Q + F to start again from cp0")
+rule("Interact + Ultimate: Start again from checkpoint 0 (disabled when Ultimates are enabled in Workshop Settings)")
 {
 	event
 	{
@@ -2152,9 +2159,11 @@ rule("Sub6: CheckAbilityCounts")
 			End;
 			If(X Component Of(Event Player.CPAbilityCounts) >= X Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]));
 				"Have to wait to disable punch because otherwise it would disable immediately after using preventing punch from working properly."
-				Wait(0.400, Ignore Condition);
+				Wait(0.800, Ignore Condition);
 				"This is to fix interaction with the Quick Reset (R) right after using punch, so this doesn't disable punch after you respawn. Can have slight bug where player is punching through the start location, and doesn't set cooldown properly."
 				Abort If(True && Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentCP]) < Global.CPRadius);
+				"Adding this to fix issue of starting punch going through an effect lock that also allows punch. Otherwise, the effect lock would enable punch, then this rule would disable it!"
+				Abort If(Event Player.EffectLockTimerChase > 0);
 				Set Secondary Fire Enabled(Event Player, False);
 			End;
 			Event Player.AbilityLimitsDisplayVar = Global.CPAbilityCounts[Event Player.CurrentCP] - Event Player.CPAbilityCounts;
@@ -2185,10 +2194,6 @@ rule("Sub7: Create Effect Locks and Env / Kill spheres")
 			"Effect Lock Sphere Create Non-Pioneer"
 			Create Effect(Filtered Array(Event Player, Index Of Array Value(Current Array Element.EffectLockObtained, Evaluate Once(
 				Event Player.TempIterator)) == -1), Sphere, Custom Color(192, 192, 192, 192), Evaluate Once(
-				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), Evaluate Once(
-				Global.EffectLockSphereRadiusConstant + -1), Visible To);
-			"Effect Lock Sphere Create Non-Pioneer"
-			disabled Create Effect(Event Player, Sphere, Custom Color(192, 192, 192, 192), Evaluate Once(
 				Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator]), Evaluate Once(
 				Global.EffectLockSphereRadiusConstant + -1), Visible To);
 			Modify Player Variable(Event Player, TempMenuIDStore, Append To Array, Last Created Entity);
@@ -2290,7 +2295,7 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 			Current Array Element) <= Global.EffectLockSphereRadiusConstant && Index Of Array Value(Event Player.EffectLockObtained,
 			Current Array Index) == -1) == True;
 		Global.GameStarted == True;
-		Event Player.CurrentCP < Count Of(Global.CPLocations);
+		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations);
 	}
 
 	actions
@@ -2317,7 +2322,7 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 		End;
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Wait Until(!Is Using Ability 2(Event Player), 5);
-		Event Player.EffectLockTimerChase = 0.400;
+		Event Player.EffectLockTimerChase = 0.800;
 		Start Rule(CheckAbilityCounts, Restart Rule);
 	}
 }
@@ -2934,6 +2939,7 @@ rule("Ana Sleep Dart Teleport")
 		"Shorten ray cast to avoid unintended tele through surfaces"
 		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
 			* 0.500;
+		"Need to find a better way to do skybox detection - this has issues on maps like Nepal that have high variance in altitude"
 		If(Y Component Of(Event Player.AnaSleepDartTeleLocation) > 24);
 			Small Message(Event Player, Custom String("Teleport location elevation too high"));
 			Cancel Primary Action(Event Player);
