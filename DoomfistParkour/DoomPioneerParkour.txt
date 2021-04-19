@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: Apr 17, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: Apr 18, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -17,7 +17,7 @@ settings
 		{
 			enabled maps
 			{
-				EichenWalde
+				Eichenwalde
 			}
 		}
 
@@ -54,7 +54,6 @@ settings
 
 			Doomfist
 			{
-				No Ammunition Requirement: On
 				Seismic Slam Cooldown Time: 66%
 			}
 
@@ -94,11 +93,6 @@ settings
 				Doomfist
 			}
 		}
-	}
-
-	workshop
-	{
-		Multi-Hero Mode Enabled: On
 	}
 }
 
@@ -144,6 +138,7 @@ variables
 		37: DisableHUDConstant
 		38: EffectLocksOrderMatters
 		39: MrDestructoVector
+		40: EffectLocksResetCooldownConstant
 
 	player:
 		0: CurrentCP
@@ -196,6 +191,7 @@ variables
 		48: TextIDTempStore
 		49: AbilityLimitsDisplayVar
 		50: EffectLockTimerChase
+		51: ThreeSecondBounceTimer
 }
 
 subroutines
@@ -248,7 +244,7 @@ rule("Initialize Globals")
 		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Important Settings"), Custom String(
 			"Seconds Before Player Can Skip Level"), 240, 60, 9999, 0);
 		Global.ReplaysEnabledConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
-			"Enable Pioneer Replays (Can cause large server load)"), True, 0);
+			"Enable Pioneer Replays (Can cause large server load at 40+ CP's)"), True, 0);
 		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
 			"Ultimate Abilites Enabled"), False, 0);
 		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True, 0);
@@ -260,7 +256,8 @@ rule("Initialize Globals")
 		Global.InfiniteModeEnabledConstant = Workshop Setting Toggle(Custom String("Infinite Mode"), Custom String(
 			"Infinite Mode Enabled"), True, 0);
 		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
-		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Multi-Hero Mode Enabled"), False, 0);
+		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
+			"Multi-Hero Mode Enabled (Wrecking Ball, Genji, Ana, Sigma, etc)"), False, 0);
 		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
 			"Player Move Speed Scale Factor"), 100, 10, 1000, 0);
 		Global.PioneerMinDistanceConstant = 6;
@@ -273,7 +270,8 @@ rule("Initialize Globals")
 		Global.DevModeEngaged = False;
 		Global.ReplayPioneerPositionArray = Empty Array;
 		Global.ReplayPioneerFacingArray = Empty Array;
-		Global.DisableHUDConstant = Workshop Setting Toggle(Custom String("Other"), Custom String("Disable HUD"), False, 9);
+		Global.DisableHUDConstant = Workshop Setting Toggle(Custom String("Other"), Custom String(
+			"Disable HUD (Mostly For Recording Gameplay)"), False, 9);
 		"Green Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
 			Global.CurrentPioneer.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
@@ -283,6 +281,8 @@ rule("Initialize Globals")
 		Global.EffectLocksOrderMatters = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
 			"Effect Locks Must Be Obtained In Pioneer Order"), True, 9);
 		Global.MrDestructoVector = Empty Array;
+		Global.EffectLocksResetCooldownConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
+			"Effect Locks Reset Ability Cooldowns (For Speedrunning)"), False, 0);
 	}
 }
 
@@ -374,6 +374,13 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			< Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])), Custom String("{0}", Ability Icon String(Hero(
 			Winston), Button(Ability 2))), Global.CPLocations[Local Player.CurrentCP + 1], 1.300, Clip Against Surfaces,
 			Visible To and Position, Color(White), Default Visibility);
+		"Push the progress bar for stall 3 sec bounce timer down the screen"
+		Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300), Null, Null,
+			Custom String(" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), Top, 9.900, Color(White),
+			Color(White), Color(White), Visible To, Default Visibility);
+		Create Progress Bar HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300),
+			Local Player.ThreeSecondBounceTimer / 0.030, Custom String("Bounce Timer"), Top, 10, Color(White), Color(White),
+			Visible To and Values, Default Visibility);
 	}
 }
 
@@ -417,6 +424,8 @@ rule("Initialize player + Ring Effects")
 			Visible To Position and Radius);
 		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Color(
 			Purple), Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
+		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player) > 0.050 || Is On Ground(Event Player)
+			? 0 : 4, Speed Of(Event Player) > 0.050 || Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
 	}
 }
 
@@ -2267,6 +2276,14 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 				Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Vector(0, 0, -0.100);
 			End;
 		End;
+		If(Global.EffectLocksResetCooldownConstant);
+			Wait Until(!(Is Using Ability 1(Event Player) || Is Firing Secondary(Event Player)), 2);
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+			Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+			"for wrecking ball"
+			Set Ability Cooldown(Event Player, Button(Jump), 0);
+			Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+		End;
 		"to stop pioneer from creating spheres too many in a row"
 		Wait(0.250, Ignore Condition);
 	}
@@ -2318,6 +2335,13 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 		Wait Until(!Is Using Ability 2(Event Player), 5);
 		Event Player.EffectLockTimerChase = 0.800;
 		Start Rule(CheckAbilityCounts, Restart Rule);
+		If(Global.EffectLocksResetCooldownConstant);
+			Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
+			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+			Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+			"for wrecking ball"
+			Set Ability Cooldown(Event Player, Button(Jump), 0);
+		End;
 	}
 }
 
