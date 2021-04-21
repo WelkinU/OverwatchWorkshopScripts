@@ -376,8 +376,10 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Visible To and Position, Color(White), Default Visibility);
 		"Push the progress bar for stall 3 sec bounce timer down the screen"
 		Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300), Null, Null,
-			Custom String(" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), Top, 9.900, Color(White),
-			Color(White), Color(White), Visible To, Default Visibility);
+			Custom String("{0}", String Slice(Custom String(
+			" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), 0,
+			Global.CurrentPioneer == Local Player ? 40 : 34)), Top, 9.900, Color(White), Color(White), Color(White), Visible To and String,
+			Default Visibility);
 		Create Progress Bar HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300),
 			Local Player.ThreeSecondBounceTimer / 0.030, Custom String("Bounce Timer"), Top, 10, Color(White), Color(White),
 			Visible To and Values, Default Visibility);
