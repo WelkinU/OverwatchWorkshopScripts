@@ -426,8 +426,8 @@ rule("Initialize player + Ring Effects")
 			Visible To Position and Radius);
 		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Color(
 			Purple), Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
-		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player) > 0.050 || Is On Ground(Event Player)
-			? 0 : 4, Speed Of(Event Player) > 0.050 || Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
+		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player) > 0.070 || Is On Ground(Event Player)
+			? 0 : 4, Speed Of(Event Player) > 0.070 || Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
 	}
 }
 
