@@ -3,113 +3,205 @@
 <head>
   <title>Workshop Code Finder</title>
 
-  <!--Include JQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" 
-  			 integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
-			  crossorigin="anonymous"></script>
+  <!-- Set up table styles-->
+  <style>
+    table {border-collapse:collapse; width:100%;}
+    table td {border:solid 1px #fab; word-wrap:break-word;}
+  </style>
+
+  <!--Include JQuery-->
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
 
 </head>
 <body>
+  <h2>Overwatch Workshop Code Finder</h2>
+  <h4>How To Use</h4>
+  <p>Step 1: Make a lot of workshop codes - store them in Notepad. Unfortunately, Workshop Codes can't be shared (as far as I know). <br>
+  Step 2: Paste them into the large textbox below. <br>
+  Step 3: Paste text into the second textbox and click submit. The algorithm will attempt to find the code(s) closest to this text.</p>
+  <label>Enter list of Workshop Codes here (separated by whitespace)</label>
+  <button onclick="WelkinTernCodes()">Populate With WelkinTern Codes</button>
+  <br>
+  <textarea id="codesInput" style="width: 75%" rows='5'> </textarea>
+  <br>
+  <label>Enter phrase to find a similar code to - eg. "tower defense" or "doom parkour". Uses <a href='https://siderite.dev/blog/super-fast-and-accurate-string-distance.html'>SIFT4 algorithm</a>. Does not replace numbers with similar letters.</label>
+  <br>
+  <input type="text" id="phraseText"  style="width: 50%">
+  <br>
+
+  <button onclick="showResults()">Submit</button>
+
+  <div id='resultsDiv'></div>
+
+
   <script type="text/javascript">
-  //alert(sift4('WEXT0','TEXT',10,10))
+  	var distancesToShow = 3; //number of closest distances to show in table
+  	generateTable(); //initialize hidden table, becomes visible when showing results
 
-  function sift4 (s1, s2, maxOffset, maxDistance) {
-  	//based off function from here: https://github.com/MasterDuke17/Text-Diff-Sift4/blob/master/Sift4.js
-    if (!s1 || !s1.length) {
-      if (!s2) {
-        return 0;
+  	function generateTable() {
+      let tableHeaders = ["SIFT4 Distance", "Workshop Codes"];
+
+      var table = $('<table>', {
+      	id: "resultsTable",
+      	hidden: true
+      });
+
+      //add table header
+      var row = $('<tr>');
+      for(let i=0; i<tableHeaders.length; i++) {
+      	row.append('<th>' + tableHeaders[i] + '</th>');
       }
-      return s2.length;
+      table.append(row)
+
+      //populate table rows
+      for(i=0; i<distancesToShow; i++){
+        row = $('<tr>');
+
+        for(let j=0; j<tableHeaders.length; j++) {
+          row.append($('<td>', {
+            id: "row" + i + "col" + j,
+          }));
+        }
+        
+        table.append(row);
+      }
+      $('#resultsDiv').append(table);
+  	}
+  
+    function getSIFT4Results() {
+      //compute the SIFT4 distance between each workshop code and the input phrase
+      let ret_dict = {};
+      let codes = $("#codesInput").val().toUpperCase().split(/[ ,]+/); //split input by whitespace
+      let phrase = $("#phraseText").val().toUpperCase();
+      let SIFT4dist;
+
+      //get SIFT4 distance
+      for(let i=0; i<codes.length; i++) {
+        SIFT4dist = sift4(codes[i],phrase,3,10);
+
+        if(!ret_dict[SIFT4dist]) {
+          ret_dict[SIFT4dist] = [];
+        }
+        ret_dict[SIFT4dist].push(codes[i]);
+      }
+      //returns dictionary of lists, dict keys are the SIFT4 distance, values are lists of strings containing workshop codes
+      return ret_dict; 
     }
 
-    if (!s2 || !s2.length) {
-      return s1.length;
+    function showResults() {
+      code_dict = getSIFT4Results();
+      let distancesList = (Object.keys(code_dict).map(Number)).sort((a,b)=>a-b); //sorting ints in Javascript is weird
+      console.log(distancesList);
+
+      //function populates the table with SIFT4 distances
+      for(let i=0; i<Math.min(distancesToShow,distancesList.length); i++) {
+      	$("#row" + i +"col0").text(distancesList[i]);
+      	$("#row" + i +"col1").text(code_dict[distancesList[i]].join(" "));
+      }
+      $("#resultsTable").show();
     }
 
-    var l1 = s1.length;
-    var l2 = s2.length;
+    function WelkinTernCodes() {
+      //default codes that I have made
+      $("#codesInput").text("NBAY6 MBA11 MYABA BYPWY MYAWP P1XMN TP0WR KARY5 WEXT0 PM110 HH443 VETEH ESDWN 8KBDB 51XBX YYESN  HJ8P8 PSACM XRAB6 0XRW0 WTC7A GBTKY AA0J1 132C1 SPKHT NQQ78 77Z8Y DDAXJ 5M5WD 2HR2P X6XC3 V7412 22S0X JX2J0 1WXME P5JY0 VD579 V3R4T E1VFS H367H WSW6T Y21AX JEG5J M65TE V4SJK 8EFTP 16BNY W1C0R  V18D5 2WBGD QMV9C 7SSHG 02E6N 5KA2E 6BG02 72192 SPG0J Q191M X7JK4 C469M WP6MH 62QBM 6CDWF AC4X5 44J8V X1CS7 KK7Q1 ZWMHA XRT9B JRYQZ M6NC8 YQRYF 7X8HK QNR4Z MDP4R E4DJH CMPY1 M2CQB JS8VH HS8XN RGXQM TVGWSE 9XBHV 3S9MJ 7A20A Q1S2V NGPB1 WKXEA 3E53Y TCD16 T77CR SF2ZG 14VRY Y8PT6 E7SMQ HRTP3 QT2ZA KPGF6 TYC04 1HMCD QCWXR SP07N J1TXJ 90RJE ECEV3 33W7D W696X ZZRJ9 S8ZKE Q4TT5 A03X8 FS7Y6 4TRTX 51DJF E3G15 TQJT8 1ATW2 N5Y7E FM3SY 3FMJA T4K7T 2J9V8 Q1N4V 14R9N 2HMYX CQ1G3 05KCN 1RH9R NHPPT XNVRS EW5NE HF5YN J2YBE");
+    }
+    //based off function from here: https://github.com/MasterDuke17/Text-Diff-Sift4/blob/master/Sift4.js
+    function sift4 (s1, s2, maxOffset, maxDistance) {
+      
+      if (!s1 || !s1.length) {
+        if (!s2) {
+          return 0;
+        }
+        return s2.length;
+      }
 
-    var c1 = 0;  //cursor for string 1
-    var c2 = 0;  //cursor for string 2
-    var lcss = 0;  //largest common subsequence
-    var local_cs = 0; //local common substring
-    var trans = 0;  //number of transpositions ('ab' vs 'ba')
-    var offset_arr = [];  //offset pair array, for computing the transpositions
+      if (!s2 || !s2.length) {
+        return s1.length;
+      }
 
-    while ((c1 < l1) && (c2 < l2)) {
-      if (s1.charAt(c1) == s2.charAt(c2)) {
-        local_cs++;
-        var isTrans = false;
-        //see if current match is a transposition
-        var i = 0;
-        while (i < offset_arr.length) {
-          var ofs = offset_arr[i];
-          if (c1 <= ofs.c1 || c2 <= ofs.c2) {
-            // when two matches cross, the one considered a transposition is the one with the largest difference in offsets
-            isTrans = Math.abs(c2 - c1) >= Math.abs(ofs.c2 - ofs.c1);
-            if (isTrans) {
-              trans++;
-            } else {
-              if (!ofs.trans) {
-                ofs.trans = true;
+      var l1 = s1.length;
+      var l2 = s2.length;
+
+      var c1 = 0;  //cursor for string 1
+      var c2 = 0;  //cursor for string 2
+      var lcss = 0;  //largest common subsequence
+      var local_cs = 0; //local common substring
+      var trans = 0;  //number of transpositions ('ab' vs 'ba')
+      var offset_arr = [];  //offset pair array, for computing the transpositions
+
+      while ((c1 < l1) && (c2 < l2)) {
+        if (s1.charAt(c1) == s2.charAt(c2)) {
+          local_cs++;
+          var isTrans = false;
+          //see if current match is a transposition
+          var i = 0;
+          while (i < offset_arr.length) {
+            var ofs = offset_arr[i];
+            if (c1 <= ofs.c1 || c2 <= ofs.c2) {
+              // when two matches cross, the one considered a transposition is the one with the largest difference in offsets
+              isTrans = Math.abs(c2 - c1) >= Math.abs(ofs.c2 - ofs.c1);
+              if (isTrans) {
                 trans++;
+              } else {
+                if (!ofs.trans) {
+                  ofs.trans = true;
+                  trans++;
+                }
+              }
+              break;
+            } else {
+              if (c1 > ofs.c2 && c2 > ofs.c1) {
+                offset_arr.splice(i, 1);
+              } else {
+                i++;
               }
             }
-            break;
-          } else {
-            if (c1 > ofs.c2 && c2 > ofs.c1) {
-              offset_arr.splice(i, 1);
-            } else {
-              i++;
+          }
+          offset_arr.push({
+            c1:c1,
+            c2:c2,
+            trans:isTrans
+          });
+        } else {
+          lcss += local_cs;
+          local_cs = 0;
+          if (c1 != c2) {
+            c1 = c2 = Math.min(c1, c2);  //using min allows the computation of transpositions
+          }
+          //if matching characters are found, remove 1 from both cursors (they get incremented at the end of the loop)
+          //so that we can have only one code block handling matches 
+          for (var i = 0; i < maxOffset && (c1 +i < l1 || c2 + i < l2); i++) {
+            if ((c1 + i < l1) && (s1.charAt(c1 + i) == s2.charAt(c2))) {
+              c1 += i - 1; 
+              c2--;
+              break;
+            }
+            if ((c2 + i < l2) && (s1.charAt(c1) == s2.charAt(c2 + i))) {
+              c1--;
+              c2 += i - 1;
+              break;
             }
           }
         }
-        offset_arr.push({
-          c1:c1,
-          c2:c2,
-          trans:isTrans
-        });
-      } else {
-        lcss += local_cs;
-        local_cs = 0;
-        if (c1 != c2) {
-          c1 = c2 = Math.min(c1, c2);  //using min allows the computation of transpositions
-        }
-        //if matching characters are found, remove 1 from both cursors (they get incremented at the end of the loop)
-        //so that we can have only one code block handling matches 
-        for (var i = 0; i < maxOffset && (c1 +i < l1 || c2 + i < l2); i++) {
-          if ((c1 + i < l1) && (s1.charAt(c1 + i) == s2.charAt(c2))) {
-            c1 += i - 1; 
-            c2--;
-            break;
-          }
-          if ((c2 + i < l2) && (s1.charAt(c1) == s2.charAt(c2 + i))) {
-            c1--;
-            c2 += i - 1;
-            break;
+        c1++;
+        c2++;
+        if (maxDistance) {
+          var temporaryDistance = Math.max(c1, c2) - lcss + trans;
+          if (temporaryDistance >= maxDistance) {
+            return Math.round(temporaryDistance);
           }
         }
-      }
-      c1++;
-      c2++;
-      if (maxDistance) {
-        var temporaryDistance = Math.max(c1, c2) - lcss + trans;
-        if (temporaryDistance >= maxDistance) {
-          return Math.round(temporaryDistance);
+        // this covers the case where the last match is on the last token in list, so that it can compute transpositions correctly
+        if ((c1 >= l1) || (c2 >= l2)) {
+          lcss += local_cs;
+          local_cs = 0;
+          c1 = c2 = Math.min(c1, c2);
         }
       }
-      // this covers the case where the last match is on the last token in list, so that it can compute transpositions correctly
-      if ((c1 >= l1) || (c2 >= l2)) {
-        lcss += local_cs;
-        local_cs = 0;
-        c1 = c2 = Math.min(c1, c2);
-      }
+      lcss += local_cs;
+      return Math.round(Math.max(l1, l2) - lcss + trans); //add the cost of transpositions to the final result
     }
-    lcss += local_cs;
-    return Math.round(Math.max(l1, l2) - lcss + trans); //add the cost of transpositions to the final result
-  }
-  </script>
-  <script type="text/javascript">alert(sift4('WEXT0','TEXT',10,10))</script>
+    </script>
 
 </body>
 </html>
