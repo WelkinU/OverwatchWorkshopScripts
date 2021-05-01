@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: Apr 18, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 1, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -17,7 +17,14 @@ settings
 		{
 			enabled maps
 			{
-				Eichenwalde
+				Ilios
+			}
+		}
+
+		Team Deathmatch
+		{
+			enabled maps
+			{
 			}
 		}
 
@@ -45,6 +52,15 @@ settings
 			{
 				Immortality Field Cooldown Time: 70%
 				Regenerative Burst Cooldown Time: 70%
+			}
+
+			Bastion
+			{
+				Damage Dealt: 10%
+				Damage Received: 10%
+				Infinite Ultimate Duration: On
+				Self-Repair Maximum Time: 500%
+				Self-Repair Recharge Rate: 500%
 			}
 
 			D.Va
@@ -93,6 +109,12 @@ settings
 				Doomfist
 			}
 		}
+	}
+
+	workshop
+	{
+		Multi-Hero Mode Enabled Wrecking Ball Genji Ana Sigma etc: On
+		Ultimate Abilites Enabled: On
 	}
 }
 
@@ -235,7 +257,7 @@ rule("Initialize Globals")
 		Pause Match Time;
 		"These are the allowed heros for multi-hero mode"
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
-			Hero(Junkrat), Hero(Ana));
+			Hero(Junkrat), Hero(Ana), Hero(Bastion));
 		Global.AllowedPlayerScalesArray = Array(0.100, 1, 2, 5);
 		Global.AbilityCountsEnabledConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
 			"Ability Count Limits Enabled"), True, 0);
@@ -351,7 +373,6 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Custom String(
 			"3. Open Workshop Editor, open first rule & paste. \r\nDelete the two \"ReplayPioneer\" variables (giant arrays)"))), Right, 2,
 			Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-		"Updated to use the \"Local Player\" functionality - Surprisingly it appears to add server load, rather than reduce it."
 		Create HUD Text(All Living Players(All Teams), Null, Null, Custom String("Checkpoint {0}/{1} - Time Spent On CP {2}",
 			Local Player.CurrentCP, Count Of(Global.CPLocations) - 1, Local Player.TimeSpentOnCP), Top, 0, Color(White), Color(White),
 			Color(White), Visible To and String, Default Visibility);
@@ -1219,9 +1240,10 @@ rule("Interact + Up/Down to increase/decrease pioneer player size")
 		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations);
 		Is Button Held(Event Player, Button(Interact)) == True;
 		Absolute Value(Z Component Of(Throttle Of(Event Player))) == 1;
-		Is On Ground(Event Player) == True;
-		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) < Global.CPRadius;
 		Global.GameStarted == True;
+		"Technically abusable, making large radius to avoid issues with 5x scale not allowing players to get smaller because they can't stay close enough to the CP start"
+		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) < 8;
+		disabled Is On Ground(Event Player) == True;
 	}
 
 	actions
@@ -2018,7 +2040,10 @@ rule("Sub0: RespawnPlayer")
 		Event Player.WinstonBubbleLocation = Null;
 		"Should Fix Phased Out Status issue"
 		Clear Status(Event Player, Phased Out);
-		Set Status(Event Player, Null, Phased Out, 9999);
+		"Don't phase out bastion, so you can Bastion Ult parkour"
+		If(!Array Contains(Array(Hero(Bastion)), Hero Of(Event Player)));
+			Set Status(Event Player, Null, Phased Out, 9999);
+		End;
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
@@ -2950,22 +2975,47 @@ rule("Ana Sleep Dart Teleport")
 		Wait(0.300, Ignore Condition);
 		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
 			+ Facing Direction Of(Event Player) * 180, All Players(All Teams), Event Player, True);
-		"Shorten ray cast to avoid unintended tele through surfaces"
-		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
-			* 0.500;
-		"Need to find a better way to do skybox detection - this has issues on maps like Nepal that have high variance in altitude"
-		If(Y Component Of(Event Player.AnaSleepDartTeleLocation) > 24);
-			Small Message(Event Player, Custom String("Teleport location elevation too high"));
-			Cancel Primary Action(Event Player);
+		If(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) > 175);
 			Wait(0.100, Ignore Condition);
 			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 			Abort;
 		End;
+		"Shorten ray cast to avoid unintended tele through surfaces"
+		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
+			* 0.500;
 		"Sleep dart travel time"
 		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
 		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
 		Call Subroutine(CancelMomentum);
-		disabled Small Message(Event Player, Custom String("{0} alt {1}", Event Player.AnaSleepDartTeleLocation, Altitude Of(Event Player)));
+	}
+}
+
+rule("Skybox Detector - Don't let people tele then surf the skybox / let people fall through the skybox")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Vertical Speed Of(Event Player) == 0;
+		"Player and many positons around the player are on invisible walls"
+		Is True For All(Array(Vector(-1, 0, -1), Vector(-1, 0, 1), Vector(1, 0, -1), Vector(1, 0, 1), Vector(0, 0, 0)), Distance Between(
+			Eye Position(Event Player) + Current Array Element, Ray Cast Hit Position(Eye Position(Event Player) + Current Array Element,
+			Eye Position(Event Player) + Current Array Element + Vector(0, -10, 0), Null, Event Player, False)) == 10) == True;
+	}
+
+	actions
+	{
+		Wait(0.100, Abort When False);
+		Small Message(Event Player, Custom String("On the skybox!"));
+		disabled Call Subroutine(RespawnPlayer);
+		Disable Movement Collision With Environment(Event Player, True);
+		Wait(0.500, Ignore Condition);
+		Enable Movement Collision With Environment(Event Player);
 	}
 }
 
