@@ -17,16 +17,20 @@
   <h2>Overwatch Workshop Code Finder</h2>
   <h4>How To Use</h4>
   <p>Step 1: Make a lot of workshop codes - store them in Notepad. Unfortunately, Workshop Codes can't be shared (as far as I know). <br>
-  Step 2: Paste them into the large textbox below. <br>
-  Step 3: Paste text into the second textbox and click submit. The algorithm will attempt to find the code(s) closest to this text.</p>
+  Step 2: Paste the codes into the large textbox below. <br>
+  Step 3: Paste text into the second textbox and click submit. The algorithm will attempt to match the code(s) closest to this text.</p>
   <label>Enter list of Workshop Codes here (separated by whitespace)</label>
   <button onclick="WelkinTernCodes()">Populate With WelkinTern Codes</button>
   <br>
   <textarea id="codesInput" style="width: 75%" rows='5'> </textarea>
   <br>
-  <label>Enter phrase to find a similar code to - eg. "tower defense" or "doom parkour". Uses <a href='https://siderite.dev/blog/super-fast-and-accurate-string-distance.html'>SIFT4 algorithm</a>. Does not replace numbers with similar letters.</label>
+  <label>Enter phrase to find a similar code to - eg. "tower defense" or "doom parkour". Uses <a href='https://siderite.dev/blog/super-fast-and-accurate-string-distance.html'>SIFT4 algorithm</a>.
   <br>
   <input type="text" id="phraseText"  style="width: 50%">
+
+  <br>
+  <input type="checkbox" id="replaceLetters">
+  <label for="replaceLetters"> Replace numbers with similar letters (eg. 0 -> O, 3 -> E, etc.)</label> </label>
   <br>
 
   <button onclick="showResults()">Submit</button>
@@ -35,21 +39,33 @@
 
 
   <script type="text/javascript">
-  	var distancesToShow = 3; //number of closest distances to show in table
-  	generateTable(); //initialize hidden table, becomes visible when showing results
+    var distancesToShow = 3; //number of closest distances to show in table
+    var num_to_letter_dict = {
+        "0": ["O"],
+        "1": ["I","L"],
+        "2": ["Z"],
+        "3": ["E"],
+        "4": ["A"],
+        "5": ["S"],
+        "6": ["G"],
+        "7": ["T"],
+        "8": ["B"],
+        "9": [],
+      };
+    generateTable(); //initialize hidden table, becomes visible when showing results
 
-  	function generateTable() {
+    function generateTable() {
       let tableHeaders = ["SIFT4 Distance", "Workshop Codes"];
 
       var table = $('<table>', {
-      	id: "resultsTable",
-      	hidden: true
+        id: "resultsTable",
+        hidden: true
       });
 
       //add table header
       var row = $('<tr>');
       for(let i=0; i<tableHeaders.length; i++) {
-      	row.append('<th>' + tableHeaders[i] + '</th>');
+        row.append('<th>' + tableHeaders[i] + '</th>');
       }
       table.append(row)
 
@@ -66,7 +82,7 @@
         table.append(row);
       }
       $('#resultsDiv').append(table);
-  	}
+    }
   
     function getSIFT4Results() {
       //compute the SIFT4 distance between each workshop code and the input phrase
@@ -77,7 +93,7 @@
 
       //get SIFT4 distance
       for(let i=0; i<codes.length; i++) {
-        SIFT4dist = sift4(codes[i],phrase,3,10);
+        SIFT4dist = sift4_convert_numbers_to_letters(codes[i],phrase,3,10);
 
         if(!ret_dict[SIFT4dist]) {
           ret_dict[SIFT4dist] = [];
@@ -91,12 +107,11 @@
     function showResults() {
       code_dict = getSIFT4Results();
       let distancesList = (Object.keys(code_dict).map(Number)).sort((a,b)=>a-b); //sorting ints in Javascript is weird
-      console.log(distancesList);
 
       //function populates the table with SIFT4 distances
       for(let i=0; i<Math.min(distancesToShow,distancesList.length); i++) {
-      	$("#row" + i +"col0").text(distancesList[i]);
-      	$("#row" + i +"col1").text(code_dict[distancesList[i]].join(" "));
+        $("#row" + i +"col0").text(distancesList[i]);
+        $("#row" + i +"col1").text(code_dict[distancesList[i]].join(" "));
       }
       $("#resultsTable").show();
     }
@@ -105,6 +120,28 @@
       //default codes that I have made
       $("#codesInput").text("2Y555 HQS555 NBAY6 MBA11 MYABA BYPWY MYAWP P1XMN TP0WR KARY5 WEXT0 PM110 HH443 VETEH ESDWN 8KBDB 51XBX YYESN HBE4T NABGZ HJ8P8 PSACM XRAB6 0XRW0 WTC7A GBTKY AA0J1 132C1 SPKHT NQQ78 77Z8Y DDAXJ 5M5WD 2HR2P X6XC3 V7412 22S0X JX2J0 1WXME P5JY0 VD579 V3R4T E1VFS H367H WSW6T Y21AX JEG5J M65TE V4SJK 8EFTP 16BNY W1C0R ES5K6 Y6KRE G53RT Q3FE7 4RWXT 9173S ZTYQ6 3KRWX2 K6XFK 7A5JF Z68WS 094R0 36H6E Q2HNJ 5WBPA H7JC5 V18D5 2WBGD QMV9C 7SSHG 02E6N 5KA2E 6BG02 72192 SPG0J Q191M X7JK4 C469M WP6MH 62QBM 6CDWF AC4X5 44J8V X1CS7 KK7Q1 ZWMHA XRT9B JRYQZ M6NC8 YQRYF 7X8HK QNR4Z MDP4R E4DJH CMPY1 M2CQB JS8VH HS8XN RGXQM TVGWSE 9XBHV 3S9MJ 7A20A Q1S2V NGPB1 WKXEA 3E53Y TCD16 T77CR SF2ZG 14VRY Y8PT6 E7SMQ HRTP3 QT2ZA KPGF6 TYC04 1HMCD QCWXR SP07N J1TXJ 90RJE ECEV3 33W7D W696X ZZRJ9 S8ZKE Q4TT5 A03X8 FS7Y6 4TRTX 51DJF E3G15 TQJT8 1ATW2 N5Y7E FM3SY 3FMJA T4K7T 2J9V8 Q1N4V 14R9N 2HMYX CQ1G3 05KCN 1RH9R NHPPT XNVRS EW5NE HF5YN J2YBE");
     }
+
+    function sift4_convert_numbers_to_letters(code, phrase, maxOffset, maxDistance) {
+      let min_distance = sift4(code,phrase,maxOffset, maxDistance);
+
+      if ($("#replaceLetters").is(":checked")) {
+        //swap out numbers for letters (other than 1)
+        for(key in num_to_letter_dict) {
+          if (key != "1") {
+              code = code.replace(key,num_to_letter_dict[key]);
+          }
+        }
+        //try swapping 1 for I or L and find minimum sift distance
+        if (code.includes("1")) {
+          min_distance = Math.min(min_distance, sift4(code.replace("1","I"), phrase, maxOffset, maxDistance));
+          min_distance = Math.min(min_distance, sift4(code.replace("1","L"), phrase, maxOffset, maxDistance));
+        } else {
+          min_distance = Math.min(min_distance, sift4(code, phrase, maxOffset, maxDistance));
+        }
+    }
+      return min_distance;
+    }
+
     //based off function from here: https://github.com/MasterDuke17/Text-Diff-Sift4/blob/master/Sift4.js
     function sift4 (s1, s2, maxOffset, maxDistance) {
       
