@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 1, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 6, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -110,12 +110,6 @@ settings
 			}
 		}
 	}
-
-	workshop
-	{
-		Multi-Hero Mode Enabled Wrecking Ball Genji Ana Sigma etc: On
-		Ultimate Abilites Enabled: On
-	}
 }
 
 variables
@@ -214,6 +208,7 @@ variables
 		49: AbilityLimitsDisplayVar
 		50: EffectLockTimerChase
 		51: ThreeSecondBounceTimer
+		52: BounceTimerEnabled
 }
 
 subroutines
@@ -351,10 +346,10 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			"    +  {0}  | Preview Next Checkpoint (Look at effect lock to view location)\r\n    +  {1}  | Spectate", Input Binding String(
 			Button(Primary Fire)), Input Binding String(Button(Melee))), Custom String(
 			"    +  {0}  | Skip CP (After {1}sec)\r\n    +  {2}  | Previous CP", Input Binding String(Button(Jump)), Global.SkipTimeLimit,
-			Input Binding String(Button(Crouch))), Custom String("{0}", Custom String(
+			Input Binding String(Button(Crouch))), Custom String("{1}\r\n{0}", Custom String(
 			"{0}  +  {1}  | Toggle Invisiblity\r\nNeed Healing/Help | Replay Pioneer Route", Input Binding String(Button(Jump)),
-			Input Binding String(Button(Crouch)))))), Left, 0, Color(White), Color(White), Color(White), Visible To and String,
-			Visible Never);
+			Input Binding String(Button(Crouch))), Custom String("    +  {0}  | Toggle Bounce Timer On/Off", Input Binding String(Button(
+			Ultimate)))))), Left, 0, Color(White), Color(White), Color(White), Visible To and String, Visible Never);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String(" \r\n- - - - - - - - - - - Pioneer Controls - - - - - - - - - - -\r\n{0}\r\n{1}\r\n", Custom String(
 			"{0} | Create Effect Lock\r\n{1} | Create Env. Collision Sphere\r\nGroup Up | Create Kill Sphere", Input Binding String(Button(
@@ -447,8 +442,10 @@ rule("Initialize player + Ring Effects")
 			Visible To Position and Radius);
 		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Color(
 			Purple), Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
-		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player) > 0.070 || Is On Ground(Event Player)
-			? 0 : 4, Speed Of(Event Player) > 0.070 || Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
+		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player) > 0.070 || Is Using Ultimate(
+			Event Player) || Is On Ground(Event Player) ? 0 : 4, Speed Of(Event Player) > 0.070 || Is Using Ultimate(Event Player)
+			|| Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
+		Event Player.BounceTimerEnabled = True;
 	}
 }
 
@@ -1325,7 +1322,7 @@ rule("Melee + Emote + Dev Mode Engaged: Delete Last Checkpoint")
 	}
 }
 
-rule("Interact + Ultimate: Start again from checkpoint 0 (disabled when Ultimates are enabled in Workshop Settings)")
+rule("Interact + Ultimate: Bounce Timer Toggle")
 {
 	event
 	{
@@ -1336,18 +1333,24 @@ rule("Interact + Ultimate: Start again from checkpoint 0 (disabled when Ultimate
 
 	conditions
 	{
-		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Button Held(Event Player, Button(Ultimate)) == True;
-		Global.UltimateAbilitiesEnabledConstant == False;
-		Global.CurrentPioneer != Event Player;
+		((Is Button Held(Event Player, Button(Interact)) && Is Button Held(Event Player, Button(Ultimate))) || Global.DisableHUDConstant) == True ;
 	}
 
 	actions
-	{
-		Event Player.CurrentCP = 0;
-		Call Subroutine(RespawnPlayer);
-		Call Subroutine(HandleSkipTimer);
-		Call Subroutine(CreateEffectLocks);
+	{	
+		Event Player.BounceTimerEnabled = !Event Player.BounceTimerEnabled;
+		If(Event Player.BounceTimerEnabled);
+			Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, (Speed Of(Event Player) > 0.070 && !Is Using Ultimate(
+				Event Player)) || Is On Ground(Event Player) ? 0 : 4, (Speed Of(Event Player) > 0.070 && !Is Using Ultimate(Event Player))
+				|| Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
+		Else;
+			Stop Chasing Player Variable(Event Player, ThreeSecondBounceTimer);
+			Event Player.ThreeSecondBounceTimer = 0;
+		End;
+		disabled Event Player.CurrentCP = 0;
+		disabled Call Subroutine(RespawnPlayer);
+		disabled Call Subroutine(HandleSkipTimer);
+		disabled Call Subroutine(CreateEffectLocks);
 	}
 }
 
@@ -2043,6 +2046,8 @@ rule("Sub0: RespawnPlayer")
 		"Don't phase out bastion, so you can Bastion Ult parkour"
 		If(!Array Contains(Array(Hero(Bastion)), Hero Of(Event Player)));
 			Set Status(Event Player, Null, Phased Out, 9999);
+		Else;
+			Set Ultimate Ability Enabled(Event Player, True);
 		End;
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
