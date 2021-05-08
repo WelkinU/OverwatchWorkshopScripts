@@ -2,7 +2,13 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Parkour Illios! MultiLevel Framework with meteor strike, ability limit levels, 360's and max slam detectors by WelkinTern. Make a Pull Request on the code repository: https://github.com/WelkinU/OverwatchWorkshopScripts/tree/master/DoomfistParkourMultilevelFramework"
+		Description: "Doomfist Parkour Illios! MultiLevel Framework with meteor strike, ability limit levels, 360's and max slam detectors by WelkinTern. Make a Pull Request on the code repository: https://github.com/WelkinU/OverwatchWorkshopScripts"
+	}
+
+	lobby
+	{
+		Max Team 1 Players: 12
+		Max Team 2 Players: 0
 	}
 
 	modes
