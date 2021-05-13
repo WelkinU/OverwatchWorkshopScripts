@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Workshop Merger</title>
+
+  <!--Include JQuery-->
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+</head>
+<body>
+	<h2> Merge Two Overwatch Workshop Scripts </h2>
+
+	<p> Paste 1st workshop text here. Settings from this workshop will be preserved (maps, hero roster, etc.) </p>
+	<textarea id="workshop1" style="width: 75%" rows='5'> </textarea>
+
+	<br>
+	<p> Paste 2nd workshop text here. Only rules and variables will be copied - settings from this workshop will be overwritten by those from 1st workshop</p>
+	<textarea id="workshop2" style="width: 75%" rows='5'> </textarea>
+
+	<br> <br>
+	<input type="checkbox" id="MergeVariablesSameName" checked>
+	<label for="MergeVariablesSameName"> Merge Workshop Variables With Same Name </label><br>
+	<br>
+	<button onclick="mergeWorkshops()">Submit</button>
+
+	<br> <br>
+	<p> Merged Workshop </p>
+	<textarea id="mergedWorkshop" style="width: 75%" rows='15'> </textarea>
+
+	<script type="text/javascript">
+
+		function parseNamedVariables(text) {
+			//var pattern = /(?=variables\n{).*(?<=})/;
+			//console.log(text)
+			//var pattern = /variables/;
+
+			//var results = text.match(pattern);
+			var lines = text.split(/\r?\n/);
+			var state = 'findvars';
+
+			for(let i = 0; i<lines.length; i++) {
+				switch(state) {
+					
+					case "findvars":
+						//find the variables block
+						if (lines[i] = "variables") {
+							i++; //skip next line
+							state = "findglobals";
+						}
+						break;
+
+					case "findglobals":
+						//variables block found, search for global variables (or )
+						if (lines[i].trim() = "global:") {
+							state = "getAllGlobals";
+						} else if (lines[i].trim() = "player:") {
+							state = "getAllLocals";
+						} else if (lines[i] = "}") {
+							state = "done";
+						}
+						break;
+
+					case "getAllGlobals":
+						if (lines[i].trim() = "player:") {
+							state = "getAllLocals";
+						} else if (lines[i].trim() = "") {
+							//do nothing
+						} else if (lines[i] = "}") {
+							state = "done";
+						} else {
+
+						}
+
+				}
+
+			}
+		}
+		function onlyUnique(value, index, self) {
+			//https://stackoverflow.com/questions/1960473/get-all-unique-values-in-a-javascript-array-remove-duplicates
+ 			return self.indexOf(value) === index;
+		}
+
+		function findAllVariables(text) {
+			
+			var results = [...text.matchAll(/Global\.([a-zA-Z0-9_]*)/g)]; //match Global.______ 
+			var globals = results.map(x => x[1]).filter(onlyUnique); //preserves order (instead of set based solution)
+
+			//match Event Player.______ 
+			results = [...text.matchAll(/Event Player\.([a-zA-Z0-9_]*)/g)];
+			var locals = results.map(x => x[1]).filter(onlyUnique); //preserves order
+			//var locals = [...new Set(results.map(x => x[1]))]; //keep only unique matches order not mattering but faster
+
+			//get subroutines
+			var subs = findAllSubroutines(text);
+
+			return [globals, locals, subs];
+		}
+
+		function findAllSubroutines(text) {
+			var subs = [];
+
+			var lines = text.split(/\r?\n/);
+			var state = false;
+			for(let i = 0; i<lines.length; i++) {
+				if (state) {
+					if (lines[i] == "}") {
+						break;
+					} else {
+						subs.push(lines[i].split(": ")[1].trim());
+					}
+				} else {
+					if (lines[i] == "subroutines") {
+						i++; //skip next line
+						state = true;
+					}
+				}
+			}
+			return subs;
+		}
+
+		function mergeWorkshops() {
+			var globals1, globals2, locals1, locals2, subs1, subs2;
+			[globals1, locals1, subs1] = findAllVariables($("#workshop1").val());
+			[globals2, locals2, subs2] = findAllVariables($("#workshop2").val());
+
+			var merged_globals = [...new Set([...globals1, ...globals2])];
+			var merged_locals = [...new Set([...locals1, ...locals2])];
+			var merged_subs = [...new Set([...subs1, ...subs2])];
+
+			var varstr = "variables\n{\n";
+
+			if (merged_globals.length > 0)
+				varstr += "global:\n";
+			
+			for(let i=0; i<merged_globals.length; i++) {
+				varstr += i+": " + merged_globals[i] + "\n"; 
+			}
+
+			if (merged_globals.length > 0)
+				varstr += "\n";
+
+			if (merged_locals.length > 0)
+				varstr += "player:\n";
+			
+			for(let i=0; i<merged_locals.length; i++) {
+				varstr += i+": " + merged_locals[i] + "\n"; 
+			}
+			varstr += "}"
+
+			var substr = "subroutines\n{\n";
+			for(let i=0; i<merged_subs.length; i++) {
+				substr += i + ": " + merged_subs[i]+"\n";
+			}
+			substr += "}"
+
+			output = $("#workshop1").val().replace(/variables\n{(.|\r|\n)*?\n}(?=\n)/, varstr);
+			output = output.replace(/subroutines\n{(.|\r|\n)*?\n}(?=\n)/, substr);
+
+			output += $("#workshop2").val().replaceAll(/(settings|variables|subroutines)\n{(.|\r|\n)*?\n}(?=\n)/g, "");
+
+			$("#mergedWorkshop").val(output);
+		}
+
+	</script>
+
+</body>
+</html>
