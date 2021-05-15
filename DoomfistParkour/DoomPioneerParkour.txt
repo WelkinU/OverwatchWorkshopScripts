@@ -17,6 +17,7 @@ settings
 		{
 			enabled maps
 			{
+				Dorado
 			}
 		}
 
@@ -24,7 +25,6 @@ settings
 		{
 			enabled maps
 			{
-				Kanezaka
 			}
 		}
 
@@ -938,28 +938,34 @@ rule("Interact + Left Click: Camera To See Next Point (or the effect lock sphere
 		"Make sure next point exists"
 		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
 		"Is not pioneer"
-		Global.CurrentPioneer != Event Player;
+		disabled Global.CurrentPioneer != Event Player;
 	}
 
 	actions
 	{
+		Event Player.TempIterator = -1;
 		Set Primary Fire Enabled(Event Player, False);
 		Set Facing(Event Player, Vector(-10, -10, 0), To World);
-		"Look at effect lock sphere if it exists and is within 10 degrees of where the player is looking when pressing left click + interact. Otherwise look at next CP"
-		If(Global.CPEffectLockSphereArray[Event Player.CurrentCP] != Empty Array && Is True For Any(
-			Global.CPEffectLockSphereArray[Event Player.CurrentCP], Angle Between Vectors(Direction Towards(Eye Position(Event Player),
-			Current Array Element), Facing Direction Of(Event Player)) < 10) && Angle Between Vectors(Facing Direction Of(Event Player),
-			Direction Towards(Eye Position(Event Player), Global.CPLocations[Event Player.CurrentCP + 1])) > 10);
-			Event Player.TempVariable2 = First Of(Sorted Array(Global.CPEffectLockSphereArray[Event Player.CurrentCP], Angle Between Vectors(
-				Direction Towards(Eye Position(Event Player), Current Array Element), Facing Direction Of(Event Player))));
-			Start Camera(Event Player, Ray Cast Hit Position(Event Player.TempVariable2, Event Player.TempVariable2 + Facing Direction Of(
-				Event Player) * -15, All Players(All Teams), Event Player, True), Event Player.TempVariable2, 30);
-		Else;
-			Start Camera(Event Player, Ray Cast Hit Position(Global.CPLocations[Event Player.CurrentCP + 1],
-				Global.CPLocations[Event Player.CurrentCP + 1] + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player,
-				True), Global.CPLocations[Event Player.CurrentCP + 1], 30);
+		While(Is Button Held(Event Player, Button(Interact)));
+			Wait Until(!Is Button Held(Event Player, Button(Interact)) || Is Button Held(Event Player, Button(Primary Fire)), 20);
+			If(Is Button Held(Event Player, Button(Interact)));
+				Event Player.TempIterator = (Event Player.TempIterator + 1) % (Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP])
+					+ 1);
+				If(Event Player.TempIterator == 0);
+					Start Camera(Event Player, Ray Cast Hit Position(Global.CPLocations[Event Player.CurrentCP + 1],
+						Global.CPLocations[Event Player.CurrentCP + 1] + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player,
+						True), Global.CPLocations[Event Player.CurrentCP + 1], 30);
+				Else;
+					Start Camera(Event Player, Ray Cast Hit Position(
+						Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
+						Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1] + Facing Direction Of(Event Player)
+						* -15, All Players(All Teams), Event Player, True),
+						Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1], 30);
+				End;
+				Wait Until(!Is Button Held(Event Player, Button(Primary Fire)), 20);
+			End;
+			Wait(0.100, Ignore Condition);
 		End;
-		Wait Until(!(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact))), 20);
 		Stop Camera(Event Player);
 		Set Primary Fire Enabled(Event Player, True);
 		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
@@ -1740,7 +1746,7 @@ rule("Reset Cooldowns If In Starting CP Ring")
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		"if u charge punch, then jump and land in circle, it takes your punch away "
 		disabled Event Player.CPAbilityCounts = Vector(0, 0, 0);
-		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
+		disabled Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 	}
 }
 
@@ -3552,7 +3558,10 @@ rule("Mr Destructo Data | Kanezaka")
 			45.079), Vector(-13.692, 6.003, 45.239), Vector(-11.342, 6.148, 45.153), Vector(-9.582, 7.027, 45.604), Vector(-12.309, 10.052,
 			38.987), Vector(-12.498, 10.484, 21.625), Vector(-11.321, 10.489, 23.754), Vector(-10.412, 10.484, 20.536), Vector(-8.721,
 			10.484, 23.402), Vector(-5.603, 9.673, 24.720), Vector(-5.408, 9.549, 24.646), Vector(-3.277, 8.318, 23.414), Vector(-2.021,
-			7.593, 22.689), Vector(-0.252, 6.536, 19.674), Vector(1.221, 6.432, 18.584));
+			7.593, 22.689), Vector(-0.252, 6.536, 19.674), Vector(1.221, 6.432, 18.584), Vector(-35.931, 9.285, 23.210), Vector(-36.599,
+			8.969, 23.235), Vector(-40.314, 7.604, 23.247), Vector(-42.650, 6.425, 23.209), Vector(-21.222, 4.544, 41.302), Vector(-19.824,
+			5.226, 41.300), Vector(-11.056, 6.292, 45.150), Vector(-9.492, 7.072, 45.150), Vector(-19.459, 10, -5.838), Vector(-2.200,
+			7.389, 21.496), Vector(-4.424, 8.698, 22.826), Vector(-5.434, 9.409, 23.645), Vector(-1.198, 6.450, 19.853));
 	}
 }
 
