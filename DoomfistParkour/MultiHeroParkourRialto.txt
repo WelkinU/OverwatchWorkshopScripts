@@ -5,6 +5,12 @@ settings
 		Description: "Doomfist Parkour: Multi-Hero Edition by WelkinTern. Select a hero (Doomfist, Roadhog, Ana, Moira) at the start point, then select a level and use your abilities to get to the next checkpoint. Ability modifier help on the left side of screen. This map uses many checkpoints from Pioneer community and attempts to minimize usage of existing Rialto checkpoints. Workshop Code: VP3H4"
 	}
 
+	lobby
+	{
+		Max Team 1 Players: 12
+		Max Team 2 Players: 0
+	}
+
 	modes
 	{
 		Skirmish
@@ -299,7 +305,7 @@ rule("-------------UPDATE MAP CONSTANTS HERE - CHECKPOINTS, ABILITIES-----------
 			0), Vector(1, 0, 0), Vector(0, 2, 0), Vector(1, 1, 0), Vector(0, 1, 1), Vector(3, 1, 1), Vector(2, 0, 0), Vector(0, 3, 0),
 			Vector(1, 0, 0), Vector(1, 2, 0), Vector(9, 9, 0), Vector(0, 3, 1), Vector(1, 1, 1), Vector(1, 1, 1), Vector(1, 1, 1));
 		"--------------Set Level 19 Parameters. Set CPLocations Index to level number--------------\r\n                               Set all first array elements to NULL"
-		Global.CPLocations[19] = Array(Null, Vector(59.074, 1.580, -8.073), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
+		Global.CPLocations[19] = Array(Null, Vector(-53.273, 1.566, -61.560), Vector(50.403, 2.944, -129.801), Vector(24.793, 2.810,
 			-133.650), Vector(-27.110, 3.250, -133.603), Vector(-15.738, 4.250, -86.475), Vector(-4.372, 18.247, 0.788), Vector(25.515,
 			-0.896, 27.851), Vector(-10.232, 0.889, 48.579), Vector(82.594, 2.925, 52.756), Vector(-42.306, -0.459, -7.170), Vector(13.890,
 			-0.433, 39.303), Vector(-42.089, -0.506, -6.698), Vector(-1.840, 17.344, -20.191), Vector(-42.384, -0.516, -5.926), Vector(
@@ -828,6 +834,7 @@ rule("Respawn If Touched Ground Not On Level Entry Point")
 			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
+		disabled Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player)) < 2)) == 0;
 		Count Of(Filtered Array(Global.LevelOrigins, Distance Between(Current Array Element, Position Of(Event Player))
 			< 2 && Global.LevelHeros[Current Array Index + 1] == Global.UniqueHeroRoster[Event Player.HeroSelectMenuIndex] && True)) == 0;
 	}
@@ -849,11 +856,11 @@ rule("Start Timer When Player Leaves Origin Point")
 
 	conditions
 	{
+		Distance Between(Position Of(Event Player), Global.CPLocations[0][0]) > Global.CPRadii[0][0];
 		Event Player.CurrentCP <= 0;
 		Has Spawned(Event Player) == True;
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
-		Distance Between(Position Of(Event Player), Global.CPLocations[0][0]) > Global.CPRadii[0][0];
 	}
 
 	actions
@@ -876,18 +883,18 @@ rule("Arrived At Next Checkpoint")
 
 	conditions
 	{
+		"Within range of next checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
+			< Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		"Player has selected a level"
 		Event Player.CurrentCP > 0;
 		Is On Ground(Event Player) == True;
+		"Is not on last checkpoint in level"
+		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		Event Player.CurrentLevel > 0;
 		Event Player.BlockArriveAtNextPoint != True;
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
-		"Is not on last checkpoint in level"
-		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
-		"Within range of next checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
-			< Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 	}
 
 	actions
@@ -934,6 +941,12 @@ rule("Respawn If Touched Ground Not On Checkpoints")
 
 	conditions
 	{
+		"Not on current checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
+			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
+		"Not within range of next checkpoint"
+		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
+			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 		"Player has selected a level"
 		Event Player.CurrentCP > 0;
 		Is On Ground(Event Player) == True;
@@ -942,12 +955,6 @@ rule("Respawn If Touched Ground Not On Checkpoints")
 		"Disable this rule if Free Roam Mode enabled"
 		Event Player.FreeRoamEnabled == False;
 		(Hero Of(Event Player) == Hero(Roadhog) && Is Using Ability 2(Event Player)) == False;
-		"Not on current checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 0])
-			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 0];
-		"Not within range of next checkpoint"
-		Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1])
-			> Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1];
 	}
 
 	actions
@@ -972,11 +979,11 @@ rule("Finished Level")
 
 	conditions
 	{
+		"Is on last checkpoint in level"
+		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		Event Player.CurrentCP > 0;
 		Event Player.CurrentLevel > 0;
 		Event Player.LevelTimer > 0;
-		"Is on last checkpoint in level"
-		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 	}
 
 	actions
@@ -1508,10 +1515,10 @@ rule("Subroutine 1: AutogenerateMapVariables")
 				Modify Global Variable At Index(CPUltimate360MaxSlamCounts, Global.LevelIterator, Append To Array, Vector(0, 0, 0));
 			End;
 		End;
-		disabled For Global Variable(LevelIterator, 1, Count Of(Global.CPLocations), 1);
-		disabled Global.LevelNames[Global.LevelIterator] = Custom String("{0} {1}", Hero Icon String(Global.LevelHeros[Global.LevelIterator]),
-			Global.LevelNames[Global.LevelIterator]);
-		disabled End;
+		For Global Variable(LevelIterator, 1, Count Of(Global.CPLocations), 1);
+			Global.LevelNames[Global.LevelIterator] = Custom String("{0} {1}", Hero Icon String(Global.LevelHeros[Global.LevelIterator]),
+				Global.LevelNames[Global.LevelIterator]);
+		End;
 		Global.UniqueHeroRoster = Empty Array;
 		For Global Variable(LevelIterator, 1, Count Of(Global.LevelHeros), 1);
 			"Hero is not in unique hero list, add to unique hero list"
