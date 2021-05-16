@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 6, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 15, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -343,7 +343,7 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String("{0} | Quick Reset\r\n{1} +\r\n{2}", Input Binding String(Button(Reload)), Input Binding String(Button(
 			Interact)), Custom String("{0}\r\n{1}\r\n{2}", Custom String(
-			"    +  {0}  | Preview Next Checkpoint (Look at effect lock to view location)\r\n    +  {1}  | Spectate", Input Binding String(
+			"    +  {0}  | Preview Next Checkpoint ( {0} again to view effect locks )\r\n    +  {1}  | Spectate", Input Binding String(
 			Button(Primary Fire)), Input Binding String(Button(Melee))), Custom String(
 			"    +  {0}  | Skip CP (After {1}sec)\r\n    +  {2}  | Previous CP", Input Binding String(Button(Jump)), Global.SkipTimeLimit,
 			Input Binding String(Button(Crouch))), Custom String("{1}\r\n{0}", Custom String(
@@ -378,12 +378,12 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Local Player), Button(Ability 1)), Y Component Of(Local Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}",
 			Ability Icon String(Hero Of(Local Player), Button(Ability 2)), Z Component Of(Local Player.AbilityLimitsDisplayVar))), Null,
 			Null, Top, -1.400, Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
-		Create Icon(Filtered Array(All Living Players(All Teams), Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+		Create Icon(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
 			Global.CPLocations[Local Player.CurrentCP + 1] + Up, Flag, Visible To and Position, Color(Yellow), True);
-		Create In-World Text(Filtered Array(All Living Players(All Teams), Count Of(Global.CPLocations)
-			> Current Array Element.CurrentCP + 1), Custom String("Come Here\r\nPioneer: {0}",
-			Global.PioneerList[Local Player.CurrentCP + 1]), Global.CPLocations[Local Player.CurrentCP + 1] + Up, 1.300, Do Not Clip,
-			Visible To Position and String, Color(Yellow), Default Visibility);
+		Create In-World Text(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
+			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Local Player.CurrentCP + 1]),
+			Global.CPLocations[Local Player.CurrentCP + 1] + Up, 1.300, Do Not Clip, Visible To Position and String, Color(Yellow),
+			Default Visibility);
 		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
 		Create In-World Text(Filtered Array(All Living Players(All Teams), Count Of(
 			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP]) > 0 && Count Of(Current Array Element.EffectLockObtained)
@@ -468,7 +468,7 @@ rule("Player-Specific HUD")
 	{
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0} {1}", Evaluate Once(Event Player),
 			Event Player.MaxUnlockedCP), Right, 100 - Event Player.MaxUnlockedCP, Color(White), Color(White), Color(Green),
-			Visible To and String, Default Visibility);
+			Visible To Sort Order and String, Default Visibility);
 	}
 }
 
@@ -922,7 +922,7 @@ rule("Crouch + Interact - Move Back A Checkpoint")
 	}
 }
 
-rule("Interact + Left Click: Camera To See Next Point (or the effect lock sphere)")
+rule("Interact + Left Click: Camera To See Next Point (Left Clicking multiple times cycles through effect lock spheres)")
 {
 	event
 	{
@@ -1038,8 +1038,9 @@ rule("Interact + Melee : Spectate Other Players")
 
 	conditions
 	{
-		Is Button Held(Event Player, Button(Melee)) == True;
-		Is Button Held(Event Player, Button(Interact)) == True;
+		((Is Button Held(Event Player, Button(Melee)) && Is Button Held(Event Player, Button(Interact))) || (Is Button Held(Event Player,
+			Button(Ultimate)) && Is Button Held(Event Player, Button(Ability 1)) && Is Button Held(Event Player, Button(Ability 2))))
+			== True;
 	}
 
 	actions
@@ -1470,6 +1471,7 @@ rule("Handle Ability Count Limits (if enabled)")
 	{
 		Global.AbilityCountsEnabledConstant == True;
 		(Is Using Ability 1(Event Player) || Is Using Ability 2(Event Player) || Is Firing Secondary(Event Player)) == True;
+		"Doesn't trigger if player is pioneer or waiting for pioneer"
 		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations);
 		Global.GameStarted == True;
 	}
@@ -1744,9 +1746,6 @@ rule("Reset Cooldowns If In Starting CP Ring")
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
-		"if u charge punch, then jump and land in circle, it takes your punch away "
-		disabled Event Player.CPAbilityCounts = Vector(0, 0, 0);
-		disabled Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 	}
 }
 
@@ -1963,6 +1962,9 @@ rule("Sub0: RespawnPlayer")
 	actions
 	{
 		Stop Holding Button(Event Player, Button(Secondary Fire));
+		Event Player.CPAbilityCounts = Vector(0, 0, 0);
+		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
+		Event Player.EffectLockSphereLocation = Empty Array;
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentCP]);
 		If(Is Button Held(Event Player, Button(Interact)));
 			Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
@@ -1983,8 +1985,6 @@ rule("Sub0: RespawnPlayer")
 		Event Player.PunchFixStore = Hero Of(Event Player) == Hero(Doomfist) && Is Button Held(Event Player, Button(Secondary Fire));
 		Cancel Primary Action(Event Player);
 		Call Subroutine(CancelMomentum);
-		Event Player.CPAbilityCounts = Vector(0, 0, 0);
-		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
 		"Added this to fix issue where if you pressed R while using slam, the slam cooldown wasn't reset"
 		Wait(0.100, Ignore Condition);
 		Stop Chasing Player Variable(Event Player, SlamTimer);
@@ -2078,7 +2078,6 @@ rule("Sub0: RespawnPlayer")
 		Event Player.ReplayPosition = Empty Array;
 		Event Player.ReplayFacing = Empty Array;
 		Set Gravity(Event Player, 100);
-		Event Player.EffectLockSphereLocation = Empty Array;
 		Event Player.EffectLockObtained = Empty Array;
 		Event Player.AbilitiesForEffectLock = Empty Array;
 		Event Player.AbilityLimitsDisplayVar = Global.CPAbilityCounts[Event Player.CurrentCP];
@@ -2300,7 +2299,6 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 	actions
 	{
 		Modify Player Variable(Event Player, AbilitiesForEffectLock, Append To Array, Vector(0, 0, 0));
-		Modify Player Variable(Event Player, EffectLockSphereLocation, Append To Array, Eye Position(Event Player));
 		If(!Global.DisableHUDConstant);
 			Small Message(Event Player, Custom String("Effect Lock Sphere Created!"));
 		End;
@@ -2323,6 +2321,7 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 			Set Ability Cooldown(Event Player, Button(Jump), 0);
 			Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		End;
+		Modify Player Variable(Event Player, EffectLockSphereLocation, Append To Array, Eye Position(Event Player));
 		"to stop pioneer from creating spheres too many in a row"
 		Wait(0.250, Ignore Condition);
 	}
