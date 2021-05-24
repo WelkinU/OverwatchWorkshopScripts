@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 23, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code WARMR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 23, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -330,7 +330,7 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create HUD Text(Filtered Array(All Living Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null,
 			Null, Custom String("Hold {0} For Controls / Game Settings\r\nNeed Healing | Checkpoint Route", Input Binding String(Button(
 			Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: YMVCR"), Right, -2, Color(White), Color(White),
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: WARMR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
 		"Create HUD showing abilities the pioneer has used"
 		disabled Create HUD Text(Global.CurrentPioneer, Custom String("Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
