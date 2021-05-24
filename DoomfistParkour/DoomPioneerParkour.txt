@@ -128,6 +128,7 @@ variables
 		10: SkipTimeLimit
 		11: InfiniteModeEnabledConstant
 		12: AbilityCountsEnabledConstant
+		13: DownwardsDiagEnabledConstant
 		14: PioneerTimeLimitConstant
 		15: PlayerMoveSpeedConstant
 		16: NonInfiniteModeWinTime
@@ -135,6 +136,7 @@ variables
 		18: PunchGraceEnabled
 		19: PrimaryFireUsefulForTheseHeros
 		20: CPRadius
+		21: CPSpecialRequirementsArray
 		22: HeroRoster
 		23: CPGreenSphereArray
 		24: GreenSphereRadiusConstant
@@ -208,6 +210,7 @@ variables
 		50: EffectLockTimerChase
 		51: ThreeSecondBounceTimer
 		52: BounceTimerEnabled
+		53: CPSpecialRequirements
 }
 
 subroutines
@@ -277,6 +280,8 @@ rule("Initialize Globals")
 			"Effect Locks Must Be Obtained In Pioneer Order"), True, 9);
 		Global.EffectLocksResetCooldownConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
 			"Effect Locks Reset Ability Cooldowns (For Speedrunning)"), False, 0);
+		Global.DownwardsDiagEnabledConstant = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
+			"Downwards Diagonal Punch Enabled"), True, 0);
 		Global.PioneerMinDistanceConstant = 6;
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		Global.GameStarted = False;
@@ -393,6 +398,14 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create Progress Bar HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300),
 			Local Player.ThreeSecondBounceTimer / 0.030, Custom String("Bounce Timer"), Top, 10, Color(White), Color(White),
 			Visible To and Values, Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams), X Component Of(
+			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP]) > 0), Custom String("{0}", Ability Icon String(Hero(
+			Tracer), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("Downwards Diagonal Punch Required"),
+			Left, 3, Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.TimeSpentOnCP > Global.SkipTimeLimit), Null,
+			Custom String("Skip Checkpoint Available"), Custom String("{0} + {1}", Input Binding String(Button(Interact)),
+			Input Binding String(Button(Jump))), Left, 2, Color(White), Color(Orange), Color(White), Visible To and String,
+			Default Visibility);
 	}
 }
 
@@ -510,6 +523,7 @@ rule("Create Origin Point")
 		Global.ReplayPioneerFacingArray = Empty Array;
 		Global.CPPlayerScaleArray = Empty Array;
 		Global.EffectLockAbilitiesArray = Empty Array;
+		Global.CPSpecialRequirementsArray = Empty Array;
 	}
 }
 
@@ -617,6 +631,7 @@ rule("Pioneer Create Point")
 		Global.ReplayPioneerFacingArray[Event Player.CurrentCP] = Event Player.ReplayFacing;
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Modify Global Variable(CPPlayerScaleArray, Append To Array, Event Player.PlayerScale);
+		Modify Global Variable(CPSpecialRequirementsArray, Append To Array, Event Player.CPSpecialRequirements);
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
 		Event Player.TimeSpentOnCP = 0;
@@ -689,6 +704,14 @@ rule("Non-Pioneer Arrive At CP")
 		If(Count Of(Event Player.EffectLockObtained) < Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP]));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to get the effect lock!"));
+			Call Subroutine(RespawnPlayer);
+			Abort;
+		End;
+		"Check if pioneer and player both did Downwards Diagonal Punch"
+		If((X Component Of(Global.CPSpecialRequirementsArray[Event Player.CurrentCP]) > 0) != (X Component Of(
+			Event Player.CPSpecialRequirements) > 0));
+			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
+			Small Message(Event Player, Custom String("Checkpoint requires you to do a Downwards Diagonal Punch!"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
@@ -1297,6 +1320,7 @@ rule("Melee + Emote + Dev Mode Engaged: Delete Last Checkpoint")
 		Modify Global Variable(ReplayPioneerFacingArray, Remove From Array By Index, Count Of(Global.ReplayPioneerFacingArray) - 1);
 		Modify Global Variable(CPFacingDirections, Remove From Array By Index, Count Of(Global.CPFacingDirections) - 1);
 		Modify Global Variable(CPPlayerScaleArray, Remove From Array By Index, Count Of(Global.CPPlayerScaleArray) - 1);
+		Modify Global Variable(CPSpecialRequirementsArray, Remove From Array By Index, Count Of(Global.CPSpecialRequirementsArray) - 1);
 		"Hopefully tempvariable doesn't conflict with \"Pioneer runs out of time\" rule"
 		For Player Variable(Event Player, TempVariable, 0, Count Of(All Living Players(All Teams)), 1);
 			If(All Living Players(All Teams)[Event Player.TempVariable].CurrentCP == Count Of(Global.CPLocations) - 1);
@@ -1703,6 +1727,33 @@ disabled rule("125 Slam Detection")
 	}
 }
 
+rule("Downward Diag Detector")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Global.DownwardsDiagEnabledConstant == True;
+		Vertical Speed Of(Event Player) < -8;
+		"Can only get this speed by punching."
+		Horizontal Speed Of(Event Player) > 40;
+		Is Using Ultimate(Event Player) == False;
+	}
+
+	actions
+	{
+		"Stops this rule from triggering on downward diag from doorframe"
+		Wait(0.080, Abort When False);
+		Event Player.CPSpecialRequirements += Vector(1, 0, 0);
+		Small Message(Event Player, Custom String("Downward Diagonal Punch"));
+	}
+}
+
 disabled rule("Handle Edge Cases")
 {
 	event
@@ -1954,6 +2005,7 @@ rule("Sub0: RespawnPlayer")
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
+		Event Player.CPSpecialRequirements = Vector(0, 0, 0);
 		Event Player.EffectLockSphereLocation = Empty Array;
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentCP]);
 		If(Is Button Held(Event Player, Button(Interact)));
