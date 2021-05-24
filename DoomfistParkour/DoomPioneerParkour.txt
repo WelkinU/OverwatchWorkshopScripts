@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 15, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code YMVCR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 23, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -135,7 +135,6 @@ variables
 		18: PunchGraceEnabled
 		19: PrimaryFireUsefulForTheseHeros
 		20: CPRadius
-		21: SlamBuffEnabled
 		22: HeroRoster
 		23: CPGreenSphereArray
 		24: GreenSphereRadiusConstant
@@ -253,7 +252,7 @@ rule("Initialize Globals")
 		"These are the allowed heros for multi-hero mode"
 		Global.HeroRoster = Array(Hero(Doomfist), Hero(Sigma), Hero(Genji), Hero(Winston), Hero(Wrecking Ball), Hero(Lúcio), Hero(Roadhog),
 			Hero(Junkrat), Hero(Ana), Hero(Bastion));
-		Global.AllowedPlayerScalesArray = Array(0.100, 1, 2, 5);
+		Global.AllowedPlayerScalesArray = Array(0.100, 1, 2, 4);
 		Global.AbilityCountsEnabledConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
 			"Ability Count Limits Enabled"), True, 0);
 		Global.PioneerTimeLimitConstant = Workshop Setting Integer(Custom String("Important Settings"), Custom String(
@@ -265,41 +264,36 @@ rule("Initialize Globals")
 		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
 			"Ultimate Abilites Enabled"), False, 0);
 		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True, 0);
-		Global.SlamBuffEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Slam Buff Enabled (Slam resets bhop)"),
-			False, 0);
 		Global.NonInfiniteModeWinTime = Workshop Setting Integer(Custom String("Infinite Mode"), Custom String(
 			"Time Limit Before Victory in Non-Infinite Mode"), 300, 90, 1200, 0);
 		"Set up workshop toggle/int/real variables"
 		Global.InfiniteModeEnabledConstant = Workshop Setting Toggle(Custom String("Infinite Mode"), Custom String(
 			"Infinite Mode Enabled"), True, 0);
-		Global.CPRadius = Workshop Setting Real(Custom String("Game Constants"), Custom String("Checkpoint Radius (m)"), 2, 0, 20, 0);
 		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
-			"Multi-Hero Mode Enabled (Wrecking Ball, Genji, Ana, Sigma, etc)"), False, 0);
-		Global.PlayerMoveSpeedConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
-			"Player Move Speed Scale Factor"), 100, 10, 1000, 0);
+			"Multi-Hero Mode Enabled (Wrecking Ball, Genji, Ana, Sigma, etc)"), True, 0);
+		Global.DisableHUDConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+			"Disable HUD (Mostly For Recording Gameplay)"), False, 9);
+		Global.EffectLocksOrderMatters = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+			"Effect Locks Must Be Obtained In Pioneer Order"), True, 9);
+		Global.EffectLocksResetCooldownConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
+			"Effect Locks Reset Ability Cooldowns (For Speedrunning)"), False, 0);
 		Global.PioneerMinDistanceConstant = 6;
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		Global.GameStarted = False;
-		Global.GreenSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
-			"Environmental Collision Sphere Radius"), 3.500, 1, 5, 0);
-		Global.EffectLockSphereRadiusConstant = Workshop Setting Real(Custom String("Game Constants"), Custom String(
-			"Effect Lock (White) Sphere Radius"), 2, 1, 5, 0);
 		Global.DevModeEngaged = False;
 		Global.ReplayPioneerPositionArray = Empty Array;
 		Global.ReplayPioneerFacingArray = Empty Array;
-		Global.DisableHUDConstant = Workshop Setting Toggle(Custom String("Other"), Custom String(
-			"Disable HUD (Mostly For Recording Gameplay)"), False, 9);
 		"Green Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.GreenSphereLocation != Null), Sphere, Color(Green),
 			Global.CurrentPioneer.GreenSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
 		"Kill Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
 			Global.CurrentPioneer.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
-		Global.EffectLocksOrderMatters = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
-			"Effect Locks Must Be Obtained In Pioneer Order"), True, 9);
 		Global.MrDestructoVector = Empty Array;
-		Global.EffectLocksResetCooldownConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
-			"Effect Locks Reset Ability Cooldowns (For Speedrunning)"), False, 0);
+		Global.CPRadius = 2;
+		Global.GreenSphereRadiusConstant = 3.500;
+		Global.EffectLockSphereRadiusConstant = 1.700;
+		Global.PlayerMoveSpeedConstant = 100;
 	}
 }
 
@@ -562,8 +556,6 @@ rule("Pioneer Create Point")
 		Event Player.SpectateMode == False;
 		"Punch grace from Hax framework"
 		(!Global.PunchGraceEnabled || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
-		"Slam Buff"
-		!(Global.SlamBuffEnabled && Is Using Ability 2(Event Player) && True) == True;
 		"Winston Leap Bhop Fix"
 		(Hero Of(Event Player) != Hero(Winston) || Event Player.WinstonLeapGrace <= 0) == True;
 	}
@@ -658,8 +650,6 @@ rule("Non-Pioneer Respawn If Touch Ground Outside of current or next CP")
 		Has Spawned(Event Player) == True;
 		"Punch grace from Hax framework"
 		(!Global.PunchGraceEnabled || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
-		"Slam Buff"
-		!(Global.SlamBuffEnabled && Is Using Ability 2(Event Player) && True) == True;
 		"Winston Leap Bhop Fix"
 		(Hero Of(Event Player) != Hero(Winston) || Event Player.WinstonLeapGrace <= 0) == True;
 		Is Dummy Bot(Event Player) == False;
@@ -2081,6 +2071,7 @@ rule("Sub0: RespawnPlayer")
 		Event Player.EffectLockObtained = Empty Array;
 		Event Player.AbilitiesForEffectLock = Empty Array;
 		Event Player.AbilityLimitsDisplayVar = Global.CPAbilityCounts[Event Player.CurrentCP];
+		Log To Inspector(Custom String("respawn {0}", Event Player));
 	}
 }
 
