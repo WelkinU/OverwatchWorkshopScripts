@@ -1,19 +1,19 @@
 # OverwatchWorkshopScripts
 
-## [Doomfist Pioneer Parkour](DoomfistParkour/DoomPioneerParkour.txt) (Workshop Code: YMVCR)
-Version of Doomfist Parkour that lets users create their own checkpoints. Has improved key bindings, and features for multiple effect locks, pioneer route replay, tiny/massive player sizings, multi-hero support, map saving, off-map shenanigans and more.
+## [Doomfist Pioneer Parkour](DoomfistParkour/DoomPioneerParkour.txt) (Workshop Code: WARMR)
+Version of Doomfist Parkour that lets users create their own checkpoints. Has improved key bindings, and features for multiple effect locks, pioneer route replay, downwards diag detection, tiny/massive player sizings, multi-hero support, map saving, off-map shenanigans and more.
 
 ## Doomfist Parkour Maps
 | Map | Workshop Code | Comments
 | :- | :- | :- |
-| Illios | 7RDMK | 14 Levels, 180+ Checkpoints |
-| Busan Stadium (Lucioball) | 55ESWS | 5 Levels, Only Available During Summer Games Event |
+| [Illios](DoomfistParkour/DoomParkourIllios.txt) | 7RDMK | 14 Levels, 180+ Checkpoints |
+| [Busan Stadium (Lucioball)](DoomfistParkour/DoomParkourBusanStadium.txt) | 55ESWS | 5 Levels, Only Available During Summer Games Event |
 
 
 ## Doomfist Parkour Multi-Hero Maps
 | Map | Workshop Code | Heros | Comments |
 | :- | :- | :- | :- |
-| Rialto | VP3H4 | Doomfist, Roadhog, Ana, Moira | 20 Levels, 4 Levels For Each Hero, Doomfist has extra cool levels. Framework also supports Winston and Sigma |
+| [Rialto](DoomfistParkour/MultiHeroParkourRialto.txt) | VP3H4 | Doomfist, Roadhog, Ana, Moira | 20 Levels, 4 Levels For Each Hero, Doomfist has extra cool levels. Framework also supports Winston and Sigma |
 
 
 ## Doomfist Rollouts (Workshop Code: TEATW)
