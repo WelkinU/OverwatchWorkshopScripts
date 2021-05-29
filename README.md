@@ -15,7 +15,7 @@ Navigate Doomfist to the next checkpoint by using the abilities available to you
 | Map | Workshop Code | Comments
 | :- | :- | :- |
 | [Illios](DoomfistParkour/DoomParkourIllios.txt) | 7RDMK | 14 Levels, 180+ Checkpoints |
-| [Busan Stadium (Lucioball)](DoomfistParkour/DoomParkourBusanStadium.txt) | 55ESWS | 5 Levels, Only Available During Summer Games Event |
+| [Busan Stadium (Lucioball)](DoomfistParkour/DoomParkourBusanStadium.txt) | HBE4T | 5 Levels, Only Available During Summer Games Event |
 
 
 ## Doomfist Parkour Multi-Hero Maps

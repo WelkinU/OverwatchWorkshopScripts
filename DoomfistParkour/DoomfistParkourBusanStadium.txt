@@ -2,13 +2,13 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Parkour Busan Stadium! MultiLevel Framework by WelkinTern. Make a Pull Request on the code repository: https://github.com/WelkinU/OverwatchWorkshopScripts/tree/master/DoomfistParkourMultilevelFramework"
+		Description: "Doomfist Parkour Busan Stadium! Workshop Code HBE4T. MultiLevel Framework by WelkinTern. Make a Pull Request on the code repository: https://github.com/WelkinU/OverwatchWorkshopScripts"
 	}
 
 	lobby
 	{
-		Max Team 1 Players: 6
-		Max Team 2 Players: 6
+		Max Team 1 Players: 12
+		Max Team 2 Players: 0
 	}
 
 	modes
@@ -358,6 +358,24 @@ rule("Level 4 End Boss Get on Train Notification")
 	}
 }
 
+rule("Start game mode when a player spawns")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Count Of(All Players(All Teams)) > 0;
+	}
+
+	actions
+	{
+		Start Game Mode;
+	}
+}
+
 disabled rule("Initialize Player and Map")
 {
 	event
@@ -383,6 +401,8 @@ rule("Initialize Other Global Constants")
 		Pause Match Time;
 		Disable Built-In Game Mode Completion;
 		Disable Built-In Game Mode Scoring;
+		Disable Game Mode HUD(All Players(All Teams));
+		Disable Game Mode In-World UI(All Players(All Teams));
 	}
 }
 
@@ -398,47 +418,43 @@ rule("Initialize Global HUD and Effects")
 		"Wait for Map Checkpoints, radii, etc to get generated. Prevents this rule from running out of order with map generation rules."
 		Wait(0.200, Ignore Condition);
 		"Create Origin Point Ring"
-		Create Effect(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Ring, Purple, Global.CPLocations[0][0],
-			Global.CPRadii[0][0], Visible To);
+		Create Effect(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Ring, Color(Purple),
+			Global.CPLocations[0][0], Global.CPRadii[0][0], Visible To);
 		For Global Variable(LevelIterator, 1, Count Of(Global.CPLocations), 1);
 			"Create Level Entry Rings"
-			Create Effect(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Ring, Purple,
+			Create Effect(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Ring, Color(Purple),
 				Global.CPLocations[Global.LevelIterator][1], Global.CPRadii[Global.LevelIterator][1], Visible To);
-			"Put checkpoint numbers under level description (looked bad)"
-			disabled Create In-World Text(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Custom String(
-				"{0}\r\nCheckpoints: {1}", Global.LevelNames[Global.LevelIterator], Count Of(Global.CPLocations[Global.LevelIterator])),
-				Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Yellow, Default Visibility);
 			Create In-World Text(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0), Custom String("{0} ({1})",
 				Global.LevelNames[Global.LevelIterator], Global.LevelDescriptions[Global.LevelIterator]),
-				Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Orange, Default Visibility);
+				Global.CPLocations[Global.LevelIterator][1], 1.500, Do Not Clip, Visible To, Color(Orange), Default Visibility);
 			Create Icon(Filtered Array(All Players(All Teams), Current Array Element.CurrentCP == 0),
-				Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Yellow, True);
+				Global.CPLocations[Global.LevelIterator][1], Flag, Visible To, Color(Yellow), True);
 		End;
 		"Hide Game HUD"
-		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+		disabled Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"),
-			Top, 0, White, White, White, Visible To and String, Default Visibility);
+			Top, 0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Controls HUD"
-		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, -2, White, White, White,
+		Create HUD Text(All Players(All Teams), Custom String("Controls"), Null, Null, Left, -2, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"Quick Reset - R\r\nSkip Checkpoint - Jump + Interact\r\n{0}\r\n{1}", Custom String(
 			"Previous Checkpoint - Crouch + Interact\r\nChoose New Level - Ultimate + Interact"), Custom String(
 			"View Level Entry / CP Location - Left Click + Interact\r\nSpectate - Need Healing Voiceline\r\nFree Roam - Hello + Interact")),
-			Left, 0, White, White, White, Visible To and String, Default Visibility);
+			Left, 0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Top Scores HUD"
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Custom String("Top Scores"),
-			Null, Null, Left, 1, White, White, Green, Visible To and String, Default Visibility);
+			Null, Null, Left, 1, Color(White), Color(White), Color(Green), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.TopScoreString != Custom String("")), Null, Null, Custom String(
-			"{0}", Global.TopScoreString), Left, 2, White, White, Green, Visible To and String, Default Visibility);
+			"{0}", Global.TopScoreString), Left, 2, Color(White), Color(White), Color(Green), Visible To and String, Default Visibility);
 		"All Scores HUD"
 		disabled Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Custom String("All Scores"),
-			Null, Null, Right, 2, White, White, White, Visible To and String, Default Visibility);
+			Null, Null, Right, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.AllScoreString != Custom String("")), Null, Null, Custom String(
-			"{0}", Global.AllScoreString), Right, 3, White, White, White, Visible To and String, Default Visibility);
+			"{0}", Global.AllScoreString), Right, 3, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		"Workshop Code HUD"
-		Create HUD Text(All Players(All Teams), Custom String("Workshop Code: 55ESWS"), Null, Null, Right, -9, Green, White, White,
-			Visible To, Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: HBE4T"), Right, -9, Color(Green), Color(White),
+			Color(Orange), Visible To, Default Visibility);
 	}
 }
 
@@ -485,26 +501,26 @@ rule("Initialize Player HUD and Effects")
 	{
 		Create HUD Text(Event Player, Null, Null, Custom String("{0} Checkpoint {1} - Time {2}",
 			Global.LevelNames[Event Player.CurrentLevel], Custom String("{0}/{1}", Event Player.CurrentCP, Count Of(
-			Global.CPLocations[Event Player.CurrentLevel]) - 1), Event Player.LevelTimer), Top, -2, White, White, White,
-			Visible To and String, Default Visibility);
+			Global.CPLocations[Event Player.CurrentLevel]) - 1), Event Player.LevelTimer), Top, -2, Color(White), Color(White), Color(
+			White), Visible To and String, Default Visibility);
 		"Create Current Checkpoint Ring"
 		Create Effect(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
-			Global.CPLocations[Event Player.CurrentLevel])), Ring, Purple,
+			Global.CPLocations[Event Player.CurrentLevel])), Ring, Color(Purple),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP],
 			Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP], Visible To Position and Radius);
 		"Next Checkpoint Ring"
-		Create Effect(Filtered Array(Event Player, Current Array Element.CurrentCP > 0), Ring, Purple,
+		Create Effect(Filtered Array(Event Player, Current Array Element.CurrentCP > 0), Ring, Color(Purple),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1],
 			Global.CPRadii[Event Player.CurrentLevel][Event Player.CurrentCP + 1], Visible To Position and Radius);
 		"Create Next Checkpoint Text"
 		Create In-World Text(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
 			Global.CPLocations[Event Player.CurrentLevel])), Custom String("Come Here!"),
 			Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1], 1.300, Do Not Clip, Visible To Position and String,
-			Yellow, Default Visibility);
+			Color(Yellow), Default Visibility);
 		"Create Next Checkpoint Icon"
 		Create Icon(Filtered Array(Event Player, Event Player.CurrentCP > 0 && Event Player.CurrentCP + 1 < Count Of(
 			Global.CPLocations[Event Player.CurrentLevel])), Global.CPLocations[Event Player.CurrentLevel][Event Player.CurrentCP + 1],
-			Flag, Visible To and Position, Yellow, True);
+			Flag, Visible To and Position, Color(Yellow), True);
 		"Level 3 HUD: Ability Limits "
 		Create HUD Text(Filtered Array(Event Player, Index Of Array Value(Global.LevelsWithLimitedAbilityCounts, Event Player.CurrentLevel)
 			>= 0 && Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel])), Custom String(
@@ -514,18 +530,19 @@ rule("Initialize Player HUD and Effects")
 			Ability 1)), Y Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) - Y Component Of(
 			Event Player.PunchUpperSlamUsed)), Custom String("{0} {1}", Ability Icon String(Hero Of(Event Player), Button(Ability 2)),
 			Z Component Of(Global.CPPunchUpperSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) - Z Component Of(
-			Event Player.PunchUpperSlamUsed))), Null, Null, Top, -1.400, Blue, White, White, Visible To and String, Default Visibility);
+			Event Player.PunchUpperSlamUsed))), Null, Null, Top, -1.400, Color(Blue), Color(White), Color(White), Visible To and String,
+			Default Visibility);
 		"360 Required HUD"
 		Create HUD Text(Filtered Array(Event Player, Y Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0), Custom String(
 			"360's Required: {0}", Y Component Of(Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])),
-			Null, Null, Top, -1, Red, White, White, Visible To and String, Default Visibility);
+			Null, Null, Top, -1, Color(Red), Color(White), Color(White), Visible To and String, Default Visibility);
 		"125Slam Required HUD"
 		Create HUD Text(Filtered Array(Event Player, Z Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]) > 0), Custom String(
 			"125 Charge Slams Required: {0}", Z Component Of(
-			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])), Null, Null, Top, -1, Red, White, White,
-			Visible To and String, Default Visibility);
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP])), Null, Null, Top, -1, Color(Red), Color(
+			White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Event Player, Global.DevModeEngaged), Null, Null, Custom String(
 			"--------------Player Variables------------------\r\n{0}\r\n--------------Checkpoint Variables--------------\r\n{1}\r\n{2}\r\n-------------",
 			Custom String("Position: {0}\r\nFacing: {1}\r\nNext CP Dist: {2}", Position Of(Event Player), Facing Direction Of(
@@ -539,12 +556,12 @@ rule("Initialize Player HUD and Effects")
 			"Checkpoint Ultimate Enabled: {0}\r\nCheckpoint 360 Req'd: {1}\r\nCheckpoint 125 Slam Req'd: {2}", X Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]), Y Component Of(
 			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]), Z Component Of(
-			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]))), Left, 9, White, White, White,
-			Visible To and String, Default Visibility);
+			Global.CPUltimate360MaxSlamCounts[Event Player.CurrentLevel][Event Player.CurrentCP]))), Left, 9, Color(White), Color(White),
+			Color(White), Visible To and String, Default Visibility);
 		"Free Roam Notification HUD"
 		Create HUD Text(Filtered Array(Event Player, Event Player.FreeRoamEnabled), Custom String(
-			"Free Roam Enabled! Hello + Interact to exit Free Roam!"), Null, Null, Top, -2, Red, White, White, Visible To,
-			Default Visibility);
+			"Free Roam Enabled! Hello + Interact to exit Free Roam!"), Null, Null, Top, -2, Color(Red), Color(White), Color(White),
+			Visible To, Default Visibility);
 	}
 }
 
@@ -577,7 +594,7 @@ rule("Enter Into Level")
 
 	actions
 	{
-		Play Effect(Event Player, Buff Explosion Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Explosion Sound, Color(White), Event Player, 60);
 		Event Player.CurrentCP = 1;
 		Event Player.CurrentLevel = Index Of Array Value(Global.LevelOrigins, First Of(Filtered Array(Global.LevelOrigins,
 			Distance Between(Position Of(Event Player), Current Array Element) < 2))) + 1;
@@ -691,7 +708,7 @@ rule("Arrived At Next Checkpoint")
 			Abort;
 		End;
 		Event Player.CurrentCP += 1;
-		Play Effect(Event Player, Buff Explosion Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Explosion Sound, Color(White), Event Player, 60);
 		If(Global.CPTeleport[Event Player.CurrentLevel][Event Player.CurrentCP] != Null);
 			Event Player.CurrentCP += 1;
 		End;
@@ -836,7 +853,7 @@ rule("R -> Quick Reset")
 
 	conditions
 	{
-		Is Button Held(Event Player, Reload) == True;
+		Is Button Held(Event Player, Button(Reload)) == True;
 	}
 
 	actions
@@ -858,8 +875,8 @@ rule("Ultimate + Interact -> Reset to Origin Point")
 
 	conditions
 	{
-		Is Button Held(Event Player, Ultimate) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Ultimate)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Has Spawned(Event Player) == True;
 		"Don't allow this in free roam because otherwise the Doomfist Ultimate cancel bug will happen leaving residual stuff on player's HUD"
 		Event Player.FreeRoamEnabled == False;
@@ -886,12 +903,12 @@ rule("Jump + Interact -> Skip Level")
 
 	conditions
 	{
-		Is Button Held(Event Player, Jump) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Jump)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Event Player.CurrentLevel > 0;
 		Event Player.CurrentCP + 1 < Count Of(Global.CPLocations[Event Player.CurrentLevel]);
 		"To mitigate conflict with other button combos"
-		Is Button Held(Event Player, Crouch) == False;
+		Is Button Held(Event Player, Button(Crouch)) == False;
 		Has Spawned(Event Player) == True;
 	}
 
@@ -915,12 +932,12 @@ rule("Crouch + Interact -> Go Back A Level")
 
 	conditions
 	{
-		Is Button Held(Event Player, Crouch) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Crouch)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Event Player.CurrentLevel > 0;
 		Event Player.CurrentCP + 0 > 1;
 		"To mitigate conflict with other button combos"
-		Is Button Held(Event Player, Jump) == False;
+		Is Button Held(Event Player, Button(Jump)) == False;
 		Has Spawned(Event Player) == True;
 	}
 
@@ -948,8 +965,8 @@ rule("Left Click + Interact -> Camera To See Next Point")
 	{
 		"Make sure next point exists"
 		disabled Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1;
-		Is Button Held(Event Player, Primary Fire) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		"Make sure next point exists"
 		(Count Of(Global.CPLocations[Event Player.CurrentLevel]) > Event Player.CurrentCP + 1 || Event Player.CurrentLevel == 0) == True;
 	}
@@ -967,7 +984,7 @@ rule("Left Click + Interact -> Camera To See Next Point")
 		Start Camera(Event Player, Ray Cast Hit Position(Event Player.TempViewNextPointPosition,
 			Event Player.TempViewNextPointPosition + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
 			Event Player.TempViewNextPointPosition, 30);
-		While(Is Button Held(Event Player, Primary Fire) && Is Button Held(Event Player, Interact));
+		While(Is Button Held(Event Player, Button(Primary Fire)) && Is Button Held(Event Player, Button(Interact)));
 			Wait(0.033, Ignore Condition);
 		End;
 		Stop Camera(Event Player);
@@ -987,8 +1004,8 @@ rule("Need Healing Voiceline -> Spectate Other Players")
 	conditions
 	{
 		Is Communicating(Event Player, Need Healing) == True;
-		disabled Is Button Held(Event Player, Melee) == True;
-		disabled Is Button Held(Event Player, Interact) == True;
+		disabled Is Button Held(Event Player, Button(Melee)) == True;
+		disabled Is Button Held(Event Player, Button(Interact)) == True;
 	}
 
 	actions
@@ -1023,7 +1040,7 @@ rule("Hello + Interact -> Free Roam")
 	conditions
 	{
 		Is Communicating(Event Player, Hello) == True;
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Has Spawned(Event Player) == True;
 	}
 
@@ -1084,7 +1101,7 @@ rule("Ultimate Status + Interact -> Dev Mode (Host Only)")
 
 	conditions
 	{
-		Is Button Held(Event Player, Interact) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
 		Is Communicating(Event Player, Ultimate Status) == True;
 		Event Player == Host Player;
 		Has Spawned(Event Player) == True;
@@ -1107,8 +1124,8 @@ rule("Teleport Enabled with Melee + Left Click if done with level, free roam ena
 
 	conditions
 	{
-		Is Button Held(Event Player, Primary Fire) == True;
-		Is Button Held(Event Player, Melee) == True;
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Button Held(Event Player, Button(Melee)) == True;
 		disabled Event Player.CurrentLevel > 0;
 		(Event Player.FreeRoamEnabled || Global.DevModeEngaged || Event Player.CurrentCP + 1 >= Count Of(
 			Global.CPLocations[Event Player.CurrentLevel])) == True;
@@ -1145,12 +1162,12 @@ rule("Subroutine 0: RespawnPlayer")
 		disabled Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
 		disabled Abort;
 		disabled End;
-		Disallow Button(Event Player, Interact);
+		Disallow Button(Event Player, Button(Interact));
 		"This is really annoying that it cancels you if you're holding punch, but could prevent workshop bug where it thinks you're using punch when you're not."
-		disabled Disallow Button(Event Player, Secondary Fire);
-		Disallow Button(Event Player, Ultimate);
-		Disallow Button(Event Player, Ability 1);
-		Disallow Button(Event Player, Ability 2);
+		disabled Disallow Button(Event Player, Button(Secondary Fire));
+		Disallow Button(Event Player, Button(Ultimate));
+		Disallow Button(Event Player, Button(Ability 1));
+		Disallow Button(Event Player, Button(Ability 2));
 		Call Subroutine(CancelMomentum);
 		Clear Status(Event Player, Phased Out);
 		Set Status(Event Player, Null, Phased Out, 9999);
@@ -1198,13 +1215,13 @@ rule("Subroutine 0: RespawnPlayer")
 		"Redundant, but just in case"
 		Event Player.PunchUpperSlamUsed = Vector(0, 0, 0);
 		Event Player.Count360Slam125 = Vector(0, 0, 0);
-		Allow Button(Event Player, Secondary Fire);
-		Allow Button(Event Player, Ability 1);
-		Allow Button(Event Player, Ability 2);
-		Allow Button(Event Player, Ultimate);
+		Allow Button(Event Player, Button(Secondary Fire));
+		Allow Button(Event Player, Button(Ability 1));
+		Allow Button(Event Player, Button(Ability 2));
+		Allow Button(Event Player, Button(Ultimate));
 		"2nd set facing command used because if you are slamming, it won't orient you properly until after slam is canceled."
 		Set Facing(Event Player, Global.CPFacing[Event Player.CurrentLevel][Event Player.CurrentCP], To World);
-		Allow Button(Event Player, Interact);
+		Allow Button(Event Player, Button(Interact));
 	}
 }
 
@@ -1445,7 +1462,7 @@ rule("Successful 360 Detected")
 	{
 		Small Message(Event Player, Custom String("360"));
 		Event Player.Count360Slam125 += Left;
-		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
 		Event Player.Array360 = Array(False, False, False, False);
 	}
 }
@@ -1589,14 +1606,14 @@ rule("125 Slam Detection")
 		Event Player.SlamTimer >= 1.220;
 		Is Using Ability 2(Event Player) == True;
 		"To prevent player from just holding down slam at invalid slam angle to get a 125 slam"
-		Is Button Held(Event Player, Ability 2) == False;
+		Is Button Held(Event Player, Button(Ability 2)) == False;
 	}
 
 	actions
 	{
 		Event Player.Count360Slam125 += Up;
 		Small Message(Event Player, Custom String("125 Slam"));
-		Play Effect(Event Player, Buff Impact Sound, White, Event Player, 60);
+		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
 	}
 }
 
