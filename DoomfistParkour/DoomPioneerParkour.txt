@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code WARMR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension.  ---------------------- Last Updated: May 23, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code WARMR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension. Based on the original Pioneer Parkour by kaeku (X8080). ---------------------- Last Updated: June 3, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
