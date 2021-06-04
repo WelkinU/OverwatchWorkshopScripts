@@ -1,7 +1,7 @@
 # OverwatchWorkshopScripts
 
 ## Doomfist Pioneer Parkour
-Version of Doomfist Parkour that lets users create their own checkpoints. Has improved key bindings, and features for multiple effect locks, pioneer route replay, downwards diag detection, tiny/massive player sizings, multi-hero support, map saving, off-map shenanigans and more.
+Version of Doomfist Parkour that lets users create their own checkpoints. Has improved key bindings, and features for multiple effect locks, pioneer route replay, downwards diag detection, tiny/massive player sizings, multi-hero support, map saving, off-map shenanigans and more. Based on the original version by kaeku (code X8080).
 
 | Map | Workshop Code
 | :- | :- |
