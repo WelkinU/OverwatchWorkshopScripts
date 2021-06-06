@@ -964,25 +964,21 @@ rule("Interact + Left Click: Camera To See Next Point (Left Clicking multiple ti
 		Event Player.TempIterator = -1;
 		Set Primary Fire Enabled(Event Player, False);
 		Set Facing(Event Player, Vector(-10, -10, 0), To World);
+		Start Camera(Event Player, Ray Cast Hit Position(
+			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
+			(
+			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1])
+			+ Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
+			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
+			30);
 		While(Is Button Held(Event Player, Button(Interact)));
 			Wait Until(!Is Button Held(Event Player, Button(Interact)) || Is Button Held(Event Player, Button(Primary Fire)), 20);
 			If(Is Button Held(Event Player, Button(Interact)));
 				Event Player.TempIterator = (Event Player.TempIterator + 1) % (Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP])
 					+ 1);
-				If(Event Player.TempIterator == 0);
-					Start Camera(Event Player, Ray Cast Hit Position(Global.CPLocations[Event Player.CurrentCP + 1],
-						Global.CPLocations[Event Player.CurrentCP + 1] + Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player,
-						True), Global.CPLocations[Event Player.CurrentCP + 1], 30);
-				Else;
-					Start Camera(Event Player, Ray Cast Hit Position(
-						Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
-						Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1] + Facing Direction Of(Event Player)
-						* -15, All Players(All Teams), Event Player, True),
-						Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1], 30);
-				End;
 				Wait Until(!Is Button Held(Event Player, Button(Primary Fire)), 20);
 			End;
-			Wait(0.100, Ignore Condition);
+			Wait(0.050, Ignore Condition);
 		End;
 		Destroy HUD Text(Event Player.MenuTextIDTempStore);
 		Stop Camera(Event Player);
