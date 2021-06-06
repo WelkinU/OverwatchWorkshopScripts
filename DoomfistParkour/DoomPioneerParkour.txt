@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code WARMR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters. ---------------------- Made by WelkinTern, pioneer replay improvments by khandescension. Based on the original Pioneer Parkour by kaeku (X8080). ---------------------- Last Updated: June 3, 2021. Request a feature, report issue or view update history here: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code WARMR. Press Interact to view controls. Press Need Healing to view replay CP route. Host can go to Lobby -> Settings -> Workshop Settings to change many game parameters.  Made by WelkinTern, pioneer replay improvments by khandescension. Based on the original Pioneer Parkour by kaeku (X8080), with Hax framework ideas. Last Updated: June 6, 2021. Request a feature, report issue or view updates: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -17,7 +17,7 @@ settings
 		{
 			enabled maps
 			{
-				Dorado
+				Junkertown
 			}
 		}
 
@@ -950,12 +950,17 @@ rule("Interact + Left Click: Camera To See Next Point (Left Clicking multiple ti
 		Is Button Held(Event Player, Button(Interact)) == True;
 		"Make sure next point exists"
 		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
-		"Is not pioneer"
-		disabled Global.CurrentPioneer != Event Player;
+		"To not interfere with the temp variable used in Pioneer Create Point rule"
+		Event Player.CancelPointTimer <= 0;
+		"To not interfere with hero select menu creation"
+		Event Player.HeroSelectMenuOpen != True;
 	}
 
 	actions
 	{
+		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n\r\n\r\n\r\n{0} to view effect locks (hold interact)",
+			Input Binding String(Button(Primary Fire))), Top, 9, Color(White), Color(White), Color(White), String, Default Visibility);
+		Event Player.MenuTextIDTempStore = Last Text ID;
 		Event Player.TempIterator = -1;
 		Set Primary Fire Enabled(Event Player, False);
 		Set Facing(Event Player, Vector(-10, -10, 0), To World);
@@ -979,6 +984,7 @@ rule("Interact + Left Click: Camera To See Next Point (Left Clicking multiple ti
 			End;
 			Wait(0.100, Ignore Condition);
 		End;
+		Destroy HUD Text(Event Player.MenuTextIDTempStore);
 		Stop Camera(Event Player);
 		Set Primary Fire Enabled(Event Player, True);
 		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
@@ -1040,7 +1046,7 @@ rule("Interact + Jump -> Skip Checkpoint")
 	}
 }
 
-rule("Interact + Melee : Spectate Other Players")
+rule("Interact + Melee : Spectate Other Players (Also Ult + Ability1 + Ability 2 like Hax Framework)")
 {
 	event
 	{
