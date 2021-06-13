@@ -1,0 +1,46 @@
+settings
+{
+	modes
+	{
+		Assault
+
+		Control
+
+		Escort
+
+		Hybrid
+
+		General
+		{
+			Limit Roles: 2 Of Each Role Per Team
+		}
+	}
+}
+
+rule("Skybox Detector - Don't let people tele then surf the skybox / let people fall through the skybox - JUST COPY THIS RULE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Vertical Speed Of(Event Player) == 0;
+		"Player and many positons around the player are on invisible walls"
+		Is True For All(Array(Vector(-1, 0, -1), Vector(-1, 0, 1), Vector(1, 0, -1), Vector(1, 0, 1), Vector(0, 0, 0)), Distance Between(
+			Eye Position(Event Player) + Current Array Element, Ray Cast Hit Position(Eye Position(Event Player) + Current Array Element,
+			Eye Position(Event Player) + Current Array Element + Vector(0, -10, 0), Null, Event Player, False)) == 10) == True;
+	}
+
+	actions
+	{
+		Wait(0.100, Abort When False);
+		Small Message(Event Player, Custom String("On the skybox!"));
+		Disable Movement Collision With Environment(Event Player, True);
+		Wait(0.500, Ignore Condition);
+		Enable Movement Collision With Environment(Event Player);
+	}
+}

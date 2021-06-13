@@ -45,6 +45,7 @@ Run these HTML files in a web browser. (Need Javascript enabled)
 These are workshops with rules intended to be pasted into other scripts. These are located in the utils folder.
 | Map | Description |
 | :- | :- |
+| Skybox Detector | Detect if a player is on the skybox and make them fall through it. Originally used as a map-agnostic solution for Ana parkour/pioneer |
 | [MrDestructoBot](utils/DestroyMapRailings.txt) | Obsoleted by [MsDestructo Bot](https://discord.com/channels/689587520496730129/757303228021866606/851573753698975755) with giant dva ult - much more compact as no railing data is needed. ~~Creates a bot that very quickly destroys all map railings. This workshop includes railing data for all relevant maps. [Map data](https://nebulaow.github.io/MrDestructo-Data) from nebulaOW~~ |
 | Multi-hero Wheel Select Menu | In-world custom hero selection menu. See [README.md](utils/README.md) |
 | In-Game Keyboard | Creates an in-world keyboard for the user. See [README.md](utils/README.md) |
