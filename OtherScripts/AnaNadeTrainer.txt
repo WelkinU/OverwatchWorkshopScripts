@@ -1,0 +1,629 @@
+settings
+{
+	main
+	{
+		Description: "Learn Ana set-nade spots on Eichenwalde, Route66. Code 2Y555. Created by WelkinTern"
+	}
+
+	lobby
+	{
+		Max Team 1 Players: 0
+		Max Team 2 Players: 12
+	}
+
+	modes
+	{
+		Assault
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Control
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Escort
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Hybrid
+		{
+			enabled maps
+			{
+				Eichenwalde
+			}
+		}
+
+		General
+		{
+			Hero Limit: Off
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Ability Cooldown Time: 0%
+			No Ammunition Requirement: On
+			Ultimate Generation - Combat: 0%
+			Ultimate Generation - Passive: 0%
+
+			enabled heroes
+			{
+				Ana
+			}
+		}
+	}
+}
+
+variables
+{
+	global:
+		0: CPLocation
+		1: CPDestination
+		2: CPFacing
+		3: CPHintText
+		4: CPHintEffectPosition
+		5: CPScoped
+		6: CPObjectiveText
+		13: DevModeEngaged
+
+	player:
+		0: CP
+		1: ChaseCamOn
+		5: StartPos
+		6: StartVelocity
+		7: NadeTimerChase
+		10: AnaSleepDartTeleLocation
+		11: Destination
+}
+
+subroutines
+{
+	0: RespawnPlayer
+}
+
+rule("Initialize Globals and HUD")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Disable Game Mode HUD(All Players(All Teams));
+		Global.DevModeEngaged = False;
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+			"Ana Nade Trainer By WelkinTern | Code 2Y555\r\nMaps: Eichenwalde, Route66, Anubis"), Left, -1, Color(White), Color(White),
+			Color(Green), Visible To, Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+			"- - - - - - - - - Controls - - - - - - - - - \r\n{0}      | Reset Camera + Position\r\n{1}\r\n{2}", Input Binding String(
+			Button(Reload)), Custom String("{0} + {1} | Next Checkpoint\r\n{2}    | Reset Camera Only", Input Binding String(Button(
+			Interact)), Input Binding String(Button(Jump)), Input Binding String(Button(Melee))), Custom String(
+			"{0}    | Teleport (Like Ana Parkour)\r\n{1}", Ability Icon String(Hero(Ana), Button(Ability 1)), Custom String(
+			"{0} + {1} | Toggle Chase Cam", Input Binding String(Button(Melee)), Input Binding String(Button(Ultimate))))), Left, 0, Color(
+			White), Color(White), Color(Orange), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+			"- - - - - - - - - - - - - - - - - - -\r\nUlt Status | Set Throw Destination\r\n{0} + {1} | Calculate Throw Angle To Destination",
+			Input Binding String(Button(Interact)), Input Binding String(Button(Ultimate))), Left, 1, Color(White), Color(White), Color(
+			Orange), Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String(
+			"Position: {0}\r\nFacing: {1}\r\n{2}", Position Of(Local Player), Facing Direction Of(Local Player), Custom String(
+			"Ray Cast: {0}\r\nCollision Position: {1}", Ray Cast Hit Position(Eye Position(Local Player), Eye Position(Local Player)
+			+ 180 * Facing Direction Of(Local Player), Null, Null, False),
+			Local Player.StartPos + Local Player.StartVelocity * Local Player.NadeTimerChase + Vector(0, -4.900, 0)
+			* Local Player.NadeTimerChase * Local Player.NadeTimerChase)), Left, 9, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
+		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Checkpoint {0} / {1}\r\nFly Time: {2}", Local Player.CP,
+			Count Of(Global.CPLocation) - 1, Local Player.NadeTimerChase), Right, 5, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
+	}
+}
+
+rule("Initialize Player")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Disable Game Mode HUD(Event Player);
+		Event Player.ChaseCamOn = True;
+		Event Player.Destination = Null;
+		Event Player.CP = 0;
+		"Orb tracking projectile position"
+		Create Effect(Filtered Array(Event Player, Current Array Element.NadeTimerChase > 0), Sphere, Color(Red),
+			Event Player.StartPos + Event Player.StartVelocity * Event Player.NadeTimerChase + Vector(0, -4.900, 0)
+			* Event Player.NadeTimerChase * Event Player.NadeTimerChase, 1, Visible To Position and Radius);
+		"Create Ring Effects"
+		Create Effect(Event Player, Ring, Color(White), Global.CPLocation[Event Player.CP], 2, Visible To Position and Radius);
+		Create Effect(Event Player, Ring, Color(White), Global.CPDestination[Event Player.CP], 4, Visible To Position and Radius);
+		"Objective and Hint Text"
+		Create HUD Text(Event Player, Custom String("Objective: {0}\r\nAim Hint: {1}", Global.CPObjectiveText[Event Player.CP],
+			Global.CPHintText[Event Player.CP]), Null, Null, Top, 0, Color(White), Color(White), Color(White), Visible To and String,
+			Default Visibility);
+		"Hint Orb"
+		Create Effect(Event Player, Sphere, Custom Color(128 + 127 * Cosine From Degrees(Total Time Elapsed * 100),
+			128 + 127 * Cosine From Degrees(120 + Total Time Elapsed * 100), 128 + 127 * Cosine From Degrees(
+			240 + Total Time Elapsed * 100), 255), Global.CPHintEffectPosition[Event Player.CP], Distance Between(
+			Global.CPLocation[Event Player.CP], Global.CPHintEffectPosition[Event Player.CP]) * Sine From Degrees(1),
+			Visible To Position Radius and Color);
+		"Flag icon for destination"
+		Create Icon(Filtered Array(Event Player, Event Player.Destination != Null), Event Player.Destination, Flag,
+			Visible To and Position, Color(Yellow), False);
+		Set Status(Event Player, Null, Phased Out, 9999);
+		Create Effect(Filtered Array(Event Player, Event Player.Destination != Null), Ring, Color(Purple), Event Player.Destination, 4,
+			Visible To Position and Radius);
+	}
+}
+
+disabled rule("Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Eichenwalde Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Current Map == Map(Eichenwalde);
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(26.200, 5.350, -67.080), Vector(-3.340, 2.290, -22.710), Vector(22.540, 3.520, -23.920), Vector(
+			-13.190, 2.550, -31.750), Vector(-13.190, 2.550, -31.750), Vector(18.149, 4.870, -43.419), Vector(21.913, 5.320, -66.216),
+			Vector(27.826, 5, -45.516), Vector(22.810, 5, -52.176), Vector(-2.100, 3.700, -80.440), Vector(88.287, 12.770, -101.982),
+			Vector(94.380, 13.780, -67.391), Vector(98.544, 10.750, -27.622));
+		Global.CPDestination = Array(Vector(-11.940, 0, -9.960), Vector(22, 5.440, -61.400), Vector(20.780, 5.790, -63.470), Vector(17.070,
+			5.460, -48.340), Vector(10.970, 10.470, -40.660), Vector(16.530, 6.800, -76.050), Vector(51.210, 22.520, -64.860), Vector(
+			54.450, 18.890, -78.470), Vector(54.460, 18.310, -102.480), Vector(81.100, 13.180, -73.580), Vector(16.700, 6.460, -75.120),
+			Vector(-5.150, 3.920, -84.340), Vector(79.190, 12.930, -98.030));
+		Global.CPFacing = Array(Vector(-0.220, 0.920, 0.330), Vector(0.144, 0.960, -0.220), Vector(-0.010, 0.970, -0.220), Vector(0.170,
+			0.980, -0.090), Vector(0.140, 0.990, -0.050), Vector(-0.010, 0.980, -0.180), Vector(0.180, 0.984, 0.010), Vector(0.170, 0.970,
+			-0.200), Vector(0.200, 0.920, -0.330), Vector(0.630, 0.780, 0.050), Vector(-0.420, 0.890, 0.160), Vector(-0.810, 0.570,
+			-0.140), Vector(-0.230, 0.460, -0.860));
+		Global.CPObjectiveText = Array(Custom String("Hit Enemy Team Coming Out of Spawn At Beginning of Round"), Custom String(
+			"Hit a big anti on enemy team to initiate near 1st point"), Custom String(
+			"Hit a big anti on enemy team to initiate near 1st point"), Custom String(
+			"Anti their tanks if they're playing close to the bridge"), Custom String("Anti people being annoying on the bridge"),
+			Custom String("Hit a big anti on enemy team on point"), Custom String("Anti people on the top of the castle"), Custom String(
+			"Hit enemies on top of the castle"), Custom String("Another Anti-Sniper Spot"), Custom String(
+			"Throw nade to end of 2nd point when respawning"), Custom String("Throw nade from spawn to 1st point"), Custom String(
+			"Hit enemies coming out of attack spawn"), Custom String("Throw nade from spawn to middle 2nd point"));
+		Global.CPHintText = Array(Custom String("Align top-right corner of triangle scope with tower corner"), Custom String(
+			"Aim for the metal bracket on the post in front of you"), Custom String("Aim for the tip of the tree leaf directly above"),
+			Custom String(
+			"Scope, then put the center of your ultimate meter \r\nwhere the post intersects the roof (over the green sphere)"),
+			Custom String("Scope, then put the center of your ultimate meter \r\non the corner of the roof (over the green sphere)"),
+			Custom String("Aim at the corner of the roof above"), Custom String(
+			"Put your crossheir on the corner with the green sphere\r\nthen move slightly to the right"), Custom String(
+			"Scope, then align bottom left \"wick\" with the tower corner"), Custom String(
+			"Scope, then put crossheir touching the branch tip. \r\nOr put the left side of your ultimate meter on tower spire"),
+			Custom String("Put your crossheir on the flat part of stone pillar, then jump and throw"), Custom String(
+			"When walking out of spawn, aim at approx this height"), Custom String("Aim slightly above the left side of the tree"),
+			Custom String("Stand on carpet corner, aim for center of archway stone"));
+		Global.CPHintEffectPosition = Array(Vector(17.640, 36.060, -57.940), Null, Null, Vector(-10.680, 11.080, -33.100), Vector(-10.810,
+			11.330, -32.620), Null, Vector(22.720, 10.950, -66.240), Vector(31.780, 23.250, -52.730), Null, Null, Null, Null, Null);
+		Global.CPScoped = Array(True, False, True, True, True, False, True, True, True, False, False, False, False);
+	}
+}
+
+rule("Route66 Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Current Map == Map(Route 66);
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(33.305, 0.230, 41.559), Vector(33.305, 0.230, 41.559), Vector(53.665, 2.450, -8.287), Vector(
+			13.301, 8.470, -21.098), Vector(-20.977, 3.500, -41.030), Vector(-41.762, 4, -24.120));
+		Global.CPDestination = Array(Vector(36.140, 8.820, -2.440), Vector(47.050, 2.950, 4.500), Vector(44, 3.100, 61.840), Vector(
+			-27.350, 9, -29.250), Vector(21.800, 2.800, 7.600), Vector(3, 809, -44.700));
+		Global.CPFacing = Array(Vector(0.020, 0.970, -0.260), Vector(0.080, 0.970, -0.210), Vector(-0.060, 0.910, 0.420), Vector(-0.220,
+			0.970, -0.040), Vector(0.250, 0.930, 0.280), Vector(0.850, 0.340, -0.390));
+		Global.CPObjectiveText = Array(Custom String("Nade enemy team on top of gas station"), Custom String(
+			"Nade enemy tanks holding 1st choke"), Custom String("Nade enemy team coming out of spawn"), Custom String(
+			"Hit enemies on the common stairs location"), Custom String("Throw nade when walking from spawn to 1st point"), Custom String(
+			"Hit enemies in the cave"));
+		Global.CPHintText = Array(Custom String("Align top left of triangle crossheir on corner of metal piece"), Custom String(
+			"Align upper right \"wick\" of scope with the orb at end of metal piece"), Null, Custom String(
+			"Walk into the corner, then aim for the top of the wood branch"), Custom String(
+			"Scope, then put your ultimate meter on top the metal pipe"), Custom String(
+			"Walk on bottom of stair railing, look at top of railing, jump and throw"));
+		Global.CPHintEffectPosition = Array(Vector(32.850, 13.950, 38.650), Vector(38.700, 30.270, 39.740), Null, Vector(-27.460, 184.850,
+			-29.270), Null, Null);
+		Global.CPScoped = Array(True, True, True, True, False, True);
+	}
+}
+
+rule("Temple of Anubis Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Current Map == Map(Temple of Anubis);
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(-18.870, 1, -0.925), Vector(-25.758, 4.550, 30.828));
+		Global.CPDestination = Array(Vector(-22, 179.200, 32.500), Vector(1.930, 0.640, -17.500));
+		Global.CPFacing = Array(Vector(-0.020, 0.980, 0.180), Vector(0.150, 0.950, -0.270));
+		Global.CPObjectiveText = Array(Custom String("Anti their whole team to start the round :D"), Custom String(
+			"Anti their whole team to start the round :D"));
+		Global.CPHintText = Array(Custom String("Scope, then align your ultimate meter with the top light wall section"), Custom String(
+			"Scope then center your ult meter on the spire (then move up slightly)"));
+		Global.CPHintEffectPosition = Array(Null, Null);
+		Global.CPScoped = Array(True, True);
+	}
+}
+
+disabled rule("Game Framework")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Teleport player at first cp when they spawn")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Count Of(Global.CPLocation) > 0;
+	}
+
+	actions
+	{
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Respawn Player on CP if they die")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Respawn(Event Player);
+		Wait(0.100, Ignore Condition);
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+disabled rule("Trajectory And Camera Stuff")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Throw Nade")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+	}
+
+	actions
+	{
+		Stop Camera(Event Player);
+		Event Player.NadeTimerChase = 0;
+		Chase Player Variable At Rate(Event Player, NadeTimerChase, 10, 1, Destination and Rate);
+		"should this be eye position?"
+		Event Player.StartPos = Eye Position(Event Player);
+		Event Player.StartVelocity = 30 * Facing Direction Of(Event Player);
+		If(Angle Between Vectors(Facing Direction Of(Event Player), Up) < 0.100);
+			Event Player.StartVelocity = Vector(0, 30, 0);
+		End;
+		If(Event Player.ChaseCamOn);
+			Start Camera(Event Player, Event Player.StartPos + Event Player.StartVelocity * Event Player.NadeTimerChase + Vector(0, -4.900, 0)
+				* Event Player.NadeTimerChase * Event Player.NadeTimerChase + -8 * Vector(X Component Of(Facing Direction Of(Event Player)),
+				-1 * Absolute Value(Y Component Of(Facing Direction Of(Event Player))), Z Component Of(Facing Direction Of(Event Player))),
+				Event Player.StartPos + Event Player.StartVelocity * Event Player.NadeTimerChase + Vector(0, -4.900, 0)
+				* Event Player.NadeTimerChase * Event Player.NadeTimerChase, 30);
+		End;
+	}
+}
+
+rule("Detect Nade Collision")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Distance Between(Event Player.StartPos + Event Player.StartVelocity * Event Player.NadeTimerChase + Vector(0, -4.900, 0)
+			* Event Player.NadeTimerChase * Event Player.NadeTimerChase, Ray Cast Hit Position(
+			Event Player.StartPos + Event Player.StartVelocity * Event Player.NadeTimerChase + Vector(0, -4.900, 0)
+			* Event Player.NadeTimerChase * Event Player.NadeTimerChase,
+			Event Player.StartPos + Event Player.StartVelocity * Event Player.NadeTimerChase + Vector(0, -4.900, 0)
+			* Event Player.NadeTimerChase * Event Player.NadeTimerChase + Normalize(
+			Event Player.StartVelocity + Event Player.NadeTimerChase * Vector(0, -9.800, 0)), All Players(All Teams), Event Player, True))
+			< 0.990;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, NadeTimerChase);
+		Small Message(Event Player, Custom String("Press {1} + {2} to go next checkpoint. Fly Time: {0} sec", Event Player.NadeTimerChase,
+			Input Binding String(Button(Interact)), Input Binding String(Button(Jump))));
+		Wait(1, Ignore Condition);
+		Stop Camera(Event Player);
+	}
+}
+
+disabled rule("Key Bindings")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Reload - Reset Camera + Position, Melee = Reset Camera")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player.NadeTimerChase > 9 || Is Button Held(Event Player, Button(Reload)) || Is Button Held(Event Player, Button(Melee)))
+			== True;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, NadeTimerChase);
+		Stop Camera(Event Player);
+		If(!Is Button Held(Event Player, Button(Melee)));
+			Call Subroutine(RespawnPlayer);
+		End;
+	}
+}
+
+rule("Interact + Jump - Goto Next CP")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Button Held(Event Player, Button(Jump)) == True;
+	}
+
+	actions
+	{
+		Event Player.CP = (Event Player.CP + 1) % Count Of(Global.CPLocation);
+		Call Subroutine(RespawnPlayer);
+	}
+}
+
+rule("Melee + Ultimate - Toggle Chase Cam")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Melee)) == True;
+		Is Button Held(Event Player, Button(Ultimate)) == True;
+	}
+
+	actions
+	{
+		Event Player.ChaseCamOn = !Event Player.ChaseCamOn;
+		Small Message(Event Player, Event Player.ChaseCamOn ? Custom String("Chase Cam On") : Custom String("Chase Cam Off"));
+	}
+}
+
+rule("Ana Sleep Dart Teleport")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Stop Camera(Event Player);
+		"The duration before Ana fires sleep dart"
+		Wait(0.300, Ignore Condition);
+		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ Facing Direction Of(Event Player) * 60, All Players(All Teams), Event Player, True);
+		"Shorten ray cast to avoid unintended tele through surfaces"
+		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
+			* 0.500;
+		"Sleep dart travel time"
+		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
+		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
+	}
+}
+
+rule("Interact + Hello - Toggle Dev Mode [HOST ONLY]")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player == Host Player;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating(Event Player, Hello) == True;
+	}
+
+	actions
+	{
+		Global.DevModeEngaged = !Global.DevModeEngaged;
+		Small Message(Event Player, Global.DevModeEngaged ? Custom String("Dev Mode Engaged") : Custom String("Dev Mode Disengaged"));
+	}
+}
+
+disabled rule("Subroutines")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Sub0 - RespawnPlayer")
+{
+	event
+	{
+		Subroutine;
+		RespawnPlayer;
+	}
+
+	actions
+	{
+		Stop Camera(Event Player);
+		Teleport(Event Player, Global.CPLocation[Event Player.CP]);
+		Set Facing(Event Player, Global.CPFacing[Event Player.CP], To World);
+		disabled Small Message(Event Player, Custom String("{0}", Global.CPHintText[Event Player.CP]));
+		If(Is Firing Secondary(Event Player) != Global.CPScoped[Event Player.CP]);
+			Press Button(Event Player, Button(Secondary Fire));
+		End;
+	}
+}
+
+disabled rule("Find Angles from Start and Destination Positions")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Ultimate Status - Set Destination point")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Communicating(Event Player, Ultimate Status) == True;
+	}
+
+	actions
+	{
+		Event Player.Destination = Position Of(Event Player);
+		Small Message(Event Player, Custom String("Destination Point Set: {0}", Position Of(Event Player)));
+	}
+}
+
+rule("Interact + Ultimate - Compute throw to destination point - THANKS https://www.youtube.com/watch?v=bqYtNrhdDAY")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Ultimate)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
+	}
+
+	actions
+	{
+		"horizontal distance"
+		Event Player.M = Distance Between(Event Player.Destination * Vector(1, 0, 1), Position Of(Event Player) * Vector(1, 0, 1));
+		"vert distance"
+		Event Player.O = Y Component Of(Position Of(Event Player)) - Y Component Of(Event Player.Destination);
+		"Formula from https://youtu.be/bqYtNrhdDAY?t=818"
+		Event Player.P = (Arccosine In Degrees((9.800 * Event Player.M * Event Player.M / 900 - Event Player.O) / Distance Between(
+			Event Player.Destination, Position Of(Event Player))) + Arctangent In Degrees(Event Player.M, Event Player.O)) / -2;
+		Set Facing(Event Player, Direction From Angles(Horizontal Angle From Direction(Direction Towards(Position Of(Event Player),
+			Event Player.Destination)), Event Player.P), To World);
+	}
+}
