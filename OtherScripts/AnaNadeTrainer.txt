@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Learn Ana set-nade spots on Eichenwalde, Route66. Code 2Y555. Created by WelkinTern"
+		Description: "Learn Ana set-nade spots on Eichenwalde, Route66, Anubis, Hanamura, Dorado, Hollywood, Blz World, Kings Row. Code 2Y555. Created by WelkinTern"
 	}
 
 	lobby
@@ -31,6 +31,7 @@ settings
 		{
 			enabled maps
 			{
+				Dorado
 			}
 		}
 
@@ -38,7 +39,6 @@ settings
 		{
 			enabled maps
 			{
-				Eichenwalde
 			}
 		}
 
@@ -76,6 +76,7 @@ variables
 		5: CPScoped
 		6: CPObjectiveText
 		13: DevModeEngaged
+		15: PioneerMode
 
 	player:
 		0: CP
@@ -103,13 +104,14 @@ rule("Initialize Globals and HUD")
 	{
 		Disable Game Mode HUD(All Players(All Teams));
 		Global.DevModeEngaged = False;
+		Global.PioneerMode = False;
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
-			"Ana Nade Trainer By WelkinTern | Code 2Y555\r\nMaps: Eichenwalde, Route66, Anubis"), Left, -1, Color(White), Color(White),
-			Color(Green), Visible To, Default Visibility);
+			"Ana Nade Trainer By WelkinTern | Code 2Y555\r\nMaps: Eich, Route66, Anubis, Hana, Dorado, \r\n      Holly, Blz"), Left, -1,
+			Color(White), Color(White), Color(Green), Visible To, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String(
 			"- - - - - - - - - Controls - - - - - - - - - \r\n{0}      | Reset Camera + Position\r\n{1}\r\n{2}", Input Binding String(
 			Button(Reload)), Custom String("{0} + {1} | Next Checkpoint\r\n{2}    | Reset Camera Only", Input Binding String(Button(
-			Interact)), Input Binding String(Button(Jump)), Input Binding String(Button(Melee))), Custom String(
+			Interact)), Input Binding String(Button(Reload)), Input Binding String(Button(Melee))), Custom String(
 			"{0}    | Teleport (Like Ana Parkour)\r\n{1}", Ability Icon String(Hero(Ana), Button(Ability 1)), Custom String(
 			"{0} + {1} | Toggle Chase Cam", Input Binding String(Button(Melee)), Input Binding String(Button(Ultimate))))), Left, 0, Color(
 			White), Color(White), Color(Orange), Visible To and String, Default Visibility);
@@ -117,16 +119,29 @@ rule("Initialize Globals and HUD")
 			"- - - - - - - - - - - - - - - - - - -\r\nUlt Status | Set Throw Destination\r\n{0} + {1} | Calculate Throw Angle To Destination",
 			Input Binding String(Button(Interact)), Input Binding String(Button(Ultimate))), Left, 1, Color(White), Color(White), Color(
 			Orange), Visible To and String, Default Visibility);
-		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String(
-			"Position: {0}\r\nFacing: {1}\r\n{2}", Position Of(Local Player), Facing Direction Of(Local Player), Custom String(
-			"Ray Cast: {0}\r\nCollision Position: {1}", Ray Cast Hit Position(Eye Position(Local Player), Eye Position(Local Player)
-			+ 180 * Facing Direction Of(Local Player), Null, Null, False),
+		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String("Position: {0}\r\n{1}\r\n{2}",
+			Position Of(Local Player), Custom String("Facing Vector: {0}\r\nFacing Angles: H{1}, V{2}", Facing Direction Of(Local Player),
+			Horizontal Angle From Direction(Facing Direction Of(Local Player)), Vertical Angle From Direction(Facing Direction Of(
+			Local Player))), Custom String("Ray Cast: {0}\r\nCollision Position: {1}", Ray Cast Hit Position(Eye Position(Local Player),
+			Eye Position(Local Player) + 180 * Facing Direction Of(Local Player), Null, Null, False),
 			Local Player.StartPos + Local Player.StartVelocity * Local Player.NadeTimerChase + Vector(0, -4.900, 0)
 			* Local Player.NadeTimerChase * Local Player.NadeTimerChase)), Left, 9, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Checkpoint {0} / {1}\r\nFly Time: {2}", Local Player.CP,
 			Count Of(Global.CPLocation) - 1, Local Player.NadeTimerChase), Right, 5, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
+		"Give map data a time to load"
+		Wait(0.100, Ignore Condition);
+		"If no map data for this map, initialize CP vars as empty arrays"
+		If(Count Of(Global.CPLocation) == 0);
+			Global.CPLocation = Empty Array;
+			Global.CPDestination = Empty Array;
+			Global.CPFacing = Empty Array;
+			Global.CPHintText = Empty Array;
+			Global.CPHintEffectPosition = Empty Array;
+			Global.CPScoped = Empty Array;
+			Global.CPObjectiveText = Empty Array;
+		End;
 	}
 }
 
@@ -292,6 +307,176 @@ rule("Temple of Anubis Map Data")
 	}
 }
 
+rule("Hanamura Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Array Contains(Array(Map(Hanamura), Map(Hanamura Winter)), Current Map) == True;
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(29.116, 1.425, 12.736), Vector(33.699, 0.250, 14.862), Vector(0.631, 0, -16.893), Vector(13.398,
+			0, -23.642));
+		Global.CPDestination = Array(Vector(26.200, 0.900, 0.960), Vector(-4.420, 1.710, -18.650), Vector(72.750, -1.300, 0.700), Vector(
+			-9, -0.500, -84));
+		"Using X = horizontal angle, Y = Vertical Angle"
+		Global.CPFacing = Array(Vector(-166.400, -86.210, 0), Vector(-131.320, -73.210, 0), Vector(76.280, -63.690, 0), Vector(-159.710,
+			-20.320, 0));
+		Global.CPObjectiveText = Array(Custom String("Anti their tanks at choke"), Custom String("Anti their supports"), Custom String(
+			"Anti their team coming out of spawn"), Custom String("Nade the point when walking back to the fight from spawn"));
+		Global.CPHintText = Array(Custom String("Scope, then align your crossheir against the wall near vertical"), Custom String(
+			"Scope, then align right side of crossheir where the 2 wood pieces intersect"), Custom String(
+			"Scope, then align the white part on the right with the top of roof corner"), Custom String(
+			"When walking under the gate, aim for the top of the tree in center"));
+		Global.CPHintEffectPosition = Array(Null, Null, Null, Null);
+		Global.CPScoped = Array(True, True, True, False);
+	}
+}
+
+rule("Dorado Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Current Map == Map(Dorado);
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(5.341, 0, 12.674), Vector(28.179, 1, 10.147), Vector(32.479, 8, -50.431), Vector(84.500, 9.200,
+			-24.687), Vector(104.254, 9, -20.376), Vector(128.270, 11, 15.204), Vector(169.118, 11, 29.089));
+		Global.CPDestination = Array(Vector(28.600, 12, -26.500), Vector(50, 7.500, -19), Vector(-2.340, 0, 5.640), Vector(107.600, 18.600,
+			-3.300), Vector(125, 12, 21.600), Vector(116.800, 8.550, -2.650), Vector(178, 12.740, 56.030));
+		"Using X = horizontal angle, Y = Vertical Angle"
+		Global.CPFacing = Array(Vector(149.240, -73.930, 0), Vector(143.110, -77.960, 0), Vector(-31.820, -68.480, 0), Vector(47.270,
+			-79.430, 0), Vector(26.460, -74.490, 0), Vector(-147.410, -83.320, 0), Vector(18.370, -80.970, 0));
+		Global.CPObjectiveText = Array(Custom String("Anti their team at start of round"), Custom String(
+			"Anti their team holding the choke under bridge"), Custom String("Anti their team at start of round"), Custom String(
+			"Hit enemies on close high ground"), Custom String("Hit their tanks holding the bridge"), Custom String(
+			"Hit their tanks holding the bridge"), Custom String("Hit their tanks holding the bridge"));
+		Global.CPHintText = Array(Custom String("Scope, then align the white part of crossheir on right with building corner"),
+			Custom String("Align the center of your ultimate meter with the corner \r\nof building under roof (where the orb is)"),
+			Custom String("Scope, then align the white part of crossheir on right with\r\nwhere stone pillar hits the roof"),
+			Custom String("Look up at the roof corner"), Custom String("Look up at the cylinder (electrical thing)"), Custom String(
+			"Look right above corner of metal"), Custom String("Look up at center of roof panel where it changes color"));
+		Global.CPHintEffectPosition = Array(Vector(8.160, 11.400, 10.630), Vector(32.500, 11.500, 4.600), Null, Null, Null, Null, Null,
+			Null);
+		Global.CPScoped = Array(True, False, True, False, False, True, True);
+	}
+}
+
+rule("Hollywood Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Array Contains(Array(Map(Hollywood), Map(Hollywood Halloween)), Current Map) == True;
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(7.821, 2, 30.474), Vector(-31.396, 0.800, 19.828), Vector(-15.704, 1.750, -4.276), Vector(-31.441,
+			1.750, -8.973), Vector(-44.155, -0.250, -6.348), Vector(25.845, 1.720, -30.776));
+		Global.CPDestination = Array(Vector(-18, 2.300, 5.300), Vector(-11.700, 1.720, 70), Vector(3.570, 11.400, -30.700), Vector(11.190,
+			2.200, -77.500), Vector(-5.700, 2.600, -20), Vector(-26.370, 3.700, -2.300));
+		Global.CPFacing = Array(Vector(-134.100, -78.500, 0), Vector(21.470, -72.100, 0), Vector(143.670, -79.100, 0), Vector(148.120,
+			59.570, 0), Vector(109.780, -76.670, 0), Vector(-61.400, -69.870, 0));
+		Global.CPObjectiveText = Array(Custom String("Anti their tanks holding the point"), Custom String(
+			"Hit their team coming out of spawn"), Custom String("Hit enemies on top right building"), Custom String(
+			"Throw nade coming back to fight on 2nd point"), Custom String("Hit enemy tanks"), Custom String(
+			"Throw nade to 1st point when returning to fight"));
+		Global.CPHintText = Array(Custom String("Scope, then align right white part of crossheir with top of wooden part of tree"),
+			Custom String("Scope then center your ult meter where the roofs meet"), Custom String("Look 2 tiles up from corner of roofs"),
+			Custom String("Press R, its pretty obvious"), Null, Custom String("Aim at top of box, above center of left wood panel"));
+		Global.CPHintEffectPosition = Array(Null, Vector(-25, 18.720, 34.320), Null, Null, Null, Null);
+		Global.CPScoped = Array(True, False, False, False, True, False);
+	}
+}
+
+rule("Blz World Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Array Contains(Array(Map(Blizzard World), Map(Black Forest Winter)), Current Map) == True;
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(-5.505, -1, 5.647), Vector(11.922, 0, 46.034), Vector(3.103, 8, 81.280), Vector(-72.023, 0.800,
+			98.577));
+		Global.CPDestination = Array(Vector(-6, 6.700, 52), Vector(8.500, 2.700, 71), Vector(2.600, -3.300, -18.360), Vector(1.150, 2.600,
+			75.330));
+		Global.CPFacing = Array(Vector(-0.790, -73.970, 0), Vector(-7.820, -81.970, 0), Vector(-179.770, -53, 0), Vector(107.640, -61.640,
+			0));
+		Global.CPObjectiveText = Array(Custom String("Hit enemies on the platform overlooking route to 1st point"), Custom String(
+			"Anti their tanks on point"), Custom String("Anti their whole team to start the round :D"), Custom String(
+			"Throw nade to 1st point while returning from spawn"));
+		Global.CPHintText = Array(Custom String("Put ultimate meter on the top of the bird statue"), Custom String(
+			"Scope, then put bottom of blue rows of crossheir on top wooden beam"), Custom String(
+			"Stand in middle of boat, then center ult meter on top archway roof"), Custom String(
+			"Look above pylon at same angle as the sun"));
+		Global.CPHintEffectPosition = Array(Null, Null, Null, Null);
+		Global.CPScoped = Array(False, True, False, False);
+	}
+}
+
+rule("Kings Row Map Data")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Array Contains(Array(Map(King's Row), Map(King's Row Winter)), Current Map) == True;
+	}
+
+	actions
+	{
+		Global.CPLocation = Array(Vector(-8.677, 0.072, -10.312), Vector(2.948, 0.055, -11.892), Vector(9.119, 0.065, -21.753), Vector(
+			9.119, 0.065, -21.753), Vector(-7.571, 0.022, -25.400), Vector(-49.184, 0.163, -38.250), Vector(-20.939, 0.118, -40.889));
+		Global.CPDestination = Array(Vector(-15.829, 0.595, -28.464), Vector(-9.329, 6.944, -40.993), Vector(-28.017, 0.580, -23.816),
+			Vector(-31.773, 9.750, -34.063), Vector(-60.923, 0.485, -32.162), Vector(-89.112, 1.383, -20.409), Vector(-3.845, 0.972,
+			16.273));
+		Global.CPFacing = Array(Vector(-158.494, -83.892, 0), Vector(-157.126, -79.585, 0), Vector(-93.181, -78.107, 0), Vector(-106.754,
+			-75.317, 0), Vector(-97.224, -72.175, 0), Vector(-65.923, -75.784, 0), Vector(16.650, -69.802, 0));
+		Global.CPHintText = Array(Custom String("Scope and put triangle crossheir above dark section of wall"), Custom String(
+			"Look very slightly above crack in wall"), Custom String("Look at corner above"), Custom String(
+			"Scope, align upper right triangle crossheir with corner, \r\nthen move up slightly"), Custom String(
+			"Align lower left triangle crossheir corner with corner between 2 roofs"), Custom String(
+			"Scope, align upper left triangle crossheir with smallest metal piece"), Custom String(
+			"Align triangle crossheir with metal piece"));
+		Global.CPHintEffectPosition = Array(0, 0, 0, 0, 0, 0, 0);
+		Global.CPScoped = Array(True, True, False, True, True, True, True);
+		Global.CPObjectiveText = Array(Custom String("Anti Their Tanks On 1st Point"), Custom String(
+			"Hit DPS on the perch above 1st point"), Custom String("Hit enemy team behind 1st point"), Custom String(
+			"Hit the Widow Players"), Custom String("Hit tanks in common position"), Custom String("Hit tanks in common position"),
+			Custom String("Hit enemy team coming out of spawn"));
+		Global.DevModeEngaged = True;
+		Global.PioneerMode = False;
+	}
+}
+
 disabled rule("Game Framework")
 {
 	event
@@ -406,9 +591,23 @@ rule("Detect Nade Collision")
 	{
 		Stop Chasing Player Variable(Event Player, NadeTimerChase);
 		Small Message(Event Player, Custom String("Press {1} + {2} to go next checkpoint. Fly Time: {0} sec", Event Player.NadeTimerChase,
-			Input Binding String(Button(Interact)), Input Binding String(Button(Jump))));
+			Input Binding String(Button(Interact)), Input Binding String(Button(Reload))));
 		Wait(1, Ignore Condition);
 		Stop Camera(Event Player);
+		If(Global.PioneerMode && Event Player == Host Player);
+			Modify Global Variable(CPLocation, Append To Array, Position Of(Event Player));
+			Modify Global Variable(CPDestination, Append To Array,
+				Event Player.StartPos + Event Player.StartVelocity * Event Player.NadeTimerChase + Vector(0, -4.900, 0)
+				* Event Player.NadeTimerChase * Event Player.NadeTimerChase);
+			Modify Global Variable(CPFacing, Append To Array, Vector(Horizontal Angle From Direction(Facing Direction Of(Event Player)),
+				Vertical Angle From Direction(Facing Direction Of(Event Player)), 0));
+			Modify Global Variable(CPHintText, Append To Array, Custom String(""));
+			Modify Global Variable(CPObjectiveText, Append To Array, Custom String(""));
+			Modify Global Variable(CPHintEffectPosition, Append To Array, Null);
+			Modify Global Variable(CPScoped, Append To Array, False);
+			Global.PioneerMode = False;
+			Small Message(Host Player, Custom String("New CP added to map data. Pioneer mode now turned off."));
+		End;
 	}
 }
 
@@ -433,6 +632,7 @@ rule("Reload - Reset Camera + Position, Melee = Reset Camera")
 	{
 		(Event Player.NadeTimerChase > 9 || Is Button Held(Event Player, Button(Reload)) || Is Button Held(Event Player, Button(Melee)))
 			== True;
+		Is Button Held(Event Player, Button(Interact)) != True;
 	}
 
 	actions
@@ -445,7 +645,7 @@ rule("Reload - Reset Camera + Position, Melee = Reset Camera")
 	}
 }
 
-rule("Interact + Jump - Goto Next CP")
+rule("Interact + Reload - Goto Next CP")
 {
 	event
 	{
@@ -457,7 +657,7 @@ rule("Interact + Jump - Goto Next CP")
 	conditions
 	{
 		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Button Held(Event Player, Button(Jump)) == True;
+		Is Button Held(Event Player, Button(Reload)) == True;
 	}
 
 	actions
@@ -486,95 +686,6 @@ rule("Melee + Ultimate - Toggle Chase Cam")
 	{
 		Event Player.ChaseCamOn = !Event Player.ChaseCamOn;
 		Small Message(Event Player, Event Player.ChaseCamOn ? Custom String("Chase Cam On") : Custom String("Chase Cam Off"));
-	}
-}
-
-rule("Ana Sleep Dart Teleport")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Ana;
-	}
-
-	conditions
-	{
-		Is Using Ability 1(Event Player) == True;
-	}
-
-	actions
-	{
-		Stop Camera(Event Player);
-		"The duration before Ana fires sleep dart"
-		Wait(0.300, Ignore Condition);
-		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
-			+ Facing Direction Of(Event Player) * 60, All Players(All Teams), Event Player, True);
-		"Shorten ray cast to avoid unintended tele through surfaces"
-		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
-			* 0.500;
-		"Sleep dart travel time"
-		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
-		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
-	}
-}
-
-rule("Interact + Hello - Toggle Dev Mode [HOST ONLY]")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Event Player == Host Player;
-		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating(Event Player, Hello) == True;
-	}
-
-	actions
-	{
-		Global.DevModeEngaged = !Global.DevModeEngaged;
-		Small Message(Event Player, Global.DevModeEngaged ? Custom String("Dev Mode Engaged") : Custom String("Dev Mode Disengaged"));
-	}
-}
-
-disabled rule("Subroutines")
-{
-	event
-	{
-		Ongoing - Global;
-	}
-}
-
-rule("Sub0 - RespawnPlayer")
-{
-	event
-	{
-		Subroutine;
-		RespawnPlayer;
-	}
-
-	actions
-	{
-		Stop Camera(Event Player);
-		Teleport(Event Player, Global.CPLocation[Event Player.CP]);
-		Set Facing(Event Player, Global.CPFacing[Event Player.CP], To World);
-		disabled Small Message(Event Player, Custom String("{0}", Global.CPHintText[Event Player.CP]));
-		If(Is Firing Secondary(Event Player) != Global.CPScoped[Event Player.CP]);
-			Press Button(Event Player, Button(Secondary Fire));
-		End;
-	}
-}
-
-disabled rule("Find Angles from Start and Destination Positions")
-{
-	event
-	{
-		Ongoing - Global;
 	}
 }
 
@@ -625,5 +736,158 @@ rule("Interact + Ultimate - Compute throw to destination point - THANKS https://
 			Event Player.Destination, Position Of(Event Player))) + Arctangent In Degrees(Event Player.M, Event Player.O)) / -2;
 		Set Facing(Event Player, Direction From Angles(Horizontal Angle From Direction(Direction Towards(Position Of(Event Player),
 			Event Player.Destination)), Event Player.P), To World);
+	}
+}
+
+rule("Ana Sleep Dart Teleport")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Stop Camera(Event Player);
+		"The duration before Ana fires sleep dart"
+		Wait(0.300, Ignore Condition);
+		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+			+ Facing Direction Of(Event Player) * 60, All Players(All Teams), Event Player, True);
+		"Shorten ray cast to avoid unintended tele through surfaces"
+		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
+			* 0.500;
+		"Sleep dart travel time"
+		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
+		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
+	}
+}
+
+disabled rule("Subroutines")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Sub0 - RespawnPlayer")
+{
+	event
+	{
+		Subroutine;
+		RespawnPlayer;
+	}
+
+	actions
+	{
+		Stop Camera(Event Player);
+		Teleport(Event Player, Global.CPLocation[Event Player.CP]);
+		If(Magnitude Of(Global.CPFacing[Event Player.CP]) > 2);
+			"Horiz/Vertical angle facing direction format "
+			Set Facing(Event Player, Direction From Angles(X Component Of(Global.CPFacing[Event Player.CP]), Y Component Of(
+				Global.CPFacing[Event Player.CP])), To World);
+		Else;
+			"Vector facing direction format "
+			Set Facing(Event Player, Global.CPFacing[Event Player.CP], To World);
+		End;
+		disabled Small Message(Event Player, Custom String("{0}", Global.CPHintText[Event Player.CP]));
+		If(Is Firing Secondary(Event Player) != Global.CPScoped[Event Player.CP]);
+			Press Button(Event Player, Button(Secondary Fire));
+		End;
+	}
+}
+
+disabled rule("Find Angles from Start and Destination Positions")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+disabled rule("Pioneer Mode Stuff")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+}
+
+rule("Interact + Hello - Toggle Dev Mode [HOST ONLY]")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player == Host Player;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating(Event Player, Hello) == True;
+	}
+
+	actions
+	{
+		Global.DevModeEngaged = !Global.DevModeEngaged;
+		Wait(0.100, Ignore Condition);
+		Small Message(Event Player, Global.DevModeEngaged ? Custom String("Dev Mode Engaged") : Custom String("Dev Mode Disengaged"));
+	}
+}
+
+rule("Need Healing + Dev Mode On - Toggle Pioneer Mode [HOST ONLY]")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.DevModeEngaged == True;
+		Is Communicating(Host Player, Need Healing) == True;
+	}
+
+	actions
+	{
+		Global.PioneerMode = !Global.PioneerMode;
+		Wait(0.100, Ignore Condition);
+		Small Message(Host Player, Global.PioneerMode ? Custom String("Pioneer Mode Engaged") : Custom String("Pioneer Mode Disengaged"));
+	}
+}
+
+rule("Emote + Melee + Dev Mode On - Delete Last CP [HOST ONLY]")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.DevModeEngaged == True;
+		Is Communicating Any Emote(Host Player) == True;
+		Is Button Held(Host Player, Button(Melee)) == True;
+	}
+
+	actions
+	{
+		Small Message(All Players(All Teams), Custom String("Deleting last CP"));
+		Modify Global Variable(CPLocation, Remove From Array By Index, Count Of(Global.CPLocation) - 1);
+		Modify Global Variable(CPDestination, Remove From Array By Index, Count Of(Global.CPDestination) - 1);
+		Modify Global Variable(CPFacing, Remove From Array By Index, Count Of(Global.CPFacing) - 1);
+		Modify Global Variable(CPHintText, Remove From Array By Index, Count Of(Global.CPHintText) - 1);
+		Modify Global Variable(CPHintEffectPosition, Remove From Array By Index, Count Of(Global.CPHintEffectPosition) - 1);
+		Modify Global Variable(CPScoped, Remove From Array By Index, Count Of(Global.CPScoped) - 1);
+		Modify Global Variable(CPObjectiveText, Remove From Array By Index, Count Of(Global.CPObjectiveText) - 1);
 	}
 }
