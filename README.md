@@ -7,6 +7,13 @@ Version of Doomfist Parkour that lets users create their own checkpoints. Has im
 | :- | :- |
 | [Doomfist Pioneer Parkour](DoomfistParkour/DoomPioneerParkour.txt) | WARMR (Also YMVCR) |
 
+## Ana Nade Trainer
+
+Learn preset nade spots for Ana on most maps. Also has feature that lets you set a destination and the workshop auto-calculates throw angle to that destination from any other spot.
+
+| Map | Workshop Code
+| :- | :- |
+| Ana Nade Trainer | 2Y555 |
 
 ## Doomfist Parkour Maps
 
