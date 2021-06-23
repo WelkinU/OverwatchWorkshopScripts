@@ -78,6 +78,7 @@ variables
 		7: NadeTimerChase
 		10: AnaSleepDartTeleLocation
 		11: Destination
+		12: ScopedThrow
 }
 
 subroutines
@@ -112,13 +113,17 @@ rule("Initialize Globals and HUD")
 			"- - - - - - - - - - - - - - - - - - -\r\nUlt Status | Set Throw Destination\r\n{0} + {1} | Calculate Throw Angle To Destination",
 			Input Binding String(Button(Interact)), Input Binding String(Button(Ultimate))), Left, 1, Color(White), Color(White), Color(
 			Orange), Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String(
+			"- - - - - - - Dev Mode Controls - - - - - - -\r\n{0}\r\n\r\n\r\n", Custom String(
+			"Need Healing - Pioneer Mode Engaged\r\nEmote + Melee - Delete Last CP\r\nGroup Up - Set Hint Orb Location")), Left, 8, Color(
+			White), Color(White), Color(Red), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String("Position: {0}\r\n{1}\r\n{2}",
 			Position Of(Local Player), Custom String("Facing Vector: {0}\r\nFacing Angles: H{1}, V{2}", Facing Direction Of(Local Player),
 			Horizontal Angle From Direction(Facing Direction Of(Local Player)), Vertical Angle From Direction(Facing Direction Of(
 			Local Player))), Custom String("Ray Cast: {0}\r\nCollision Position: {1}", Ray Cast Hit Position(Eye Position(Local Player),
 			Eye Position(Local Player) + 180 * Facing Direction Of(Local Player), Null, Null, False),
 			Local Player.StartPos + Local Player.StartVelocity * Local Player.NadeTimerChase + Vector(0, -4.900, 0)
-			* Local Player.NadeTimerChase * Local Player.NadeTimerChase)), Left, 9, Color(White), Color(White), Color(White),
+			* Local Player.NadeTimerChase * Local Player.NadeTimerChase)), Right, 9, Color(White), Color(White), Color(White),
 			Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Checkpoint {0} / {1}\r\nFly Time: {2}", Local Player.CP,
 			Count Of(Global.CPLocation) - 1, Local Player.NadeTimerChase), Right, 5, Color(White), Color(White), Color(White),
@@ -180,6 +185,7 @@ rule("Initialize Player")
 		Set Status(Event Player, Null, Phased Out, 9999);
 		Create Effect(Filtered Array(Event Player, Event Player.Destination != Null), Ring, Color(Purple), Event Player.Destination, 4,
 			Visible To Position and Radius);
+		Event Player.ScopedThrow = False;
 	}
 }
 
@@ -296,10 +302,11 @@ rule("Detect Nade Collision")
 	actions
 	{
 		Stop Chasing Player Variable(Event Player, NadeTimerChase);
-		Small Message(Event Player, Custom String("Press {1} + {2} to go next checkpoint. Fly Time: {0} sec", Event Player.NadeTimerChase,
-			Input Binding String(Button(Interact)), Input Binding String(Button(Reload))));
+		Small Message(Event Player, Custom String("{2} to reset view. {1} + {2} to go next checkpoint. Fly Time: {0} sec",
+			Event Player.NadeTimerChase, Input Binding String(Button(Interact)), Input Binding String(Button(Reload))));
 		Wait(1, Ignore Condition);
 		Stop Camera(Event Player);
+		"Handle pioneer mode stuff"
 		If(Global.PioneerMode && Event Player == Host Player);
 			Modify Global Variable(CPLocation, Append To Array, Position Of(Event Player));
 			Modify Global Variable(CPDestination, Append To Array,
@@ -310,7 +317,7 @@ rule("Detect Nade Collision")
 			Modify Global Variable(CPHintText, Append To Array, Custom String(""));
 			Modify Global Variable(CPObjectiveText, Append To Array, Custom String(""));
 			Modify Global Variable(CPHintEffectPosition, Append To Array, Null);
-			Modify Global Variable(CPScoped, Append To Array, False);
+			Modify Global Variable(CPScoped, Append To Array, Event Player.ScopedThrow);
 			Global.PioneerMode = False;
 			Small Message(Host Player, Custom String("New CP added to map data. Pioneer mode now turned off."));
 			Enable Inspector Recording;
@@ -457,7 +464,7 @@ rule("Ultimate Status - Set Destination point")
 	}
 }
 
-rule("Interact + Ultimate - Compute throw to destination point - THANKS https://www.youtube.com/watch?v=bqYtNrhdDAY")
+rule("Interact + Ultimate - Determine angle to destination point - THANKS https://www.youtube.com/watch?v=bqYtNrhdDAY")
 {
 	event
 	{
@@ -475,18 +482,21 @@ rule("Interact + Ultimate - Compute throw to destination point - THANKS https://
 	actions
 	{
 		"horizontal distance"
-		Event Player.M = Distance Between(Event Player.Destination * Vector(1, 0, 1), Position Of(Event Player) * Vector(1, 0, 1));
+		Event Player.ScopedThrow = Distance Between(Event Player.Destination * Vector(1, 0, 1), Position Of(Event Player) * Vector(1, 0,
+			1));
 		"vert distance"
 		Event Player.O = Y Component Of(Position Of(Event Player)) - Y Component Of(Event Player.Destination);
 		"Formula from https://youtu.be/bqYtNrhdDAY?t=818"
-		Event Player.P = (Arccosine In Degrees((9.800 * Event Player.M * Event Player.M / 900 - Event Player.O) / Distance Between(
-			Event Player.Destination, Position Of(Event Player))) + Arctangent In Degrees(Event Player.M, Event Player.O)) / -2;
+		Event Player.P = (Arccosine In Degrees((9.800 * Event Player.ScopedThrow * Event Player.ScopedThrow / 900 - Event Player.O)
+			/ Distance Between(Event Player.Destination, Position Of(Event Player))) + Arctangent In Degrees(Event Player.ScopedThrow,
+			Event Player.O)) / -2;
 		"Set player looking at proper throw angle. If they're already at that angle, set them facing at alternate throw angle"
 		If(Angle Between Vectors(Facing Direction Of(Event Player), Direction From Angles(Horizontal Angle From Direction(
 			Direction Towards(Position Of(Event Player), Event Player.Destination)), Event Player.P)) < 0.100);
 			"Formula from https://youtu.be/bqYtNrhdDAY?t=818"
-			Event Player.P = (-1 * Arccosine In Degrees((9.800 * Event Player.M * Event Player.M / 900 - Event Player.O) / Distance Between(
-				Event Player.Destination, Position Of(Event Player))) + Arctangent In Degrees(Event Player.M, Event Player.O)) / -2;
+			Event Player.P = (-1 * Arccosine In Degrees((9.800 * Event Player.ScopedThrow * Event Player.ScopedThrow / 900 - Event Player.O)
+				/ Distance Between(Event Player.Destination, Position Of(Event Player))) + Arctangent In Degrees(Event Player.ScopedThrow,
+				Event Player.O)) / -2;
 		End;
 		Set Facing(Event Player, Direction From Angles(Horizontal Angle From Direction(Direction Towards(Position Of(Event Player),
 			Event Player.Destination)), Event Player.P), To World);
@@ -605,6 +615,9 @@ rule("Emote + Melee + Dev Mode On - Delete Last CP [HOST ONLY]")
 		Modify Global Variable(CPHintEffectPosition, Remove From Array By Index, Count Of(Global.CPHintEffectPosition) - 1);
 		Modify Global Variable(CPScoped, Remove From Array By Index, Count Of(Global.CPScoped) - 1);
 		Modify Global Variable(CPObjectiveText, Remove From Array By Index, Count Of(Global.CPObjectiveText) - 1);
+		Enable Inspector Recording;
+		Log To Inspector(Custom String("Remove last CP"));
+		Disable Inspector Recording;
 	}
 }
 
@@ -626,6 +639,37 @@ rule("Group Up + Dev Mode On - Set Hint Orb located at ray cast")
 		Global.CPHintEffectPosition[Host Player.CP] = Ray Cast Hit Position(Eye Position(Host Player), Eye Position(Host Player)
 			+ 80 * Facing Direction Of(Host Player), Null, Null, False);
 		Small Message(Host Player, Custom String("Hint orb position updated to ray cast location"));
+		Enable Inspector Recording;
+		Log To Inspector(Custom String("Update Hint Orb Position on CP {0}", Host Player.CP));
+		Disable Inspector Recording;
+	}
+}
+
+rule("Check scoped throw")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
+
+	conditions
+	{
+		disabled Is Firing Secondary(Event Player) == True;
+		Is Button Held(Event Player, Button(Ability 2)) == True;
+		Global.PioneerMode == True;
+	}
+
+	actions
+	{
+		If(Is Firing Secondary(Event Player));
+			Small Message(Event Player, Custom String("Scoped throw"));
+			Event Player.ScopedThrow = True;
+		Else;
+			Small Message(Event Player, Custom String("Unscoped throw"));
+			Event Player.ScopedThrow = False;
+		End;
 	}
 }
 
@@ -738,15 +782,24 @@ rule("Temple of Anubis Map Data")
 
 	actions
 	{
-		Global.CPLocation = Array(Vector(-18.870, 1, -0.925), Vector(-25.758, 4.550, 30.828));
-		Global.CPDestination = Array(Vector(-22, 179.200, 32.500), Vector(1.930, 0.640, -17.500));
-		Global.CPFacing = Array(Vector(-0.020, 0.980, 0.180), Vector(0.150, 0.950, -0.270));
+		Global.CPLocation = Array(Vector(7.882, -2.004, 2.464), Vector(2.284, 0.262, -19.396), Vector(-25.705, 4.509, 30.861), Vector(
+			-47.671, 1.513, 35.016), Vector(-47.653, 1.513, 34.987), Vector(-16.535, 1.543, 71.018));
+		Global.CPDestination = Array(Vector(-22.202, 5.454, 32.073), Vector(-42.664, 2.295, 42.229), Vector(2.629, 1.185, -19.289), Vector(
+			-3.051, 5.103, 108.704), Vector(-23.171, 7.207, 118.364), Vector(-8.770, 5.174, 111.224));
+		Global.CPFacing = Array(Vector(-45.456, -75.740, 0), Vector(-36.107, -61.683, 0), Vector(150.535, -71.180, 0), Vector(31.196,
+			-53.399, 0), Vector(16.364, -49.010, 0), Vector(10.931, -76.558, 0));
+		Global.CPHintEffectPosition = Array(Vector(-29.206, 60.167, 38.701), 0, 0, 0, 0, Vector(-17.702, 75.597, 104.158));
+		Global.CPScoped = Array(False, False, True, False, False, True);
 		Global.CPObjectiveText = Array(Custom String("Anti their whole team to start the round :D"), Custom String(
-			"Anti their whole team to start the round :D"));
-		Global.CPHintText = Array(Custom String("Scope, then align your ultimate meter with the top light wall section"), Custom String(
-			"Scope then center your ult meter on the spire (then move up slightly)"));
-		Global.CPHintEffectPosition = Array(Null, Null);
-		Global.CPScoped = Array(True, True);
+			"Throw nade to 1st point when returning from spawn"), Custom String("Anti their whole team to start the round :D"),
+			Custom String("Throw nade to 2nd point after respawning"), Custom String("Hit their supports on 2nd point after respawning"),
+			Custom String("Hit their tanks on 2nd point"));
+		Global.CPHintText = Array(Custom String("Align your ultimate meter with the upper corner of wall"), Custom String(
+			"Align your ultimate meter with the building in background"), Custom String(
+			"Scope then center your ult meter on top of the spire"), Custom String(
+			"Aim for the top of the spire (pretty sensitive to start pos)"), Custom String(
+			"Aim slightly to the left of the top of the pyramid"), Custom String(
+			"Align the bottom right wick of your crossheir with the\r\ncorner where the orb is"));
 	}
 }
 
@@ -764,21 +817,24 @@ rule("Hanamura Map Data")
 
 	actions
 	{
-		Global.CPLocation = Array(Vector(29.116, 1.425, 12.736), Vector(33.699, 0.250, 14.862), Vector(0.631, 0, -16.893), Vector(13.398,
-			0, -23.642));
+		Global.CPLocation = Array(Vector(29.116, 0.200, 12.736), Vector(33.699, 0.250, 14.862), Vector(0.631, 0, -16.893), Vector(13.398,
+			0, -23.642), Vector(16.107, 4.153, -73.688));
 		Global.CPDestination = Array(Vector(26.200, 0.900, 0.960), Vector(-4.420, 1.710, -18.650), Vector(72.750, -1.300, 0.700), Vector(
-			-9, -0.500, -84));
-		"Using X = horizontal angle, Y = Vertical Angle"
+			-9, -0.500, -84), Vector(15.154, 0.478, 9.849));
 		Global.CPFacing = Array(Vector(-166.400, -86.210, 0), Vector(-131.320, -73.210, 0), Vector(76.280, -63.690, 0), Vector(-159.710,
-			-20.320, 0));
-		Global.CPObjectiveText = Array(Custom String("Anti their tanks at choke"), Custom String("Anti their supports"), Custom String(
-			"Anti their team coming out of spawn"), Custom String("Nade the point when walking back to the fight from spawn"));
+			-20.320, 0), Vector(-0.654, -27.378, 0));
 		Global.CPHintText = Array(Custom String("Scope, then align your crossheir against the wall near vertical"), Custom String(
 			"Scope, then align right side of crossheir where the 2 wood pieces intersect"), Custom String(
 			"Scope, then align the white part on the right with the top of roof corner"), Custom String(
-			"When walking under the gate, aim for the top of the tree in center"));
-		Global.CPHintEffectPosition = Array(Null, Null, Null, Null);
-		Global.CPScoped = Array(True, True, True, False);
+			"When walking under the gate, aim for the top of the tree in center"), Custom String(
+			"Throw nade to enemy spawn after winning teamfight"));
+		Global.CPHintEffectPosition = Array(0, 0, 0, 0, 0);
+		Global.CPScoped = Array(True, True, True, False, False);
+		Global.CPObjectiveText = Array(Custom String("Anti their tanks at choke"), Custom String("Anti their supports"), Custom String(
+			"Anti their team coming out of spawn"), Custom String("Nade the point when walking back to the fight from spawn"),
+			Custom String("Aim below roof corner"));
+		Global.DevModeEngaged = True;
+		Global.PioneerMode = False;
 	}
 }
 
@@ -915,8 +971,6 @@ rule("Kings Row Map Data")
 			"Hit DPS on the perch above 1st point"), Custom String("Hit enemy team behind 1st point"), Custom String(
 			"Hit the Widow Players"), Custom String("Hit tanks in common position"), Custom String("Hit tanks in common position"),
 			Custom String("Hit enemy team coming out of spawn"));
-		Global.DevModeEngaged = True;
-		Global.PioneerMode = False;
 	}
 }
 
@@ -1001,16 +1055,20 @@ rule("Volskaya Industries Map Data")
 	actions
 	{
 		Global.CPLocation = Array(Vector(-31.288, -4.707, 25.085), Vector(-31.288, -4.705, 25.085), Vector(-19.923, -3.567, 41.842),
-			Vector(-21.750, -3.295, 71.801), Vector(-13.639, -3.245, 44.959), Vector(-48.130, -3.980, 59.459));
+			Vector(-21.750, -3.295, 71.801), Vector(-13.639, -3.245, 44.959), Vector(-48.130, -3.980, 59.459), Vector(12.343, -4.249,
+			46.821));
 		Global.CPDestination = Array(Vector(-15.662, -2.580, 61.888), Vector(-12.372, 1.956, 76.839), Vector(-22.890, -2.499, 78.427),
-			Vector(-0.812, -5.191, 14.906), Vector(1.891, 2.599, 89.040), Vector(-104.289, 2.204, 45.820));
+			Vector(-0.812, -5.191, 14.906), Vector(1.891, 2.599, 89.040), Vector(-104.289, 2.204, 45.820), Vector(-21.573, -2.334,
+			77.924));
 		Global.CPFacing = Array(Vector(23.005, -77.025, 0), Vector(20.078, -70.796, 0), Vector(-4.636, -78.234, 0), Vector(159.796,
-			-69.813, 0), Vector(19.407, -74.218, 0), Vector(-103.651, -25.142, 0));
+			-69.813, 0), Vector(19.407, -74.218, 0), Vector(-103.651, -25.142, 0), Vector(-47.477, -74.899, 0));
 		Global.CPHintText = Array(Custom String(""), Custom String(""), Custom String(""), Custom String(""), Custom String(""),
-			Custom String(""));
-		Global.CPHintEffectPosition = Array(0, 0, 0, 0, 0, 0);
-		Global.CPScoped = Array(True, True, False, True, False, True);
+			Custom String(""), Custom String(""));
+		Global.CPHintEffectPosition = Array(0, 0, 0, 0, 0, 0, 0);
+		Global.CPScoped = Array(True, True, False, True, False, True, True);
 		Global.CPObjectiveText = Array(Custom String(""), Custom String(""), Custom String(""), Custom String(""), Custom String(""),
-			Custom String(""));
+			Custom String(""), Custom String(""));
+		Global.DevModeEngaged = True;
+		Global.PioneerMode = False;
 	}
 }
