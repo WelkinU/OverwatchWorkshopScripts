@@ -545,6 +545,7 @@ rule("Game Started (origin point just created by host) - Create World Effects")
 	conditions
 	{
 		Global.GameStarted == True;
+		Is Dummy Bot(Event Player) == False;
 	}
 
 	actions
@@ -783,6 +784,7 @@ rule("Handle ForceRespawn")
 	conditions
 	{
 		Event Player.ForceRespawn == True;
+		Is Dummy Bot(Event Player) == False;
 	}
 
 	actions
@@ -3105,7 +3107,6 @@ rule("Skybox Detector - Don't let people tele then surf the skybox / let people 
 	{
 		Wait(0.100, Abort When False);
 		Small Message(Event Player, Custom String("On the skybox!"));
-		disabled Call Subroutine(RespawnPlayer);
 		Disable Movement Collision With Environment(Event Player, True);
 		Wait(0.500, Ignore Condition);
 		Enable Movement Collision With Environment(Event Player);
@@ -3255,7 +3256,7 @@ disabled rule("Other Stuff")
 	}
 }
 
-rule("Ms. Destructo | Created by nebula - modified from original YENEP")
+rule("Ms. Destructo | Created by nebula - slightly modified from original YENEP")
 {
 	event
 	{
@@ -3272,6 +3273,8 @@ rule("Ms. Destructo | Created by nebula - modified from original YENEP")
 		Wait(2, Ignore Condition);
 		Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(0, 200, 0), Vector(0, 0, 0));
 		Global.MsDestructo = Last Created Entity;
+		disabled Set Invisible(First Of(Filtered Array(All Players(All Teams), Is Dummy Bot(Current Array Element) && Hero Of(Current Array Element)
+			== Hero(D.Va))), All);
 		Start Forcing Dummy Bot Name(Global.MsDestructo, Custom String("Ms. Destructo"));
 		Wait(3, Ignore Condition);
 		If(Current Map == Map(Hanamura) || Current Map == Map(Hanamura Winter));
@@ -3491,5 +3494,26 @@ rule("Ms. Destructo | Created by nebula - modified from original YENEP")
 			Start Holding Button(Global.MsDestructo, Button(Ultimate));
 			Wait(8, Ignore Condition);
 			Destroy Dummy Bot(Team Of(Global.MsDestructo), Slot Of(Global.MsDestructo));
+	}
+}
+
+rule("Rule 102")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		D.Va;
+	}
+
+	conditions
+	{
+		Has Spawned(Event Player) == True;
+		Is Dummy Bot(Event Player) == True;
+	}
+
+	actions
+	{
+		Set Invisible(Event Player, All);
 	}
 }
