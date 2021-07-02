@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Learn Ana set-nade spots on Eichenwalde, Route66, Anubis, Hanamura, Dorado, Hollywood, Blz World, Kings Row, Nepal, JTown, Volskaya. Code 2Y555. Created by WelkinTern"
+		Description: "Learn Ana set-nade spots on Eichenwalde, Route66, Anubis, Hanamura, Dorado, Hollywood, Blz World, Kings Row, Nepal, JTown, Volskaya. Code 2Y555. Created by WelkinTern. Last Update July 1, 2021."
 	}
 
 	lobby
@@ -728,15 +728,17 @@ rule("Eichenwalde Map Data")
 		Global.CPLocation = Array(Vector(26.200, 5.350, -67.080), Vector(-3.340, 2.290, -22.710), Vector(22.540, 3.520, -23.920), Vector(
 			-13.190, 2.550, -31.750), Vector(-13.190, 2.550, -31.750), Vector(18.149, 4.870, -43.419), Vector(21.913, 5.320, -66.216),
 			Vector(27.826, 5, -45.516), Vector(22.810, 5, -52.176), Vector(-2.100, 3.700, -80.440), Vector(88.287, 12.770, -101.982),
-			Vector(94.380, 13.780, -67.391), Vector(98.544, 10.750, -27.622), Vector(100.590, 10.870, -43.579));
+			Vector(94.380, 13.780, -67.391), Vector(98.544, 10.750, -27.622), Vector(100.590, 10.870, -43.579), Vector(96.215, 10.839,
+			-46.924));
 		Global.CPDestination = Array(Vector(-11.940, 0, -9.960), Vector(22, 5.440, -61.400), Vector(20.780, 5.790, -63.470), Vector(17.070,
 			5.460, -48.340), Vector(10.970, 10.470, -40.660), Vector(16.530, 6.800, -76.050), Vector(51.210, 22.520, -64.860), Vector(
 			54.450, 18.890, -78.470), Vector(54.460, 18.310, -102.480), Vector(81.100, 13.180, -73.580), Vector(16.700, 6.460, -75.120),
-			Vector(-5.150, 3.920, -84.340), Vector(79.190, 12.930, -98.030), Vector(87.361, 13.344, -69.562));
+			Vector(-5.150, 3.920, -84.340), Vector(79.190, 12.930, -98.030), Vector(87.361, 13.344, -69.562), Vector(121.135, 9.362,
+			-35.050));
 		Global.CPFacing = Array(Vector(-0.217, 0.920, 0.326), Vector(0.144, 0.960, -0.220), Vector(-0.010, 0.970, -0.220), Vector(0.176,
 			0.980, -0.093), Vector(0.133, 0.990, -0.047), Vector(-0.011, 0.980, -0.199), Vector(0.178, 0.984, 0.010), Vector(0.170, 0.970,
 			-0.200), Vector(0.203, 0.920, -0.335), Vector(0.624, 0.780, 0.050), Vector(-0.426, 0.890, 0.162), Vector(-0.810, 0.570,
-			-0.140), Vector(-0.229, 0.460, -0.858), Vector(-153.018, -80.678, 0));
+			-0.140), Vector(-0.229, 0.460, -0.858), Vector(-153.018, -80.678, 0), Vector(64.523, -81.387, 0));
 		Global.CPHintText = Array(Custom String("Align top-right corner of triangle scope with tower corner"), Custom String(
 			"Aim for the metal bracket on the post in front of you"), Custom String("Aim for the tip of the tree leaf directly above"),
 			Custom String(
@@ -748,10 +750,11 @@ rule("Eichenwalde Map Data")
 			"Scope, then put crossheir touching the branch tip. \r\nOr put the left side of your ultimate meter on tower spire"),
 			Custom String("Put your crossheir on the flat part of stone pillar, then jump and throw"), Custom String(
 			"When walking out of spawn, aim at approx this height"), Custom String("Aim slightly above the left side of the tree"),
-			Custom String("Stand on carpet corner, aim for center of archway stone"), Custom String(""));
+			Custom String("Stand on carpet corner, aim for center of archway stone"), Custom String(""), Custom String(
+			"Stand on the dark stone, look through the ceiling window"));
 		Global.CPHintEffectPosition = Array(Vector(17.640, 36.060, -57.940), 0, 0, Vector(-10.680, 11.080, -33.100), Vector(-10.810,
-			11.330, -32.620), 0, Vector(22.720, 10.950, -66.240), Vector(31.780, 23.250, -52.730), 0, 0, 0, 0, 0, 0);
-		Global.CPScoped = Array(True, False, True, True, True, False, True, True, True, False, False, False, False, False);
+			11.330, -32.620), 0, Vector(22.720, 10.950, -66.240), Vector(31.780, 23.250, -52.730), 0, 0, 0, 0, 0, 0, 0);
+		Global.CPScoped = Array(True, False, True, True, True, False, True, True, True, False, False, False, False, False, False);
 		Global.CPObjectiveText = Array(Custom String("Hit Enemy Team Coming Out of Spawn At Beginning of Round"), Custom String(
 			"Hit a big anti on enemy team to initiate near 1st point"), Custom String(
 			"Hit a big anti on enemy team to initiate near 1st point"), Custom String(
@@ -760,7 +763,8 @@ rule("Eichenwalde Map Data")
 			"Hit enemies on top of the castle"), Custom String("Another Anti-Sniper Spot"), Custom String(
 			"Throw nade to end of 2nd point when respawning"), Custom String("Throw nade from spawn to 1st point"), Custom String(
 			"Hit enemies coming out of attack spawn"), Custom String("Throw nade from spawn to middle 2nd point"), Custom String(
-			"Walk out of spawn and save the game with a hero nade"));
+			"Walk out of spawn and save the game with a hero nade"), Custom String(
+			"Another weird out of map nade to hit tanks on 3rd point"));
 	}
 }
 
@@ -814,23 +818,23 @@ rule("Temple of Anubis Map Data")
 	actions
 	{
 		Global.CPLocation = Array(Vector(7.882, -2.004, 2.464), Vector(2.284, 0.262, -19.396), Vector(-25.705, 4.509, 30.861), Vector(
-			-47.671, 1.513, 35.016), Vector(-47.653, 1.513, 34.987), Vector(-16.535, 1.543, 71.018));
+			-47.671, 1.513, 35.016), Vector(-47.653, 1.513, 34.987), Vector(-16.535, 1.543, 71.018), Vector(-14.030, 4.663, 106.280));
 		Global.CPDestination = Array(Vector(-22.202, 5.454, 32.073), Vector(-42.664, 2.295, 42.229), Vector(2.629, 1.185, -19.289), Vector(
-			-3.051, 5.103, 108.704), Vector(-23.171, 7.207, 118.364), Vector(-8.770, 5.174, 111.224));
+			-3.051, 5.103, 108.704), Vector(-23.171, 7.207, 118.364), Vector(-8.770, 5.174, 111.224), Vector(-9.598, 4.558, 75.797));
 		Global.CPFacing = Array(Vector(-45.456, -75.740, 0), Vector(-36.107, -61.683, 0), Vector(150.535, -71.180, 0), Vector(31.196,
-			-53.399, 0), Vector(16.364, -49.010, 0), Vector(10.931, -76.558, 0));
-		Global.CPHintEffectPosition = Array(Vector(-29.206, 60.167, 38.701), 0, 0, 0, 0, Vector(-17.702, 75.597, 104.158));
-		Global.CPScoped = Array(False, False, True, False, False, True);
-		Global.CPObjectiveText = Array(Custom String("Anti their whole team to start the round :D"), Custom String(
-			"Throw nade to 1st point when returning from spawn"), Custom String("Anti their whole team to start the round :D"),
-			Custom String("Throw nade to 2nd point after respawning"), Custom String("Hit their supports on 2nd point after respawning"),
-			Custom String("Hit their tanks on 2nd point"));
+			-53.399, 0), Vector(16.364, -49.010, 0), Vector(10.931, -76.558, 0), Vector(171.727, -80.277, 0));
 		Global.CPHintText = Array(Custom String("Align your ultimate meter with the upper corner of wall"), Custom String(
 			"Align your ultimate meter with the building in background"), Custom String(
 			"Scope then center your ult meter on top of the spire"), Custom String(
 			"Aim for the top of the spire (pretty sensitive to start pos)"), Custom String(
 			"Aim slightly to the left of the top of the pyramid"), Custom String(
-			"Align the bottom right wick of your crossheir with the\r\ncorner where the orb is"));
+			"Align the bottom right wick of your crossheir with the\r\ncorner where the orb is"), Custom String(""));
+		Global.CPHintEffectPosition = Array(Vector(-29.206, 60.167, 38.701), 0, 0, 0, 0, Vector(-17.702, 75.597, 104.158), 0);
+		Global.CPScoped = Array(False, False, True, False, False, True, False);
+		Global.CPObjectiveText = Array(Custom String("Anti their whole team to start the round :D"), Custom String(
+			"Throw nade to 1st point when returning from spawn"), Custom String("Anti their whole team to start the round :D"),
+			Custom String("Throw nade to 2nd point after respawning"), Custom String("Hit their supports on 2nd point after respawning"),
+			Custom String("Hit their tanks on 2nd point"), Custom String("Hit their team coming under bridge"));
 	}
 }
 
@@ -952,20 +956,20 @@ rule("Blz World Map Data")
 	actions
 	{
 		Global.CPLocation = Array(Vector(-5.505, -1, 5.647), Vector(11.922, 0, 46.034), Vector(3.103, 8, 81.280), Vector(-72.023, 0.800,
-			98.577));
+			98.577), Vector(-1.770, 2, 81.395), Vector(-29.846, 2.001, 81.351), Vector(-29.846, 2.001, 81.351));
 		Global.CPDestination = Array(Vector(-6, 6.700, 52), Vector(8.500, 2.700, 71), Vector(2.600, -3.300, -18.360), Vector(1.150, 2.600,
-			75.330));
+			75.330), Vector(-38.176, 0.273, 75.185), Vector(-62.436, 0.454, 89.654), Vector(-59.725, 0.499, 108.192));
 		Global.CPFacing = Array(Vector(-0.790, -73.970, 0), Vector(-7.820, -81.970, 0), Vector(-179.770, -53, 0), Vector(107.640, -61.640,
-			0));
-		Global.CPObjectiveText = Array(Custom String("Hit enemies on the platform overlooking route to 1st point"), Custom String(
-			"Anti their tanks on point"), Custom String("Anti their whole team to start the round :D"), Custom String(
-			"Throw nade to 1st point while returning from spawn"));
+			0), Vector(-99.679, -78.349, 0), Vector(-75.707, -79.431, 0), Vector(-48.065, -77.245, 0));
 		Global.CPHintText = Array(Custom String("Put ultimate meter on the top of the bird statue"), Custom String(
 			"Scope, then put bottom of blue rows of crossheir on top wooden beam"), Custom String(
 			"Stand in middle of boat, then center ult meter on top archway roof"), Custom String(
-			"Look above pylon at same angle as the sun"));
-		Global.CPHintEffectPosition = Array(Null, Null, Null, Null);
-		Global.CPScoped = Array(False, True, False, False);
+			"Look above pylon at same angle as the sun"), Custom String(""), Custom String(""), Custom String(""));
+		Global.CPHintEffectPosition = Array(Vector(-5.774, 12.816, 17.028), 0, 0, 0, Vector(-32.645, 77.028, 83.307), 0, 0);
+		Global.CPScoped = Array(False, True, False, False, True, True, True);
+		Global.CPObjectiveText = Array(Custom String("Hit enemies on the platform overlooking route to 1st point"), Custom String(
+			"Anti their tanks on point"), Custom String("Anti their whole team to start the round :D"), Custom String(
+			"Throw nade to 1st point while returning from spawn"), Custom String(""), Custom String(""), Custom String(""));
 	}
 }
 
@@ -983,17 +987,17 @@ rule("Kings Row Map Data")
 
 	actions
 	{
-		Global.CPLocation = Array(Vector(-8.677, 0.072, -10.312), Vector(2.948, 0.055, -11.892), Vector(9.119, 0.065, -21.753), Vector(
-			9.119, 0.065, -21.753), Vector(-7.571, 0.022, -25.400), Vector(-49.184, 0.163, -38.250), Vector(-20.939, 0.118, -40.889),
-			Vector(0.104, 0.031, -22.647), Vector(-83.084, 0.730, -20.321));
-		Global.CPDestination = Array(Vector(-15.829, 0.595, -28.464), Vector(-9.329, 6.944, -40.993), Vector(-28.017, 0.580, -23.816),
-			Vector(-31.773, 9.750, -34.063), Vector(-60.923, 0.485, -32.162), Vector(-89.112, 1.383, -20.409), Vector(-3.845, 0.972,
-			16.273), Vector(-25.744, 0.691, -24.941), Vector(-15.075, 0.384, -32.519));
-		Global.CPFacing = Array(Vector(-158.494, -83.892, 0), Vector(-157.126, -79.585, 0), Vector(-93.181, -78.107, 0), Vector(-106.754,
+		Global.CPLocation = Array(Vector(-8.677, 0.072, -10.312), Vector(-20.647, 0, -2.427), Vector(9.119, 0.065, -21.753), Vector(9.119,
+			0.065, -21.753), Vector(-7.571, 0.022, -25.400), Vector(-49.184, 0.163, -38.250), Vector(-20.939, 0.118, -40.889), Vector(
+			0.104, 0.031, -22.647), Vector(-83.084, 0.730, -20.321));
+		Global.CPDestination = Array(Vector(-15.829, 0.595, -28.464), Vector(3.700, 7, -37.600), Vector(-28.017, 0.580, -23.816), Vector(
+			-31.773, 9.750, -34.063), Vector(-60.923, 0.485, -32.162), Vector(-89.112, 1.383, -20.409), Vector(-3.845, 0.972, 16.273),
+			Vector(-25.744, 0.691, -24.941), Vector(-15.075, 0.384, -32.519));
+		Global.CPFacing = Array(Vector(-158.494, -83.892, 0), Vector(145.260, -75.570, 0), Vector(-93.181, -78.107, 0), Vector(-106.754,
 			-75.317, 0), Vector(-97.224, -72.175, 0), Vector(-65.923, -75.784, 0), Vector(16.650, -69.802, 0), Vector(-95.070, -81.821, 0),
 			Vector(100.267, -65.045, 0));
 		Global.CPHintText = Array(Custom String("Scope and put triangle crossheir above dark section of wall"), Custom String(
-			"Look very slightly above crack in wall"), Custom String("Look at corner above"), Custom String(
+			"Put crossheir wick on building corner with orb"), Custom String("Look at corner above"), Custom String(
 			"Scope, align upper right triangle crossheir with corner, \r\nthen move up slightly"), Custom String(
 			"Align lower left triangle crossheir corner with corner between 2 roofs"), Custom String(
 			"Scope, align upper left triangle crossheir with smallest metal piece"), Custom String(
@@ -1069,7 +1073,7 @@ rule("Junkertown Map Data")
 			"Scope, put ult meter on the pipe. If you hit this in game let me know lol"), Custom String(
 			"Put bottom of ult meter on top of the spire"), Custom String(""));
 		Global.CPHintEffectPosition = Array(0, Vector(38.446, 19.804, -73.269), Vector(-16.733, 14.526, -62.375), 0, 0, 0, 0, 0, 0);
-		Global.CPScoped = Array(True, False, False, True, False, False, False, True, True, False);
+		Global.CPScoped = Array(True, False, False, True, False, False, False, True, False, False);
 		Global.CPObjectiveText = Array(Custom String(""), Custom String(""), Custom String(""), Custom String(""), Custom String(""),
 			Custom String(""), Custom String(""), Custom String(""), Custom String(""));
 		Global.DevModeEngaged = True;
