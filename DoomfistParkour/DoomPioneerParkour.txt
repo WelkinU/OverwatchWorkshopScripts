@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Workshop Code WARMR. Press Interact for controls. Host can go to Lobby -> Settings -> Workshop Settings to change game parameters.  Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & some code Hax, khandescension, nebula. Last Updated: June 13, 2021. Request a feature, report issue or view update history: https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Workshop Code WARMR. Press Interact for controls. Host can go to Lobby -> Settings -> Workshop Settings to change game parameters.  Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & some code Hax, khandescension, nebula. Last Updated: July 1, 2021. Request a feature, report issue or view update history: https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -17,7 +17,7 @@ settings
 		{
 			enabled maps
 			{
-				Hollywood
+				Dorado
 			}
 		}
 
@@ -1779,11 +1779,12 @@ rule("BHop Reset Detector - Tons of fixes from the original, only fail case shou
 		Altitude Of(Event Player) <= 0.042;
 		!(Is Button Held(Event Player, Button(Secondary Fire)) && Is Button Held(Event Player, Button(Jump))) == True;
 		Event Player.BounceTimerEnabled == True;
-		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
+		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius + 0.300;
 		"To stop this rule from triggering when sliding on a roof. This nearest walkable position might not work if the player is off map."
 		(Distance Between(Position Of(Event Player), Nearest Walkable Position(Position Of(Event Player))) < 1 || Distance Between(
 			Global.CPLocations[Event Player.CurrentCP], Nearest Walkable Position(Global.CPLocations[Event Player.CurrentCP])) > 10)
 			== True;
+		Is On Ground(Event Player) != True;
 	}
 
 	actions
@@ -3497,7 +3498,7 @@ rule("Ms. Destructo | Created by nebula - slightly modified from original YENEP"
 	}
 }
 
-rule("Rule 102")
+rule("Make Ms Destructo Bot Invisible - Doesn't work on the mech lol")
 {
 	event
 	{
