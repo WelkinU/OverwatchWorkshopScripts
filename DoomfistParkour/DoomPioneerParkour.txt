@@ -213,6 +213,8 @@ variables
 		52: BounceTimerEnabled
 		53: CPSpecialRequirements
 		54: FreeRoamEnabled
+		55: HorizontalAngle
+		56: M360
 }
 
 subroutines
@@ -348,10 +350,11 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			"    +  {0}  | Preview Next Checkpoint ( {0} again to view effect locks )\r\n    +  {1}  | Spectate", Input Binding String(
 			Button(Primary Fire)), Input Binding String(Button(Melee))), Custom String(
 			"    +  {0}  | Skip CP (After {1}sec)\r\n    +  {2}  | Previous CP", Input Binding String(Button(Jump)), Global.SkipTimeLimit,
-			Input Binding String(Button(Crouch))), Custom String("{1}\r\n{0}", Custom String(
+			Input Binding String(Button(Crouch))), Custom String("{1}\r\n{0}\r\n{2}", Custom String(
 			"{0}  +  {1}  | Toggle Invisiblity\r\nNeed Healing/Help | Replay Pioneer Route", Input Binding String(Button(Jump)),
 			Input Binding String(Button(Crouch))), Custom String("    +  {0}  | Toggle Bounce Timer & Bhop Reset Detector",
-			Input Binding String(Button(Ultimate)))))), Left, 0, Color(White), Color(White), Color(White), Visible To and String,
+			Input Binding String(Button(Ultimate))), Custom String("{0}  +  {1}  + Ult Status | Free Roam", Input Binding String(Button(
+			Ultimate)), Input Binding String(Button(Crouch)))))), Left, 0, Color(White), Color(White), Color(White), Visible To and String,
 			Visible Never);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String(" \r\n- - - - - - - - - - - Pioneer Controls - - - - - - - - - - -\r\n{0}\r\n{1}\r\n", Custom String(
@@ -402,14 +405,22 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create Progress Bar HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300),
 			Local Player.ThreeSecondBounceTimer / 0.030, Custom String("Bounce Timer"), Top, 10, Color(White), Color(White),
 			Visible To and Values, Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams), X Component Of(
-			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP]) > 0), Custom String("{0}", Ability Icon String(Hero(
-			Tracer), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("Downwards Diagonal Punch Required"),
-			Left, 3, Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.TimeSpentOnCP > Global.SkipTimeLimit), Null,
 			Custom String("Skip Checkpoint Available"), Custom String("{0} + {1}", Input Binding String(Button(Interact)),
 			Input Binding String(Button(Jump))), Left, 2, Color(White), Color(Orange), Color(White), Visible To and String,
 			Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams), Dot Product(
+			Global.CPSpecialRequirementsArray[Local Player.CurrentCP], Vector(1, 1, 1)) > 0), Null, Null, Custom String(
+			" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), Left, 2.900, Color(Green), Color(Orange), Color(White), Visible To,
+			Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams), X Component Of(
+			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP]) > 0), Custom String("{0}", Ability Icon String(Hero(
+			Tracer), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("Downwards Diagonal Punch Required"),
+			Left, 3, Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams), Z Component Of(
+			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP]) > 0), Custom String("{0}", Ability Icon String(Hero(
+			Wrecking Ball), Button(Ability 1))), Custom String("CP Special Requirement"), Custom String("360 Required"), Left, 3.100,
+			Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String("Position: {0}", Position Of(
 			Local Player)), Left, 40, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 	}
@@ -748,6 +759,14 @@ rule("Non-Pioneer Arrive At CP")
 			Event Player.CPSpecialRequirements) > 0));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a Downwards Diagonal Punch!"));
+			Call Subroutine(RespawnPlayer);
+			Abort;
+		End;
+		"Check if pioneer and player both did Downwards Diagonal Punch"
+		If((Z Component Of(Global.CPSpecialRequirementsArray[Event Player.CurrentCP]) > 0) != (Z Component Of(
+			Event Player.CPSpecialRequirements) > 0));
+			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
+			Small Message(Event Player, Custom String("Checkpoint requires you to do a 360!"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
@@ -1845,6 +1864,47 @@ rule("Downward Diag Detector")
 		Wait(0.100, Abort When False);
 		Event Player.CPSpecialRequirements += Vector(1, 0, 0);
 		Small Message(Event Player, Custom String("Downward Diagonal Punch"));
+	}
+}
+
+rule("360 Detector - Straight from Hax framework")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
+		disabled Distance Between(Global.CPLocations[Event Player.CurrentCP + 1], Position Of(Event Player)) > Global.CPRadius;
+	}
+
+	actions
+	{
+		Event Player.HorizontalAngle = Horizontal Facing Angle Of(Event Player);
+		Event Player.M360 = False;
+		While(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius);
+			Wait Until(Absolute Value(Angle Difference(Horizontal Facing Angle Of(Event Player), Event Player.HorizontalAngle)) > 90, 99999);
+			If(Horizontal Speed Of(Event Player) < 0.100);
+				Wait Until(Horizontal Speed Of(Event Player) > 0.100, 99999);
+				Loop;
+			End;
+			Event Player.M360 = Event Player.M360 ? (Event Player.M360 > False ? (Angle Difference(Horizontal Facing Angle Of(Event Player),
+				Event Player.HorizontalAngle) > False ? Event Player.M360 + True : -1) : (Angle Difference(Horizontal Facing Angle Of(
+				Event Player), Event Player.HorizontalAngle) > False ? 1 : Event Player.M360 - True)) : (Angle Difference(
+				Horizontal Facing Angle Of(Event Player), Event Player.HorizontalAngle) > False ? 1 : -1);
+			If(Absolute Value(Event Player.M360) == 3);
+				Small Message(Event Player, Custom String("360"));
+				"Z component is 360"
+				Event Player.CPSpecialRequirements += Forward;
+				Break;
+			End;
+			Event Player.HorizontalAngle = Horizontal Angle From Direction(Direction From Angles(Event Player.HorizontalAngle + (
+				Event Player.M360 > False ? -90 : 90), False));
+		End;
 	}
 }
 
