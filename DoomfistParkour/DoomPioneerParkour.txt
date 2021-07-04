@@ -365,6 +365,11 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Ultimate)), Input Binding String(Button(Crouch)))))), Left, 0, Color(White), Color(White), Color(White), Visible To and String,
 			Visible Never);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
+			Custom String("{0}  +   Spray  |  Swag Mode", Input Binding String(Button(Interact))), Left, 0.100, Color(White), Color(White),
+			Custom Color(128 + 127 * Cosine From Degrees(Total Time Elapsed * 100), 128 + 127 * Cosine From Degrees(
+			120 + Total Time Elapsed * 100), 128 + 127 * Cosine From Degrees(240 + Total Time Elapsed * 100), 255),
+			Visible To String and Color, Visible Never);
+		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String(" \r\n- - - - - - - - - - - Pioneer Controls - - - - - - - - - - -\r\n{0}\r\n{1}\r\n", Custom String(
 			"{0} | Create Effect Lock\r\n{1} | Create Env. Collision Sphere\r\nGroup Up | Create Kill Sphere", Input Binding String(Button(
 			Melee)), Input Binding String(Button(Crouch))), Custom String(
@@ -767,21 +772,21 @@ rule("Non-Pioneer Arrive At CP")
 			Abort;
 		End;
 		"Check if pioneer and player both did Downwards Diagonal Punch"
-		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][0] > 0) != (Event Player.CPSpecialRequirements[0] > 0));
+		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][0] > 0) > (Event Player.CPSpecialRequirements[0] > 0));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a Downwards Diagonal Punch!"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
 		"Check if pioneer and player both did Headbounce"
-		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][1] > 0) != (Event Player.CPSpecialRequirements[1] > 0));
+		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][1] > 0) > (Event Player.CPSpecialRequirements[1] > 0));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a Headbounce"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
 		"Check if pioneer and player both did 360"
-		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][2] > 0) != (Event Player.CPSpecialRequirements[2] > 0));
+		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][2] > 0) > (Event Player.CPSpecialRequirements[2] > 0));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a 360!"));
 			Call Subroutine(RespawnPlayer);
