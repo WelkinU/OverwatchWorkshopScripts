@@ -222,6 +222,7 @@ variables
 		55: HorizontalAngle
 		56: M360
 		57: SwagModeEngaged
+		58: SwagEffectsIDArray
 }
 
 subroutines
@@ -415,16 +416,16 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Custom String("Skip Checkpoint Available"), Custom String("{0} + {1}", Input Binding String(Button(Interact)),
 			Input Binding String(Button(Jump))), Left, 2, Color(White), Color(Orange), Color(White), Visible To and String,
 			Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams), Dot Product(
-			Global.CPSpecialRequirementsArray[Local Player.CurrentCP], Vector(1, 1, 1)) > 0), Null, Null, Custom String(
-			" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), Left, 2.900, Color(Green), Color(Orange), Color(White), Visible To,
-			Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams), X Component Of(
-			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP]) > 0), Custom String("{0}", Ability Icon String(Hero(
-			Tracer), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("Downwards Diagonal Punch Required"),
-			Left, 3, Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams), Z Component Of(
-			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP]) > 0), Custom String("{0}", Ability Icon String(Hero(
+		Create HUD Text(Filtered Array(All Living Players(All Teams),
+			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP][0] > 0), Custom String("{0}", Ability Icon String(Hero(
+			Tracer), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("Downward Diagonal Punch Required"), Left,
+			3, Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams),
+			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP][1] > 0), Custom String("{0}", Ability Icon String(Hero(
+			Doomfist), Button(Ability 1))), Custom String("CP Special Requirement"), Custom String("Headbounce Required"), Left, 3.050,
+			Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
+		Create HUD Text(Filtered Array(All Living Players(All Teams),
+			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP][2] > 0), Custom String("{0}", Ability Icon String(Hero(
 			Reinhardt), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("360 Required"), Left, 3.100, Color(
 			Green), Color(Orange), Color(White), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String("Position: {0}", Position Of(
@@ -479,6 +480,7 @@ rule("Initialize player + Ring Effects")
 		Event Player.BounceTimerEnabled = True;
 		Event Player.FreeRoamEnabled = False;
 		Event Player.SwagModeEngaged = False;
+		Event Player.SwagEffectsIDArray = Empty Array;
 	}
 }
 
@@ -516,13 +518,14 @@ rule("Player-Specific HUD")
 			Global.CPLocations[Event Player.CurrentCP + 1] + Up, 1.300, Do Not Clip, Visible To Position and String, Color(Yellow),
 			Default Visibility);
 		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
-		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])
-			> 0 || Dot Product(Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP], Vector(1, 1, 1)) > 0), Custom String(
-			"{0} {1}", Count Of(Event Player.EffectLockObtained) < Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP])
-			? Ability Icon String(Hero(Winston), Button(Ability 2)) : String(""), Dot Product(
-			Global.CPSpecialRequirementsArray[Event Player.CurrentCP], Vector(1, 1, 1)) > Dot Product(Event Player.CPSpecialRequirements,
-			Vector(1, 1, 1)) ? Custom String("ML") : String("")), Global.CPLocations[Event Player.CurrentCP + 1], 1.300,
-			Clip Against Surfaces, Visible To Position and String, Color(White), Default Visibility);
+		Create In-World Text(Event Player, Custom String("{0} {1}", Count Of(Event Player.EffectLockObtained) < Count Of(
+			Global.CPEffectLockSphereArray[Event Player.CurrentCP]) ? Ability Icon String(Hero(Winston), Button(Ability 2)) : String(""),
+			Is True For Any(Global.CPSpecialRequirementsArray[Event Player.CurrentCP],
+			Current Array Element - Event Player.CPSpecialRequirements[Current Array Index] > 0) ? Custom String("ML") : String("")),
+			Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Clip Against Surfaces, Visible To Position and String, Color(White),
+			Default Visibility);
+		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), Left, 2.900, Color(Green), Color(
+			Orange), Color(White), None, Default Visibility);
 	}
 }
 
@@ -685,7 +688,7 @@ rule("Pioneer Create Point")
 		Global.ReplayPioneerFacingArray[Event Player.CurrentCP] = Event Player.ReplayFacing;
 		Event Player.FacingDirectionLeavingCP = Global.CPFacingDirections[Event Player.CurrentCP];
 		Modify Global Variable(CPPlayerScaleArray, Append To Array, Event Player.PlayerScale);
-		Modify Global Variable(CPSpecialRequirementsArray, Append To Array, Event Player.CPSpecialRequirements);
+		Global.CPSpecialRequirementsArray[Count Of(Global.CPSpecialRequirementsArray)] = Event Player.CPSpecialRequirements;
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
 		Event Player.TimeSpentOnCP = 0;
@@ -764,16 +767,21 @@ rule("Non-Pioneer Arrive At CP")
 			Abort;
 		End;
 		"Check if pioneer and player both did Downwards Diagonal Punch"
-		If((X Component Of(Global.CPSpecialRequirementsArray[Event Player.CurrentCP]) > 0) != (X Component Of(
-			Event Player.CPSpecialRequirements) > 0));
+		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][0] > 0) != (Event Player.CPSpecialRequirements[0] > 0));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a Downwards Diagonal Punch!"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
-		"Check if pioneer and player both did Downwards Diagonal Punch"
-		If((Z Component Of(Global.CPSpecialRequirementsArray[Event Player.CurrentCP]) > 0) != (Z Component Of(
-			Event Player.CPSpecialRequirements) > 0));
+		"Check if pioneer and player both did Headbounce"
+		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][1] > 0) != (Event Player.CPSpecialRequirements[1] > 0));
+			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
+			Small Message(Event Player, Custom String("Checkpoint requires you to do a Headbounce"));
+			Call Subroutine(RespawnPlayer);
+			Abort;
+		End;
+		"Check if pioneer and player both did 360"
+		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][2] > 0) != (Event Player.CPSpecialRequirements[2] > 0));
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a 360!"));
 			Call Subroutine(RespawnPlayer);
@@ -1570,6 +1578,7 @@ rule("Need Healing/Help: View Replay")
 			If(Is Button Held(Event Player, Button(Jump)));
 				"Switch variable from paused to unpaused or vice versa"
 				Event Player.TempVariable = !Event Player.TempVariable;
+				Wait Until(!Is Button Held(Event Player, Button(Jump)), 5);
 			End;
 			"Update replay frame index based on player pressing left or right. Clip the index to make sure player can't go to negative index, or past end of replay."
 			Event Player.TempIterator = Min(Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]) - 1, Max(0,
@@ -1875,8 +1884,32 @@ rule("Downward Diag Detector")
 	{
 		"Stops this rule from triggering on downward diag from doorframe - adjusting to be slightly larger for higher doorways on blizzard world..."
 		Wait(0.100, Abort When False);
-		Event Player.CPSpecialRequirements += Vector(1, 0, 0);
+		Event Player.CPSpecialRequirements[0] = 1;
 		Small Message(Event Player, Custom String("Downward Diagonal Punch"));
+	}
+}
+
+rule("Headbounce detector - From Hax")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Is Using Ability 1(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait(0.350, Ignore Condition);
+		If(Horizontal Speed Of(Event Player) > 7);
+			Small Message(Event Player, Custom String("Headbounce"));
+			Event Player.CPSpecialRequirements[1] = 1;
+		End;
 	}
 }
 
@@ -1892,7 +1925,6 @@ rule("360 Detector - Straight from Hax framework")
 	conditions
 	{
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
-		disabled Distance Between(Global.CPLocations[Event Player.CurrentCP + 1], Position Of(Event Player)) > Global.CPRadius;
 	}
 
 	actions
@@ -1912,7 +1944,8 @@ rule("360 Detector - Straight from Hax framework")
 			If(Absolute Value(Event Player.M360) == 3);
 				Small Message(Event Player, Custom String("360"));
 				"Z component is 360 - this should only trigger one time."
-				Event Player.CPSpecialRequirements += Forward;
+				disabled Event Player.CPSpecialRequirements += Forward;
+				Event Player.CPSpecialRequirements[2] = 1;
 				If(Event Player.SwagModeEngaged);
 					Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Eye Position(Event Player), 1);
 				End;
@@ -2213,7 +2246,7 @@ rule("Sub0: RespawnPlayer")
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
-		Event Player.CPSpecialRequirements = Vector(0, 0, 0);
+		Event Player.CPSpecialRequirements = Array(0, 0, 0, 0, 0, 0);
 		Event Player.EffectLockSphereLocation = Empty Array;
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentCP]);
 		If(Is Button Held(Event Player, Button(Interact)));
@@ -3684,7 +3717,7 @@ rule("Make Ms Destructo Bot Invisible - Doesn't work on the mech lol")
 	}
 }
 
-rule("Engage Swag Mode: Hold Interact + Emote (RGB Skin happens here)")
+rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 {
 	event
 	{
@@ -3696,14 +3729,15 @@ rule("Engage Swag Mode: Hold Interact + Emote (RGB Skin happens here)")
 	conditions
 	{
 		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating Any Emote(Event Player) == True;
+		disabled Is Communicating Any Emote(Event Player) == True;
 		disabled Is Communicating(Event Player, Yes) == True;
+		Is Communicating Any Spray(Event Player) == True;
 	}
 
 	actions
 	{
 		"Hold interact for this long while emoting"
-		Wait(0.500, Abort When False);
+		disabled Wait(0.500, Abort When False);
 		Event Player.SwagModeEngaged = !Event Player.SwagModeEngaged;
 		Wait(0.100, Ignore Condition);
 		Small Message(Event Player, Event Player.SwagModeEngaged ? Custom String("Swag Mode Engaged") : Custom String(
@@ -3712,13 +3746,21 @@ rule("Engage Swag Mode: Hold Interact + Emote (RGB Skin happens here)")
 			"RGB Skin - Based on 1v11 Boss Fight by GIGGELMAN - ZEA8D"
 			For Player Variable(Event Player, TempIterator, 0, 6, 1);
 				Create Effect(All Players(All Teams), Ring, Evaluate Once(Array(Color(Rose), Color(Sky Blue), Color(Orange), Color(Red), Color(
-					Lime Green), Color(Blue), Custom Color(255, 205, 14, 255))[Event Player.TempIterator]), Event Player, Evaluate Once(
-					1.100 - 0.800 * (Event Player.TempIterator / 7)), Visible To Position and Radius);
+					Lime Green), Color(Blue), Custom Color(255, 205, 14, 255), Color(Purple))[Event Player.TempIterator]), Event Player,
+					Evaluate Once(1.100 - 0.800 * (Event Player.TempIterator / 7)), Visible To Position and Radius);
 				disabled Create Effect(All Players(All Teams), Ring, Evaluate Once(Array(Color(Rose), Custom Color(255, 205, 14, 255), Color(Orange),
 					Custom Color(204, 164, 0, 255), Color(Sky Blue), Color(Blue), Color(Lime Green))[Event Player.TempIterator]), Event Player,
 					Evaluate Once(0.900 - 0.800 * (Event Player.TempIterator / 10)), Visible To Position and Radius);
+				Modify Player Variable(Event Player, SwagEffectsIDArray, Append To Array, Last Created Entity);
 			End;
 			Create Effect(All Players(All Teams), Ana Nano Boosted Effect, Color(Team 1), Event Player, 1, Visible To Position and Radius);
+			Modify Player Variable(Event Player, SwagEffectsIDArray, Append To Array, Last Created Entity);
+		Else;
+			"Destroy the effects from Swag Mode when turning off"
+			While(Count Of(Event Player.SwagEffectsIDArray) > 0);
+				Destroy Effect(First Of(Event Player.SwagEffectsIDArray));
+				Modify Player Variable(Event Player, SwagEffectsIDArray, Remove From Array By Index, 0);
+			End;
 		End;
 	}
 }
