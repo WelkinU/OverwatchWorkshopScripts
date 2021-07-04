@@ -2,12 +2,12 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 3, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 4, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
 	{
-		Max Team 1 Players: 12
+		Max Team 1 Players: 10
 		Max Team 2 Players: 0
 	}
 
@@ -109,6 +109,12 @@ settings
 				Doomfist
 			}
 		}
+	}
+
+	extensions
+	{
+		Buff Status Effects
+		Energy Explosion Effects
 	}
 }
 
@@ -215,6 +221,7 @@ variables
 		54: FreeRoamEnabled
 		55: HorizontalAngle
 		56: M360
+		57: SwagModeEngaged
 }
 
 subroutines
@@ -364,8 +371,7 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Input Binding String(Button(Interact)), Input Binding String(Button(Reload)), Custom String("{0}  +  {1}  | Teleport",
 			Input Binding String(Button(Primary Fire)), Input Binding String(Button(Melee))))), Left, 1, Color(White), Color(White), Color(
 			White), Visible To and String, Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
-			Custom String(
+		Create HUD Text(Filtered Array(Host Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"- - - - - - - - - - - - - - - - - - - - - -Host Controls- - - - - - - - - - - - - - - - - - - - - -\r\n{0}\r\n{1}\r\n{2}",
 			Custom String("{0} + Hello | Dev Mode (Players Can Skip Levels)\r\n{1} + Emote + Dev Mode On | Delete Last CP",
 			Input Binding String(Button(Interact)), Input Binding String(Button(Melee))), Custom String(
@@ -419,8 +425,8 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Left, 3, Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(All Living Players(All Teams), Z Component Of(
 			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP]) > 0), Custom String("{0}", Ability Icon String(Hero(
-			Wrecking Ball), Button(Ability 1))), Custom String("CP Special Requirement"), Custom String("360 Required"), Left, 3.100,
-			Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
+			Reinhardt), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("360 Required"), Left, 3.100, Color(
+			Green), Color(Orange), Color(White), Visible To, Default Visibility);
 		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String("Position: {0}", Position Of(
 			Local Player)), Left, 40, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 	}
@@ -472,6 +478,7 @@ rule("Initialize player + Ring Effects")
 			Destination and Rate);
 		Event Player.BounceTimerEnabled = True;
 		Event Player.FreeRoamEnabled = False;
+		Event Player.SwagModeEngaged = False;
 	}
 }
 
@@ -510,10 +517,12 @@ rule("Player-Specific HUD")
 			Default Visibility);
 		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
 		Create In-World Text(Filtered Array(Event Player, Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])
-			> 0 && Count Of(Current Array Element.EffectLockObtained) < Count Of(
-			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])), Custom String("{0}", Ability Icon String(Hero(Winston),
-			Button(Ability 2))), Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Clip Against Surfaces, Visible To and Position,
-			Color(White), Default Visibility);
+			> 0 || Dot Product(Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP], Vector(1, 1, 1)) > 0), Custom String(
+			"{0} {1}", Count Of(Event Player.EffectLockObtained) < Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP])
+			? Ability Icon String(Hero(Winston), Button(Ability 2)) : String(""), Dot Product(
+			Global.CPSpecialRequirementsArray[Event Player.CurrentCP], Vector(1, 1, 1)) > Dot Product(Event Player.CPSpecialRequirements,
+			Vector(1, 1, 1)) ? Custom String("ML") : String("")), Global.CPLocations[Event Player.CurrentCP + 1], 1.300,
+			Clip Against Surfaces, Visible To Position and String, Color(White), Default Visibility);
 	}
 }
 
@@ -771,6 +780,9 @@ rule("Non-Pioneer Arrive At CP")
 			Abort;
 		End;
 		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
+		If(Event Player.SwagModeEngaged);
+			Play Effect(All Players(All Teams), Lúcio Sound Barrier Cast Effect, Color(Team 1), Position Of(Event Player), 1);
+		End;
 		Event Player.CurrentCP += 1;
 		Event Player.MaxUnlockedCP = Max(Event Player.MaxUnlockedCP, Event Player.CurrentCP);
 		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
@@ -1568,6 +1580,7 @@ rule("Need Healing/Help: View Replay")
 		End;
 		"Pause a little at end of replay to show final destination"
 		If(Event Player.TempIterator >= Count Of(Global.ReplayPioneerPositionArray[Event Player.CurrentCP]));
+			Event Player.TempIterator += -1;
 			Wait(0.500, Ignore Condition);
 		End;
 		Stop Camera(Event Player);
@@ -1898,8 +1911,11 @@ rule("360 Detector - Straight from Hax framework")
 				Horizontal Facing Angle Of(Event Player), Event Player.HorizontalAngle) > False ? 1 : -1);
 			If(Absolute Value(Event Player.M360) == 3);
 				Small Message(Event Player, Custom String("360"));
-				"Z component is 360"
+				"Z component is 360 - this should only trigger one time."
 				Event Player.CPSpecialRequirements += Forward;
+				If(Event Player.SwagModeEngaged);
+					Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Eye Position(Event Player), 1);
+				End;
 				Break;
 			End;
 			Event Player.HorizontalAngle = Horizontal Angle From Direction(Direction From Angles(Event Player.HorizontalAngle + (
@@ -3665,5 +3681,88 @@ rule("Make Ms Destructo Bot Invisible - Doesn't work on the mech lol")
 	actions
 	{
 		Set Invisible(Event Player, All);
+	}
+}
+
+rule("Engage Swag Mode: Hold Interact + Emote (RGB Skin happens here)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating Any Emote(Event Player) == True;
+		disabled Is Communicating(Event Player, Yes) == True;
+	}
+
+	actions
+	{
+		"Hold interact for this long while emoting"
+		Wait(0.500, Abort When False);
+		Event Player.SwagModeEngaged = !Event Player.SwagModeEngaged;
+		Wait(0.100, Ignore Condition);
+		Small Message(Event Player, Event Player.SwagModeEngaged ? Custom String("Swag Mode Engaged") : Custom String(
+			"Swag Mode Disengaged"));
+		If(Event Player.SwagModeEngaged);
+			"RGB Skin - Based on 1v11 Boss Fight by GIGGELMAN - ZEA8D"
+			For Player Variable(Event Player, TempIterator, 0, 6, 1);
+				Create Effect(All Players(All Teams), Ring, Evaluate Once(Array(Color(Rose), Color(Sky Blue), Color(Orange), Color(Red), Color(
+					Lime Green), Color(Blue), Custom Color(255, 205, 14, 255))[Event Player.TempIterator]), Event Player, Evaluate Once(
+					1.100 - 0.800 * (Event Player.TempIterator / 7)), Visible To Position and Radius);
+				disabled Create Effect(All Players(All Teams), Ring, Evaluate Once(Array(Color(Rose), Custom Color(255, 205, 14, 255), Color(Orange),
+					Custom Color(204, 164, 0, 255), Color(Sky Blue), Color(Blue), Color(Lime Green))[Event Player.TempIterator]), Event Player,
+					Evaluate Once(0.900 - 0.800 * (Event Player.TempIterator / 10)), Visible To Position and Radius);
+			End;
+			Create Effect(All Players(All Teams), Ana Nano Boosted Effect, Color(Team 1), Event Player, 1, Visible To Position and Radius);
+		End;
+	}
+}
+
+disabled rule("Swag Mode: Slam")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Event Player.SwagModeEngaged == True;
+		Is Using Ability 2(Event Player) == True;
+	}
+
+	actions
+	{
+		Wait Until(Is On Ground(Event Player), 7);
+		Play Effect(Event Player, Lúcio Sound Barrier Cast Effect, Color(Team 1), Position Of(Event Player), 1);
+	}
+}
+
+disabled rule("Swag Mode: Left Click")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Event Player.SwagModeEngaged == True;
+		Is Firing Primary(Event Player) == True;
+	}
+
+	actions
+	{
+		Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Ray Cast Hit Position(Eye Position(Event Player),
+			Eye Position(Event Player) + Facing Direction Of(Event Player) * 180, Null, Event Player, False), 1);
 	}
 }
