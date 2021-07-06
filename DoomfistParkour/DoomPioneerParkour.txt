@@ -527,7 +527,7 @@ rule("Player-Specific HUD")
 			Global.CPEffectLockSphereArray[Event Player.CurrentCP]) ? Ability Icon String(Hero(Winston), Button(Ability 2)) : String(""),
 			Is True For Any(Global.CPSpecialRequirementsArray[Event Player.CurrentCP],
 			Current Array Element - Event Player.CPSpecialRequirements[Current Array Index] > 0) ? Custom String("ML") : String("")),
-			Global.CPLocations[Event Player.CurrentCP + 1], 1.300, Clip Against Surfaces, Visible To Position and String, Color(White),
+			Global.CPLocations[Event Player.CurrentCP + 1], 1.700, Clip Against Surfaces, Visible To Position and String, Color(White),
 			Default Visibility);
 		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), Left, 2.900, Color(Green), Color(
 			Orange), Color(White), None, Default Visibility);
@@ -1948,12 +1948,10 @@ rule("360 Detector - Straight from Hax framework")
 				Horizontal Facing Angle Of(Event Player), Event Player.HorizontalAngle) > False ? 1 : -1);
 			If(Absolute Value(Event Player.M360) == 3);
 				Small Message(Event Player, Custom String("360"));
-				"Z component is 360 - this should only trigger one time."
-				disabled Event Player.CPSpecialRequirements += Forward;
 				Event Player.CPSpecialRequirements[2] = 1;
-				If(Event Player.SwagModeEngaged);
-					Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Eye Position(Event Player), 1);
-				End;
+				disabled If(Event Player.SwagModeEngaged);
+				disabled Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Eye Position(Event Player), 1);
+				disabled End;
 				Break;
 			End;
 			Event Player.HorizontalAngle = Horizontal Angle From Direction(Direction From Angles(Event Player.HorizontalAngle + (
@@ -3796,7 +3794,7 @@ disabled rule("Swag Mode: Slam")
 	}
 }
 
-disabled rule("Swag Mode: Left Click")
+rule("Swag Mode: Left Click => EMP")
 {
 	event
 	{
