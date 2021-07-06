@@ -17,7 +17,7 @@ settings
 		{
 			enabled maps
 			{
-				Dorado
+				Paris
 			}
 		}
 
@@ -1924,7 +1924,7 @@ rule("360 Detector - Straight from Hax framework")
 	{
 		Ongoing - Each Player;
 		All;
-		All;
+		Doomfist;
 	}
 
 	conditions
@@ -1986,6 +1986,7 @@ rule("BHop Reset Detector - Tons of fixes from the original, only fail case shou
 		Is On Ground(Event Player) != True;
 		"Is pioneer or is not waiting for pioneer"
 		(Event Player == Global.CurrentPioneer || Event Player.CurrentCP < Count Of(Global.CPLocations) - 1) == True;
+		Event Player.FreeRoamEnabled != True;
 	}
 
 	actions
@@ -2582,6 +2583,7 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 		"No effect lock created yet or distance to last effect lock > effect lock sphere radius"
 		(Event Player.EffectLockSphereLocation == Empty Array || Is True For All(Event Player.EffectLockSphereLocation, Distance Between(
 			Eye Position(Event Player), Current Array Element) > Global.EffectLockSphereRadiusConstant * 2)) == True;
+		Event Player.FreeRoamEnabled != True;
 	}
 
 	actions
@@ -2686,6 +2688,7 @@ rule("Pioneer Create Green Sphere with Crouch")
 		Is Button Held(Event Player, Button(Crouch)) == True;
 		Hero Of(Event Player) != Hero(Wrecking Ball);
 		Event Player.CancelPointTimer == 0;
+		Event Player.FreeRoamEnabled != True;
 	}
 
 	actions
@@ -2800,6 +2803,7 @@ rule("Pioneer Create Kill Sphere With Group Up")
 		Global.CurrentPioneer == Event Player;
 		Is Communicating(Event Player, Group Up) == True;
 		Event Player.CancelPointTimer == 0;
+		Event Player.FreeRoamEnabled != True;
 	}
 
 	actions
