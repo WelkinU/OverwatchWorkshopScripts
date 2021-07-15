@@ -2,12 +2,12 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 4, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 14, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
 	{
-		Max Team 1 Players: 10
+		Max Team 1 Players: 9
 		Max Team 2 Players: 0
 	}
 
@@ -17,7 +17,7 @@ settings
 		{
 			enabled maps
 			{
-				Paris
+				Dorado
 			}
 		}
 
@@ -115,6 +115,8 @@ settings
 	{
 		Buff Status Effects
 		Energy Explosion Effects
+		Kinetic Explosion Effects
+		Explosion Sounds
 	}
 }
 
@@ -134,12 +136,11 @@ variables
 		10: SkipTimeLimit
 		11: InfiniteModeEnabledConstant
 		12: AbilityCountsEnabledConstant
-		13: DownwardsDiagEnabledConstant
+		13: MissionsEnabledConstant
 		14: PioneerTimeLimitConstant
 		15: PlayerMoveSpeedConstant
 		16: NonInfiniteModeWinTime
 		17: PioneerMinDistanceConstant
-		18: PunchGraceEnabled
 		19: PrimaryFireUsefulForTheseHeros
 		20: CPRadius
 		21: CPSpecialRequirementsArray
@@ -163,6 +164,7 @@ variables
 		39: EffectLocksResetCooldownConstant
 		40: MrDestructoVector
 		41: MsDestructo
+		42: MissionOrbRadiusConstant
 
 	player:
 		0: CurrentCP
@@ -202,14 +204,10 @@ variables
 		35: BlockPioneerPass
 		36: WinstonWallClimbEnabled
 		37: WinstonWallClimbTimer
-		38: WinstonBubbleLocation
-		39: WinstonBouncyBubbleCooldown
-		40: WinstonBubbleEffect
-		41: HeroSelectMenuOpen
 		42: MenuInWorldLocationTempStore
 		43: MenuTextIDTempStore
 		44: TempIterator
-		45: AnaSleepDartTeleLocation
+		45: TempVariable3
 		46: RoadhogHookPosition
 		47: AbilitiesForEffectLock
 		48: TextIDTempStore
@@ -219,10 +217,11 @@ variables
 		52: BounceTimerEnabled
 		53: CPSpecialRequirements
 		54: FreeRoamEnabled
-		55: HorizontalAngle
-		56: M360
+		55: Array360
+		56: Timer360
 		57: SwagModeEngaged
 		58: SwagEffectsIDArray
+		59: MissionHUDTextIDArray
 }
 
 subroutines
@@ -234,6 +233,7 @@ subroutines
 	5: UpdatePlayerScale
 	6: CheckAbilityCounts
 	7: CreateEffectLocks
+	8: PassPioneer
 }
 
 rule("--------MEMORY: PASTE VARIABLES HERE -------------------")
@@ -273,28 +273,26 @@ rule("Initialize Globals")
 			"Ability Count Limits Enabled"), True, 0);
 		Global.PioneerTimeLimitConstant = Workshop Setting Integer(Custom String("Important Settings"), Custom String(
 			"Pioneer Time Limit in Seconds"), 180, 30, 420, 0);
-		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Important Settings"), Custom String(
-			"Seconds Before Player Can Skip Level"), 240, 60, 9999, 0);
+		Global.SkipTimeLimit = Workshop Setting Integer(Custom String("Gameplay"), Custom String("Seconds Before Player Can Skip Level"),
+			240, 60, 9999, 0);
 		Global.ReplaysEnabledConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
-			"Enable Pioneer Replays (Can cause large server load at 40+ CP's)"), True, 0);
+			"Enable Pioneer Replays (Can cause large server load at 30+ CP's)"), True, 0);
 		Global.UltimateAbilitiesEnabledConstant = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
 			"Ultimate Abilites Enabled"), False, 0);
-		Global.PunchGraceEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String("Punch Grace Enabled"), True, 0);
 		Global.NonInfiniteModeWinTime = Workshop Setting Integer(Custom String("Infinite Mode"), Custom String(
 			"Time Limit Before Victory in Non-Infinite Mode"), 300, 90, 1200, 0);
-		"Set up workshop toggle/int/real variables"
 		Global.InfiniteModeEnabledConstant = Workshop Setting Toggle(Custom String("Infinite Mode"), Custom String(
 			"Infinite Mode Enabled"), True, 0);
 		Global.MultiHeroEnabled = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
 			"Multi-Hero Mode Enabled (Wrecking Ball, Genji, Ana, Sigma, etc)"), True, 0);
-		Global.DisableHUDConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+		Global.DisableHUDConstant = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
 			"Disable HUD (Mostly For Recording Gameplay)"), False, 9);
-		Global.EffectLocksOrderMatters = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+		Global.EffectLocksOrderMatters = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
 			"Effect Locks Must Be Obtained In Pioneer Order"), True, 9);
 		Global.EffectLocksResetCooldownConstant = Workshop Setting Toggle(Custom String("Experimental"), Custom String(
 			"Effect Locks Reset Ability Cooldowns (For Speedrunning)"), False, 0);
-		Global.DownwardsDiagEnabledConstant = Workshop Setting Toggle(Custom String("Gameplay"), Custom String(
-			"Downwards Diagonal Punch Enabled"), True, 0);
+		Global.MissionsEnabledConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+			"Missions Enabled (360, Headbounce, Down Diag, etc)"), True, 0);
 		Global.PioneerMinDistanceConstant = 6;
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		Global.GameStarted = False;
@@ -312,6 +310,7 @@ rule("Initialize Globals")
 		Global.GreenSphereRadiusConstant = 3.500;
 		Global.EffectLockSphereRadiusConstant = 1.700;
 		Global.PlayerMoveSpeedConstant = 100;
+		Global.MissionOrbRadiusConstant = 5;
 	}
 }
 
@@ -329,15 +328,15 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 
 	actions
 	{
+		Create HUD Text(Filtered Array(All Players(All Teams), Global.GameStarted == False), Custom String(
+			"{0} Press R to Create Origin Point!", Host Player), Null, Null, Top, 0, Color(Green), Color(White), Color(White),
+			Visible To and String, Default Visibility);
 		"Only show pioneer info to players within 1-2 CP's of final CP"
 		Create HUD Text(Filtered Array(All Players(All Teams),
 			Global.GameStarted && Global.CurrentPioneer != Null && Current Array Element.CurrentCP + 2 >= Count Of(Global.CPLocations)),
 			Custom String("Pioneer: {0}\r\nTime: {1}", Global.CurrentPioneer != Null ? Global.CurrentPioneer : Custom String("None"),
 			Global.PioneerTimer), Null, Null, Left, -1, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
-		Create HUD Text(Filtered Array(All Players(All Teams), Global.GameStarted == False), Custom String(
-			"{0} Press R to Create Origin Point!", Host Player), Null, Null, Top, 0, Color(Green), Color(White), Color(White),
-			Visible To and String, Default Visibility);
 		Create HUD Text(Host Player, Null, Null, Custom String("Server Load {0} | Avg {1} | Peak {2}", Server Load, Server Load Average,
 			Server Load Peak), Right, -1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Living Players(All Teams), !Is Button Held(Current Array Element, Button(Interact))), Null,
@@ -345,13 +344,6 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Interact))), Left, -1, Color(White), Color(White), Color(Red), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("Workshop Code: WARMR"), Right, -2, Color(White), Color(White),
 			Color(White), Visible To, Default Visibility);
-		"Create HUD showing abilities the pioneer has used"
-		disabled Create HUD Text(Global.CurrentPioneer, Custom String("Abilty Counts\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
-			Hero Of(Global.CurrentPioneer), Button(Secondary Fire)), X Component Of(Global.CurrentPioneer.CPAbilityCounts)), Custom String(
-			"{0} {1}", Ability Icon String(Hero Of(Global.CurrentPioneer), Button(Ability 1)), Y Component Of(
-			Global.CurrentPioneer.CPAbilityCounts)), Custom String("{0} {1}", Ability Icon String(Hero Of(Global.CurrentPioneer), Button(
-			Ability 2)), Z Component Of(Global.CurrentPioneer.CPAbilityCounts))), Null, Null, Top, -1.400, Color(Blue), Color(White),
-			Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String("{0} | Quick Reset\r\n{1} +\r\n{2}", Input Binding String(Button(Reload)), Input Binding String(Button(
 			Interact)), Custom String("{0}\r\n{1}\r\n{2}", Custom String(
@@ -374,9 +366,10 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			"{0} | Create Effect Lock\r\n{1} | Create Env. Collision Sphere\r\nGroup Up | Create Kill Sphere", Input Binding String(Button(
 			Melee)), Input Binding String(Button(Crouch))), Custom String(
 			"{0}  +  {1}  | Reset Sphere Effects\r\n     +  Up/Down  | Change Size\r\n     +  Ult Status  | Hero Switch Menu\r\n{2}",
-			Input Binding String(Button(Interact)), Input Binding String(Button(Reload)), Custom String("{0}  +  {1}  | Teleport",
-			Input Binding String(Button(Primary Fire)), Input Binding String(Button(Melee))))), Left, 1, Color(White), Color(White), Color(
-			White), Visible To and String, Default Visibility);
+			Input Binding String(Button(Interact)), Input Binding String(Button(Reload)), Custom String(
+			"{0}  +  {1}  | Teleport\r\n{0}  +  {2}  + Emote  | Pass Pioneer", Input Binding String(Button(Primary Fire)),
+			Input Binding String(Button(Melee)), Input Binding String(Button(Secondary Fire))))), Left, 1, Color(White), Color(White),
+			Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Host Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"- - - - - - - - - - - - - - - - - - - - - -Host Controls- - - - - - - - - - - - - - - - - - - - - -\r\n{0}\r\n{1}\r\n{2}",
 			Custom String("{0} + Hello | Dev Mode (Players Can Skip Levels)\r\n{1} + Emote + Dev Mode On | Delete Last CP",
@@ -389,25 +382,6 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create HUD Text(All Living Players(All Teams), Null, Null, Custom String("Checkpoint {0}/{1} - Time Spent On CP {2}",
 			Local Player.CurrentCP, Count Of(Global.CPLocations) - 1, Local Player.TimeSpentOnCP), Top, 0, Color(White), Color(White),
 			Color(White), Visible To and String, Default Visibility);
-		disabled Create HUD Text(Filtered Array(All Living Players(All Teams),
-			Global.AbilityCountsEnabledConstant && Current Array Element.CurrentCP + 1 < Count Of(Global.CPLocations)), Custom String(
-			"Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(Hero Of(Local Player), Button(
-			Secondary Fire)), X Component Of(Local Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}", Ability Icon String(Hero Of(
-			Local Player), Button(Ability 1)), Y Component Of(Local Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}",
-			Ability Icon String(Hero Of(Local Player), Button(Ability 2)), Z Component Of(Local Player.AbilityLimitsDisplayVar))), Null,
-			Null, Top, -1.400, Color(Blue), Color(White), Color(White), Visible To and String, Default Visibility);
-		disabled Create Icon(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
-			Global.CPLocations[Local Player.CurrentCP + 1] + Up, Flag, Visible To and Position, Color(Yellow), True);
-		disabled Create In-World Text(Filtered Array(All Players(All Teams), Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1),
-			Custom String("Come Here\r\nPioneer: {0}", Global.PioneerList[Local Player.CurrentCP + 1]),
-			Global.CPLocations[Local Player.CurrentCP + 1] + Up, 1.300, Do Not Clip, Visible To Position and String, Color(Yellow),
-			Default Visibility);
-		"Effect lock icon over CP (before getting all locks) - similar to hax framework"
-		disabled Create In-World Text(Filtered Array(All Living Players(All Teams), Count Of(
-			Global.CPEffectLockSphereArray[Current Array Element.CurrentCP]) > 0 && Count Of(Current Array Element.EffectLockObtained)
-			< Count Of(Global.CPEffectLockSphereArray[Current Array Element.CurrentCP])), Custom String("{0}", Ability Icon String(Hero(
-			Winston), Button(Ability 2))), Global.CPLocations[Local Player.CurrentCP + 1], 1.300, Clip Against Surfaces,
-			Visible To and Position, Color(White), Default Visibility);
 		"Push the progress bar for stall 3 sec bounce timer down the screen"
 		Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300), Null, Null,
 			Custom String("{0}", String Slice(Custom String(
@@ -417,24 +391,11 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create Progress Bar HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300),
 			Local Player.ThreeSecondBounceTimer / 0.030, Custom String("Bounce Timer"), Top, 10, Color(White), Color(White),
 			Visible To and Values, Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.TimeSpentOnCP > Global.SkipTimeLimit), Null,
+		"Skip Reminder - Commented out for lowering server load right now."
+		disabled Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.TimeSpentOnCP > Global.SkipTimeLimit), Null,
 			Custom String("Skip Checkpoint Available"), Custom String("{0} + {1}", Input Binding String(Button(Interact)),
 			Input Binding String(Button(Jump))), Left, 2, Color(White), Color(Orange), Color(White), Visible To and String,
 			Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams),
-			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP][0] > 0), Custom String("{0}", Ability Icon String(Hero(
-			Tracer), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("Downward Diagonal Punch Required"), Left,
-			3, Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams),
-			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP][1] > 0), Custom String("{0}", Ability Icon String(Hero(
-			Doomfist), Button(Ability 1))), Custom String("CP Special Requirement"), Custom String("Headbounce Required"), Left, 3.050,
-			Color(Green), Color(Orange), Color(White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(All Living Players(All Teams),
-			Global.CPSpecialRequirementsArray[Current Array Element.CurrentCP][2] > 0), Custom String("{0}", Ability Icon String(Hero(
-			Reinhardt), Button(Ability 2))), Custom String("CP Special Requirement"), Custom String("360 Required"), Left, 3.100, Color(
-			Green), Color(Orange), Color(White), Visible To, Default Visibility);
-		Create HUD Text(Filtered Array(Host Player, Global.DevModeEngaged), Null, Null, Custom String("Position: {0}", Position Of(
-			Local Player)), Left, 40, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 	}
 }
 
@@ -478,10 +439,9 @@ rule("Initialize player + Ring Effects")
 			Visible To Position and Radius);
 		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Color(
 			Purple), Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
-		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player) > 0.070 || Is Using Ultimate(
-			Event Player) || Event Player.CancelPointTimer > 0 || Is On Ground(Event Player) ? 0 : 4, Speed Of(Event Player)
-			> 0.070 || Is Using Ultimate(Event Player) || Event Player.CancelPointTimer > 0 || Is On Ground(Event Player) ? 9999 : 1,
-			Destination and Rate);
+		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player)
+			> 0.070 || Event Player.CancelPointTimer > 0 || Is On Ground(Event Player) ? 0 : 4, Speed Of(Event Player)
+			> 0.070 || Event Player.CancelPointTimer > 0 || Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
 		Event Player.BounceTimerEnabled = True;
 		Event Player.FreeRoamEnabled = False;
 		Event Player.SwagModeEngaged = False;
@@ -526,9 +486,9 @@ rule("Player-Specific HUD")
 		Create In-World Text(Event Player, Custom String("{0} {1}", Count Of(Event Player.EffectLockObtained) < Count Of(
 			Global.CPEffectLockSphereArray[Event Player.CurrentCP]) ? Ability Icon String(Hero(Winston), Button(Ability 2)) : String(""),
 			Is True For Any(Global.CPSpecialRequirementsArray[Event Player.CurrentCP],
-			Current Array Element - Event Player.CPSpecialRequirements[Current Array Index] > 0) ? Custom String("ML") : String("")),
-			Global.CPLocations[Event Player.CurrentCP + 1], 1.700, Clip Against Surfaces, Visible To Position and String, Color(White),
-			Default Visibility);
+			Current Array Element != Null && Event Player.CPSpecialRequirements[Current Array Index] == Null) ? Custom String("ML")
+			: String("")), Global.CPLocations[Event Player.CurrentCP + 1], 1.700, Clip Against Surfaces, Visible To Position and String,
+			Color(White), Default Visibility);
 		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"), Left, 2.900, Color(Green), Color(
 			Orange), Color(White), None, Default Visibility);
 	}
@@ -542,7 +502,7 @@ disabled rule("Game Framework")
 	}
 }
 
-rule("Create Origin Point (Checkpoint 0)")
+rule("Create Origin Point (First Checkpoint)")
 {
 	event
 	{
@@ -594,6 +554,7 @@ rule("Game Started (origin point just created by host) - Create World Effects")
 	conditions
 	{
 		Global.GameStarted == True;
+		"So this doesn't interfere with railing destroy bot"
 		Is Dummy Bot(Event Player) == False;
 	}
 
@@ -619,13 +580,13 @@ rule("Pioneer Create Point")
 		Global.CurrentPioneer == Event Player;
 		Is On Ground(Event Player) == True;
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
-		Global.GameStarted == True;
-		Has Spawned(Event Player) == True;
+		disabled Global.GameStarted == True;
+		disabled Has Spawned(Event Player) == True;
 		Event Player.BlockPioneerNewPoint == False;
 		"Can't pioneer in spectate mode"
 		Event Player.SpectateMode == False;
 		"Punch grace from Hax framework"
-		(!Global.PunchGraceEnabled || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
+		(!True || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
 		"Winston Leap Bhop Fix"
 		(Hero Of(Event Player) != Hero(Winston) || Event Player.WinstonLeapGrace <= 0) == True;
 		Event Player.FreeRoamEnabled == False;
@@ -635,7 +596,7 @@ rule("Pioneer Create Point")
 	{
 		"Make sure they pioneered far enough"
 		If(Distance Between(Position Of(Event Player), Global.CPLocations[Event Player.CurrentCP]) < Global.PioneerMinDistanceConstant);
-			Small Message(Event Player, Custom String("Pioneer more than {0}m!", Global.PioneerMinDistanceConstant));
+			disabled Small Message(Event Player, Custom String("Pioneer more than {0}m!", Global.PioneerMinDistanceConstant));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
@@ -645,7 +606,7 @@ rule("Pioneer Create Point")
 		Start Forcing Player Position(Event Player, Evaluate Once(Event Player.TempVariable2), True);
 		"Allow player 3 sec to cancel the CP"
 		Event Player.CancelPointTimer = 3;
-		Chase Player Variable At Rate(Event Player, CancelPointTimer, 0, 1, Destination and Rate);
+		Chase Player Variable At Rate(Event Player, CancelPointTimer, 0, 1, None);
 		If(!Global.DisableHUDConstant);
 			Create Progress Bar HUD Text(Event Player, Event Player.CancelPointTimer / 0.030, Custom String(
 				"Press R within {0} sec to cancel checkpoint", Event Player.CancelPointTimer), Top, 0, Color(White), Color(Red),
@@ -697,7 +658,7 @@ rule("Pioneer Create Point")
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
 		Event Player.TimeSpentOnCP = 0;
-		Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
+		Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, None);
 		Global.CurrentPioneer = Null;
 		Enable Inspector Recording;
 		Log To Inspector(Custom String("Created Checkpoint {0}", Count Of(Global.CPLocations)));
@@ -726,7 +687,7 @@ rule("Non-Pioneer Respawn If Touch Ground Outside of current or next CP")
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
 		"Punch grace from Hax framework"
-		(!Global.PunchGraceEnabled || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
+		(!True || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
 		"Winston Leap Bhop Fix"
 		(Hero Of(Event Player) != Hero(Winston) || Event Player.WinstonLeapGrace <= 0) == True;
 		Is Dummy Bot(Event Player) == False;
@@ -772,28 +733,34 @@ rule("Non-Pioneer Arrive At CP")
 			Abort;
 		End;
 		"Check if pioneer and player both did Downwards Diagonal Punch"
-		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][0] > 0) > (Event Player.CPSpecialRequirements[0] > 0));
+		If(Global.CPSpecialRequirementsArray[Event Player.CurrentCP][0] != Null && Event Player.CPSpecialRequirements[0] == Null);
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a Downwards Diagonal Punch!"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
 		"Check if pioneer and player both did Headbounce"
-		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][1] > 0) > (Event Player.CPSpecialRequirements[1] > 0));
+		If(Global.CPSpecialRequirementsArray[Event Player.CurrentCP][1] != Null && Event Player.CPSpecialRequirements[1] == Null);
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a Headbounce"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
 		"Check if pioneer and player both did 360"
-		If((Global.CPSpecialRequirementsArray[Event Player.CurrentCP][2] > 0) > (Event Player.CPSpecialRequirements[2] > 0));
+		If(Global.CPSpecialRequirementsArray[Event Player.CurrentCP][2] != Null && Event Player.CPSpecialRequirements[2] == Null);
 			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
 			Small Message(Event Player, Custom String("Checkpoint requires you to do a 360!"));
 			Call Subroutine(RespawnPlayer);
 			Abort;
 		End;
+		If(Global.CPSpecialRequirementsArray[Event Player.CurrentCP][3] != Null && Event Player.CPSpecialRequirements[3] == Null);
+			Play Effect(Event Player, Debuff Impact Sound, Color(White), Event Player, 60);
+			Small Message(Event Player, Custom String("Checkpoint requires punch bounce!"));
+			Call Subroutine(RespawnPlayer);
+			Abort;
+		End;
 		Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
-		If(Event Player.SwagModeEngaged);
+		If(Event Player.SwagModeEngaged && Event Player.SlamTimer < 1.520);
 			Play Effect(All Players(All Teams), Lúcio Sound Barrier Cast Effect, Color(Team 1), Position Of(Event Player), 1);
 		End;
 		Event Player.CurrentCP += 1;
@@ -898,10 +865,17 @@ rule("Start Pioneer Timer and set Invisible when player becomes pioneer")
 		If(Hero Of(Event Player) != Hero(Wrecking Ball));
 			Set Invisible(Event Player, All);
 		End;
+		Wait Until(Global.CurrentPioneer != Event Player, 99999);
+		Allow Button(Event Player, Button(Melee));
+		If(Event Player.Invisible);
+			Set Invisible(Event Player, All);
+		Else;
+			Set Invisible(Event Player, None);
+		End;
 	}
 }
 
-rule("Set Non-Pioneer Visible")
+disabled rule("Set Non-Pioneer Visible")
 {
 	event
 	{
@@ -980,7 +954,59 @@ rule("Reload - Quick Reset")
 	}
 }
 
-rule("Crouch + Interact - Move Back A Checkpoint")
+rule("Interact + Left Click: Camera To See Next Point (Left Clicking multiple times cycles through effect lock spheres)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		"Make sure next point exists"
+		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
+		"To not interfere with the temp variable used in Pioneer Create Point rule"
+		Event Player.CancelPointTimer <= 0;
+		"To stop variable overlap with \"Interact + Ult Status - Change Hero\" rule"
+		Count Of(Event Player.MenuInWorldLocationTempStore) == 0;
+	}
+
+	actions
+	{
+		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n\r\n\r\n\r\n{0} to view effect locks (hold interact)",
+			Input Binding String(Button(Primary Fire))), Top, 9, Color(White), Color(White), Color(White), String, Default Visibility);
+		Event Player.MenuTextIDTempStore = Last Text ID;
+		Event Player.TempIterator = -1;
+		Set Primary Fire Enabled(Event Player, False);
+		Set Facing(Event Player, Vector(-10, -10, 0), To World);
+		Start Camera(Event Player, Ray Cast Hit Position(
+			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
+			(
+			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1])
+			+ Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
+			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
+			30);
+		While(Is Button Held(Event Player, Button(Interact)));
+			Wait Until(!Is Button Held(Event Player, Button(Interact)) || Is Button Held(Event Player, Button(Primary Fire)), 20);
+			If(Is Button Held(Event Player, Button(Interact)));
+				Event Player.TempIterator = (Event Player.TempIterator + 1) % (Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP])
+					+ 1);
+				Wait Until(!Is Button Held(Event Player, Button(Primary Fire)), 20);
+			End;
+			Wait(0.050, Ignore Condition);
+		End;
+		Destroy HUD Text(Event Player.MenuTextIDTempStore);
+		Stop Camera(Event Player);
+		Set Primary Fire Enabled(Event Player, True);
+		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
+	}
+}
+
+rule("Interact + Crouch - Move Back A Checkpoint")
 {
 	event
 	{
@@ -1014,58 +1040,6 @@ rule("Crouch + Interact - Move Back A Checkpoint")
 		Call Subroutine(RespawnPlayer);
 		Event Player.BlockArriveNextPoint = False;
 		Call Subroutine(CreateEffectLocks);
-	}
-}
-
-rule("Interact + Left Click: Camera To See Next Point (Left Clicking multiple times cycles through effect lock spheres)")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Primary Fire)) == True;
-		Is Button Held(Event Player, Button(Interact)) == True;
-		"Make sure next point exists"
-		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
-		"To not interfere with the temp variable used in Pioneer Create Point rule"
-		Event Player.CancelPointTimer <= 0;
-		"To not interfere with hero select menu creation"
-		Event Player.HeroSelectMenuOpen != True;
-	}
-
-	actions
-	{
-		Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n\r\n\r\n\r\n{0} to view effect locks (hold interact)",
-			Input Binding String(Button(Primary Fire))), Top, 9, Color(White), Color(White), Color(White), String, Default Visibility);
-		Event Player.MenuTextIDTempStore = Last Text ID;
-		Event Player.TempIterator = -1;
-		Set Primary Fire Enabled(Event Player, False);
-		Set Facing(Event Player, Vector(-10, -10, 0), To World);
-		Start Camera(Event Player, Ray Cast Hit Position(
-			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
-			(
-			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1])
-			+ Facing Direction Of(Event Player) * -15, All Players(All Teams), Event Player, True),
-			Event Player.TempIterator == 0 ? Global.CPLocations[Event Player.CurrentCP + 1] : Global.CPEffectLockSphereArray[Event Player.CurrentCP][Event Player.TempIterator - 1],
-			30);
-		While(Is Button Held(Event Player, Button(Interact)));
-			Wait Until(!Is Button Held(Event Player, Button(Interact)) || Is Button Held(Event Player, Button(Primary Fire)), 20);
-			If(Is Button Held(Event Player, Button(Interact)));
-				Event Player.TempIterator = (Event Player.TempIterator + 1) % (Count Of(Global.CPEffectLockSphereArray[Event Player.CurrentCP])
-					+ 1);
-				Wait Until(!Is Button Held(Event Player, Button(Primary Fire)), 20);
-			End;
-			Wait(0.050, Ignore Condition);
-		End;
-		Destroy HUD Text(Event Player.MenuTextIDTempStore);
-		Stop Camera(Event Player);
-		Set Primary Fire Enabled(Event Player, True);
-		Set Facing(Event Player, Global.CPFacingDirections[Event Player.CurrentCP], To World);
 	}
 }
 
@@ -1164,89 +1138,6 @@ rule("Interact + Melee : Spectate Other Players (Also Ult + Ability1 + Ability 2
 	}
 }
 
-rule("Melee + Left Click = Teleport")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Primary Fire)) == True;
-		Is Button Held(Event Player, Button(Melee)) == True;
-		(Event Player.TeleportEnabled || Global.DevModeEngaged || Event Player.FreeRoamEnabled) == True;
-	}
-
-	actions
-	{
-		Teleport(Event Player, Ray Cast Hit Position(Position Of(Event Player), Position Of(Event Player) + Facing Direction Of(
-			Event Player) * 60, All Players(All Teams), Event Player, True));
-		Event Player.CountUltimateTeleportPrimary += Up;
-	}
-}
-
-rule("Interact + Hello Voiceline = Dev Mode Engaged")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Event Player == Host Player;
-		Is Button Held(Event Player, Button(Interact)) == True;
-		Is Communicating(Event Player, Hello) == True;
-	}
-
-	actions
-	{
-		"Right now Dev Mode lets all players teleport and skip any points with zero time using jump + interact"
-		disabled Wait(0.250, Ignore Condition);
-		If(Global.DevModeEngaged);
-			Small Message(All Players(All Teams), Custom String("Dev Mode Disengaged"));
-			Global.DevModeEngaged = False;
-		Else;
-			Small Message(All Players(All Teams), Custom String("Dev Mode Engaged"));
-			Global.DevModeEngaged = True;
-		End;
-	}
-}
-
-rule("Crouch + Jump: Toggle Invisiblity")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Jump)) == True;
-		Is Button Held(Event Player, Button(Crouch)) == True;
-		Global.CurrentPioneer != Event Player;
-	}
-
-	actions
-	{
-		If(Event Player.Invisible);
-			Set Invisible(Event Player, None);
-			Small Message(Event Player, Custom String("Visible"));
-		Else;
-			Small Message(Event Player, Custom String("Invisible"));
-			Set Invisible(Event Player, All);
-		End;
-		Event Player.Invisible = !Event Player.Invisible;
-	}
-}
-
 rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
 {
 	event
@@ -1258,7 +1149,6 @@ rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
 
 	conditions
 	{
-		disabled Is Button Held(Event Player, Button(Jump)) == True;
 		Is Button Held(Event Player, Button(Interact)) == True;
 		"This condition is so this rule doesn't get executed at same time as a player is using the level cancel"
 		Event Player.CancelPointTimer == 0;
@@ -1270,13 +1160,6 @@ rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
 
 	actions
 	{
-		"If a menu is already open, delete the in world text and recreate the menu in the proper location"
-		If(Event Player.HeroSelectMenuOpen);
-			For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
-				Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
-				Abort;
-			End;
-		End;
 		Event Player.MenuInWorldLocationTempStore = Empty Array;
 		Event Player.MenuTextIDTempStore = Empty Array;
 		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
@@ -1290,29 +1173,8 @@ rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
 			Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
 			Wait(0.016, Ignore Condition);
 		End;
-		Event Player.HeroSelectMenuOpen = True;
 		Big Message(Event Player, Custom String("Release Interact Over The Hero You Want To Select"));
-	}
-}
-
-rule("Close Hero Select Menu When Player Stops Holding Interact")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Interact)) == False;
-		Has Spawned(Event Player) == True;
-		Event Player.HeroSelectMenuOpen == True;
-	}
-
-	actions
-	{
+		Wait Until(!Is Button Held(Event Player, Button(Interact)), 609);
 		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
 			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
 			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
@@ -1322,7 +1184,8 @@ rule("Close Hero Select Menu When Player Stops Holding Interact")
 		If(Hero Of(Event Player) == Hero(Wrecking Ball));
 			Set Invisible(Event Player, None);
 		End;
-		Event Player.HeroSelectMenuOpen = False;
+		Event Player.MenuInWorldLocationTempStore = Empty Array;
+		Event Player.MenuTextIDTempStore = Empty Array;
 	}
 }
 
@@ -1355,6 +1218,182 @@ rule("Interact + Up/Down to increase/decrease pioneer player size")
 		Call Subroutine(UpdatePlayerScale);
 		Wait(0.100, Ignore Condition);
 		Small Message(Event Player, Custom String("Setting player scale to {0}", Event Player.PlayerScale));
+	}
+}
+
+rule("Crouch + Jump: Toggle Invisiblity")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Jump)) == True;
+		Is Button Held(Event Player, Button(Crouch)) == True;
+		Global.CurrentPioneer != Event Player;
+	}
+
+	actions
+	{
+		If(Event Player.Invisible);
+			Set Invisible(Event Player, None);
+			Small Message(Event Player, Custom String("Visible"));
+		Else;
+			Small Message(Event Player, Custom String("Invisible"));
+			Set Invisible(Event Player, All);
+		End;
+		Event Player.Invisible = !Event Player.Invisible;
+	}
+}
+
+rule("Ult + Crouch + Ult Status = Free Roam")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Ultimate)) == True;
+		Is Button Held(Event Player, Button(Crouch)) == True;
+		Is Communicating(Event Player, Ultimate Status) == True;
+	}
+
+	actions
+	{
+		"Respawn player when exiting free roam, otherwise player could free roam to the next CP and then turn off free roam!"
+		If(Event Player.FreeRoamEnabled == True);
+			Call Subroutine(RespawnPlayer);
+		Else;
+			Set Ability 1 Enabled(Event Player, True);
+			Set Ability 2 Enabled(Event Player, True);
+			Set Secondary Fire Enabled(Event Player, True);
+		End;
+		Event Player.FreeRoamEnabled = !Event Player.FreeRoamEnabled;
+		Wait(0.100, Ignore Condition);
+		Small Message(Event Player, Event Player.FreeRoamEnabled ? Custom String("Free Roam Enabled") : Custom String(
+			"Free Roam Disabled"));
+	}
+}
+
+rule("Melee + Left Click = Teleport")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Button Held(Event Player, Button(Melee)) == True;
+		(Event Player.TeleportEnabled || Global.DevModeEngaged || Event Player.FreeRoamEnabled) == True;
+	}
+
+	actions
+	{
+		Teleport(Event Player, Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player) + Facing Direction Of(
+			Event Player) * 60, Null, Event Player, False));
+		Event Player.CountUltimateTeleportPrimary += Up;
+	}
+}
+
+rule("Interact + Ultimate = Bounce Timer Toggle")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		((Is Button Held(Event Player, Button(Interact)) && Is Button Held(Event Player, Button(Ultimate))) || Global.DisableHUDConstant)
+			== True;
+	}
+
+	actions
+	{
+		Event Player.BounceTimerEnabled = !Event Player.BounceTimerEnabled;
+		If(Event Player.BounceTimerEnabled);
+			Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, (Speed Of(Event Player) > 0.070 && !Is Using Ultimate(
+				Event Player)) || Is On Ground(Event Player) ? 0 : 4, (Speed Of(Event Player) > 0.070 && !Is Using Ultimate(Event Player))
+				|| Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
+		Else;
+			Stop Chasing Player Variable(Event Player, ThreeSecondBounceTimer);
+			Event Player.ThreeSecondBounceTimer = 0;
+		End;
+		Wait(0.100, Ignore Condition);
+		Small Message(Event Player, Custom String("Bounce timer and bhop reset detector {0}",
+			Event Player.BounceTimerEnabled ? Custom String("Enabled") : Custom String("Disabled")));
+	}
+}
+
+rule("Left Click + Right Click + Emote = P4ss Pioneer - Host can force this in dev mode")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Button Held(Event Player, Button(Secondary Fire)) == True;
+		Is Communicating Any Emote(Event Player) == True;
+	}
+
+	actions
+	{
+		"Player has to be pioneer, or host can force this with dev mode engaged"
+		If(Global.CurrentPioneer == Event Player || (Host Player == Event Player && Global.DevModeEngaged));
+			Small Message(Event Player, Custom String("Passing Pioneer to Random Other Player"));
+			Call Subroutine(PassPioneer);
+		Else;
+			Small Message(Event Player, Custom String("Must be pioneer in order to pass it"));
+		End;
+	}
+}
+
+rule("Interact + Hello Voiceline = Dev Mode Engaged")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player == Host Player;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Is Communicating(Event Player, Hello) == True;
+	}
+
+	actions
+	{
+		"Right now Dev Mode lets all players teleport and skip any points with zero time using jump + interact"
+		disabled Wait(0.250, Ignore Condition);
+		If(Global.DevModeEngaged);
+			Small Message(All Players(All Teams), Custom String("Dev Mode Disengaged"));
+			Global.DevModeEngaged = False;
+		Else;
+			Small Message(All Players(All Teams), Custom String("Dev Mode Engaged"));
+			Global.DevModeEngaged = True;
+		End;
 	}
 }
 
@@ -1427,71 +1466,6 @@ rule("Melee + Emote + Dev Mode Engaged: Delete Last Checkpoint")
 	}
 }
 
-rule("Ult + Crouch + Ult Status = Free Roam")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Is Button Held(Event Player, Button(Ultimate)) == True;
-		Is Button Held(Event Player, Button(Crouch)) == True;
-		Is Communicating(Event Player, Ultimate Status) == True;
-	}
-
-	actions
-	{
-		"Respawn player when exiting free roam, otherwise player could free roam to the next CP and then turn off free roam!"
-		If(Event Player.FreeRoamEnabled == True);
-			Call Subroutine(RespawnPlayer);
-		Else;
-			Set Ability 1 Enabled(Event Player, True);
-			Set Ability 2 Enabled(Event Player, True);
-			Set Secondary Fire Enabled(Event Player, True);
-		End;
-		Event Player.FreeRoamEnabled = !Event Player.FreeRoamEnabled;
-		Wait(0.100, Ignore Condition);
-		Small Message(Event Player, Event Player.FreeRoamEnabled ? Custom String("Free Roam Enabled") : Custom String(
-			"Free Roam Disabled"));
-	}
-}
-
-rule("Interact + Ultimate: Bounce Timer Toggle")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		((Is Button Held(Event Player, Button(Interact)) && Is Button Held(Event Player, Button(Ultimate))) || Global.DisableHUDConstant)
-			== True;
-	}
-
-	actions
-	{
-		Event Player.BounceTimerEnabled = !Event Player.BounceTimerEnabled;
-		If(Event Player.BounceTimerEnabled);
-			Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, (Speed Of(Event Player) > 0.070 && !Is Using Ultimate(
-				Event Player)) || Is On Ground(Event Player) ? 0 : 4, (Speed Of(Event Player) > 0.070 && !Is Using Ultimate(Event Player))
-				|| Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
-		Else;
-			Stop Chasing Player Variable(Event Player, ThreeSecondBounceTimer);
-			Event Player.ThreeSecondBounceTimer = 0;
-		End;
-		Wait(0.100, Ignore Condition);
-		Small Message(Event Player, Custom String("Bounce timer and bhop reset detector {0}",
-			Event Player.BounceTimerEnabled ? Custom String("Enabled") : Custom String("Disabled")));
-	}
-}
-
 disabled rule("Replay Saving / Watching Code")
 {
 	event
@@ -1527,7 +1501,11 @@ rule("Pioneer Save Replay")
 	{
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
-		Wait(Speed Of(Event Player) <= 2.750 ? 0.480 : 0.160, Ignore Condition);
+		"Increase replay record rate when rapidly changing direction facing (like in a 360), lower replay record rate when in a stall"
+		Wait Until(Absolute Value(Angle Difference(Horizontal Angle From Direction(Facing Direction Of(Event Player)),
+			Horizontal Angle From Direction(Last Of(Event Player.ReplayFacing)))) > 45, Speed Of(Event Player) <= 2.750 ? 0.480 : 0.160);
+		"Lower the replay record rate in a stall"
+		disabled Wait(Speed Of(Event Player) <= 2.750 ? 0.480 : 0.160, Ignore Condition);
 		Loop If Condition Is True;
 		Modify Player Variable(Event Player, ReplayPosition, Append To Array, Eye Position(Event Player));
 		Modify Player Variable(Event Player, ReplayFacing, Append To Array, Facing Direction Of(Event Player));
@@ -1571,7 +1549,7 @@ rule("Need Healing/Help: View Replay")
 			Input Binding String(Button(Jump))), Top, 5, Color(White), Color(White), Values, Default Visibility);
 		"This can POTENTIALLY conflict with the pioneering of a point location variable"
 		Event Player.TempVariable2 = Last Text ID;
-		Start Forcing Player Position(Event Player, Position Of(Event Player), False);
+		disabled Start Forcing Player Position(Event Player, Position Of(Event Player), False);
 		"Using this variable to store whether replay is paused or not"
 		Event Player.TempVariable = False;
 		Event Player.TempIterator = 0;
@@ -1599,7 +1577,7 @@ rule("Need Healing/Help: View Replay")
 		End;
 		Stop Camera(Event Player);
 		Destroy Progress Bar HUD Text(Event Player.TempVariable2);
-		Stop Forcing Player Position(Event Player);
+		disabled Stop Forcing Player Position(Event Player);
 	}
 }
 
@@ -1780,11 +1758,11 @@ rule("Used Ability 2 - Start Slam Timer")
 	actions
 	{
 		Event Player.SlamTimer = 0;
-		Chase Player Variable At Rate(Event Player, SlamTimer, 99, 1, Destination and Rate);
+		Chase Player Variable At Rate(Event Player, SlamTimer, 99, 1, None);
 	}
 }
 
-rule("Used Ability 2 + 125 Slam Detector")
+rule("Used Ability 2")
 {
 	event
 	{
@@ -1840,6 +1818,45 @@ rule("Increment Slam Counter")
 	}
 }
 
+disabled rule("125 slam detector - better, but still not perfect")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+		disabled Horizontal Speed Of(Event Player) > 8;
+	}
+
+	actions
+	{
+		Event Player.SlamTimer = 0;
+		Chase Player Variable At Rate(Event Player, SlamTimer, 99, 1, None);
+		Wait Until(((Horizontal Speed Of(Event Player) > 7 || Vertical Speed Of(Event Player) > 5.500) && Is Using Ability 2(Event Player))
+			|| (Is Using Ability 2(Event Player) && !Is Button Held(Event Player, Button(Ability 2))), 7);
+		"Stop people from holding down slam, while looking at invalid location (which apparently is counted by workshop as \"using slam\")"
+		If(Event Player.SlamTimer > 0.060);
+			Small Message(Event Player, Custom String("loop"));
+			Loop If Condition Is True;
+		End;
+		Wait Until(!Is Using Ability 2(Event Player) || Absolute Value(Speed Of(Event Player) - 25) < 0.100, 20);
+		If(Event Player.SlamTimer >= 1.530 && Is On Ground(Event Player) && Absolute Value(Speed Of(Event Player) - 25) > 0.100);
+			Small Message(Event Player, Custom String("125 slam {0}", Event Player.SlamTimer));
+		Else;
+			Small Message(Event Player, Custom String("{0} slam {1}", 100 * Event Player.SlamTimer - 28, Event Player.SlamTimer));
+			disabled Small Message(Event Player, Custom String("{0} slam {1}", 97.600 * Event Player.SlamTimer - 18.800, Event Player.SlamTimer));
+		End;
+		Stop Chasing Player Variable(Event Player, SlamTimer);
+		Wait(0.100, Ignore Condition);
+		Event Player.SlamTimer = 0;
+	}
+}
+
 disabled rule("125 Slam Detection")
 {
 	event
@@ -1867,7 +1884,7 @@ disabled rule("125 Slam Detection")
 	}
 }
 
-rule("Downward Diag Detector")
+rule("Mission - Downward Diag")
 {
 	event
 	{
@@ -1878,47 +1895,33 @@ rule("Downward Diag Detector")
 
 	conditions
 	{
-		Global.DownwardsDiagEnabledConstant == True;
+		Global.MissionsEnabledConstant == True;
 		Vertical Speed Of(Event Player) < -10;
 		"Can only get this speed by punching."
 		Horizontal Speed Of(Event Player) > 40;
 		Is Using Ultimate(Event Player) == False;
+		"Is the pioneer, or is on a CP with this requirement"
+		(Global.CurrentPioneer == Event Player || Global.CPSpecialRequirementsArray[Event Player.CurrentCP][0]) == True;
 	}
 
 	actions
 	{
 		"Stops this rule from triggering on downward diag from doorframe - adjusting to be slightly larger for higher doorways on blizzard world..."
 		Wait(0.100, Abort When False);
-		Event Player.CPSpecialRequirements[0] = 1;
-		Small Message(Event Player, Custom String("Downward Diagonal Punch"));
-	}
-}
-
-rule("Headbounce detector - From Hax")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Doomfist;
-	}
-
-	conditions
-	{
-		Is Using Ability 1(Event Player) == True;
-	}
-
-	actions
-	{
-		Wait(0.350, Ignore Condition);
-		If(Horizontal Speed Of(Event Player) > 7);
-			Small Message(Event Player, Custom String("Headbounce"));
-			Event Player.CPSpecialRequirements[1] = 1;
+		If(Event Player == Global.CurrentPioneer);
+			Event Player.CPSpecialRequirements[0] = Eye Position(Event Player);
+			Small Message(Event Player, Custom String("Downward Diagonal Punch"));
+		Else;
+			If(Distance Between(Eye Position(Event Player), Global.CPSpecialRequirementsArray[Event Player.CurrentCP][0])
+				<= Global.MissionOrbRadiusConstant * 2);
+				Event Player.CPSpecialRequirements[0] = Eye Position(Event Player);
+				Small Message(Event Player, Custom String("Downward Diagonal Punch"));
+			End;
 		End;
 	}
 }
 
-rule("360 Detector - Straight from Hax framework")
+rule("Mission - Headbounce (From Hax)")
 {
 	event
 	{
@@ -1929,38 +1932,128 @@ rule("360 Detector - Straight from Hax framework")
 
 	conditions
 	{
+		Global.MissionsEnabledConstant == True;
+		Is Using Ability 1(Event Player) == True;
+		"Is the pioneer, or is on a CP with this requirement"
+		(Global.CurrentPioneer == Event Player || Global.CPSpecialRequirementsArray[Event Player.CurrentCP][1]) == True;
+	}
+
+	actions
+	{
+		Wait(0.250, Ignore Condition);
+		"Putting the headbounce position mid-uppercut for better visualization"
+		Event Player.TempVariable3 = Eye Position(Event Player);
+		Wait(0.100, Ignore Condition);
+		If(Horizontal Speed Of(Event Player) > 7);
+			If(Event Player == Global.CurrentPioneer);
+				Event Player.CPSpecialRequirements[1] = Event Player.TempVariable3;
+				Small Message(Event Player, Custom String("Headbounce"));
+			Else;
+				If(Distance Between(Event Player.TempVariable3, Global.CPSpecialRequirementsArray[Event Player.CurrentCP][1])
+					<= Global.MissionOrbRadiusConstant);
+					Event Player.CPSpecialRequirements[1] = Event Player.TempVariable3;
+					Small Message(Event Player, Custom String("Headbounce"));
+				End;
+			End;
+		End;
+	}
+}
+
+rule("Mission - 360")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global.MissionsEnabledConstant == True;
+		Is On Ground(Event Player) == False;
+		"Is the pioneer, or is on a CP with a 360 requirement"
+		(Global.CurrentPioneer == Event Player || Global.CPSpecialRequirementsArray[Event Player.CurrentCP][2]) == True;
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
 	}
 
 	actions
 	{
-		Event Player.HorizontalAngle = Horizontal Facing Angle Of(Event Player);
-		Event Player.M360 = False;
-		While(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius);
-			Wait Until(Absolute Value(Angle Difference(Horizontal Facing Angle Of(Event Player), Event Player.HorizontalAngle)) > 90, 99999);
-			If(Horizontal Speed Of(Event Player) < 0.100);
-				Wait Until(Horizontal Speed Of(Event Player) > 0.100, 99999);
-				Loop;
+		Event Player.Array360 = Array(Horizontal Facing Angle Of(Event Player));
+		Chase Player Variable At Rate(Event Player, Timer360, 0, 1, None);
+		While(!Is On Ground(Event Player));
+			"This is half the time someone has to complete the 360, make sure this matches the timeout in the next \"wait until\" command"
+			Event Player.Timer360 = 1.500;
+			Wait Until(Update Every Frame(Angle Difference(Last Of(Event Player.Array360), Horizontal Facing Angle Of(Event Player))) > 130,
+				1.500);
+			If(Event Player.Timer360 > 0);
+				Modify Player Variable(Event Player, Array360, Append To Array, Horizontal Facing Angle Of(Event Player));
+				If(Count Of(Event Player.Array360) >= 3);
+					disabled Small Message(Event Player, Custom String("360"));
+					Event Player.Array360 = Array(Horizontal Facing Angle Of(Event Player));
+					Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
+					If(Event Player == Global.CurrentPioneer);
+						If(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius);
+							Event Player.CPSpecialRequirements[2] = Eye Position(Event Player);
+							Small Message(Event Player, Custom String("360"));
+						End;
+					Else;
+						If(Distance Between(Eye Position(Event Player), Global.CPSpecialRequirementsArray[Event Player.CurrentCP][2])
+							<= Global.MissionOrbRadiusConstant * 3);
+							Event Player.CPSpecialRequirements[2] = Eye Position(Event Player);
+							Small Message(Event Player, Custom String("360"));
+						End;
+					End;
+					"Make sure 360's are spaced out by at least 1 sec"
+					Wait Until(Is On Ground(Event Player), 1);
+				End;
+			Else;
+				Event Player.Array360 = Array(Horizontal Facing Angle Of(Event Player));
 			End;
-			Event Player.M360 = Event Player.M360 ? (Event Player.M360 > False ? (Angle Difference(Horizontal Facing Angle Of(Event Player),
-				Event Player.HorizontalAngle) > False ? Event Player.M360 + True : -1) : (Angle Difference(Horizontal Facing Angle Of(
-				Event Player), Event Player.HorizontalAngle) > False ? 1 : Event Player.M360 - True)) : (Angle Difference(
-				Horizontal Facing Angle Of(Event Player), Event Player.HorizontalAngle) > False ? 1 : -1);
-			If(Absolute Value(Event Player.M360) == 3);
-				Small Message(Event Player, Custom String("360"));
-				Event Player.CPSpecialRequirements[2] = 1;
-				disabled If(Event Player.SwagModeEngaged);
-				disabled Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Eye Position(Event Player), 1);
-				disabled End;
-				Break;
-			End;
-			Event Player.HorizontalAngle = Horizontal Angle From Direction(Direction From Angles(Event Player.HorizontalAngle + (
-				Event Player.M360 > False ? -90 : 90), False));
+			"Just in case"
+			disabled Wait(0.016, Ignore Condition);
 		End;
 	}
 }
 
-rule("BHop Reset Detector - Tons of fixes from the original, only fail case should be on roofs that are off the map")
+rule("Mission - Punch Bounce (From Hax but simplified)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Doomfist;
+	}
+
+	conditions
+	{
+		Global.MissionsEnabledConstant == True;
+		Event Player.Grace > 0;
+		"Is the pioneer, or is on a CP with a punchbounce requirement"
+		(Global.CurrentPioneer == Event Player || Global.CPSpecialRequirementsArray[Event Player.CurrentCP][3]) == True;
+	}
+
+	actions
+	{
+		Wait Until(Event Player.Grace <= 0, 3);
+		Event Player.TempVariable3 = Position Of(Event Player);
+		Wait(0.250, Ignore Condition);
+		If(Vertical Speed Of(Event Player) > 5 && Altitude Of(Event Player) > 0.500);
+			If(Event Player == Global.CurrentPioneer);
+				Event Player.CPSpecialRequirements[3] = Event Player.TempVariable3;
+				Small Message(Event Player, Custom String("Punch Bounce"));
+			Else;
+				If(Distance Between(Event Player.TempVariable3, Global.CPSpecialRequirementsArray[Event Player.CurrentCP][3])
+					<= Global.MissionOrbRadiusConstant);
+					Event Player.CPSpecialRequirements[3] = Event Player.TempVariable3;
+					Small Message(Event Player, Custom String("Punch Bounce"));
+				End;
+			End;
+		End;
+	}
+}
+
+rule("BHop Reset Detector (Tons of fixes from the original, only fail case should be on stairs / uneven surfaces or some off-map roof)")
 {
 	event
 	{
@@ -1974,14 +2067,17 @@ rule("BHop Reset Detector - Tons of fixes from the original, only fail case shou
 		Is Using Ability 1(Event Player) == True;
 		"From sh3lol (DWBWK) bhop reset altitude"
 		Altitude Of(Event Player) <= 0.042;
-		!(Is Button Held(Event Player, Button(Secondary Fire)) && Is Button Held(Event Player, Button(Jump))) == True;
+		"Altitude calculation based off raycast instead of in game function for altitude - doesn't bug out on stairs, over water and uneven surfaces"
+		disabled Distance Between(Position Of(Event Player), Ray Cast Hit Position(Position Of(Event Player) + Vector(0, 0.500, 0), Position Of(
+			Event Player) + Vector(0, -0.500, 0), Null, Event Player, False)) < 0.042;
+		"So players can turn this off with Interact + Ultimate"
 		Event Player.BounceTimerEnabled == True;
+		"Stop this rule from triggering while in starting CP (using this so I don't need additional variable)"
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius + 0.300;
-		"To stop this rule from triggering when sliding on a roof. This nearest walkable position might not work if the player is off map."
+		"To stop this rule from triggering when sliding on a roof. This nearest walkable position might not work if the player is off map. This doesn't work perfectly"
 		(Distance Between(Position Of(Event Player), Nearest Walkable Position(Position Of(Event Player))) < 1 || Distance Between(
-			Global.CPLocations[Event Player.CurrentCP], Nearest Walkable Position(Global.CPLocations[Event Player.CurrentCP])) > 10)
+			Global.CPLocations[Event Player.CurrentCP], Nearest Walkable Position(Global.CPLocations[Event Player.CurrentCP])) > 20)
 			== True;
-		Is On Ground(Event Player) != True;
 		"Is pioneer or is not waiting for pioneer"
 		(Event Player == Global.CurrentPioneer || Event Player.CurrentCP < Count Of(Global.CPLocations) - 1) == True;
 		Event Player.FreeRoamEnabled != True;
@@ -1991,7 +2087,7 @@ rule("BHop Reset Detector - Tons of fixes from the original, only fail case shou
 	{
 		"To prevent conflict with create point rule - shouldn't be needed if you're copying this rule"
 		Wait(0.050, Ignore Condition);
-		"Don't show bhop reset message if you made the next CP while uppercut'ing"
+		"Don't show bhop reset message if you made the next CP while uppercut'ing - shouldn't be needed if you're copying this rule"
 		Abort If(Event Player.CancelPointTimer > 0);
 		Small Message(Event Player, Custom String("Bhop Reset"));
 	}
@@ -2100,7 +2196,6 @@ rule("Save CP Facing Direction when leaving the CP (for both pioneer and non-pio
 
 	conditions
 	{
-		disabled Global.CurrentPioneer == Event Player;
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
 		Global.GameStarted == True;
 		Has Spawned(Event Player) == True;
@@ -2138,24 +2233,25 @@ rule("Pioneer runs out of time")
 		Event Player.BlockPioneerNewPoint = True;
 		Wait(0.100, Ignore Condition);
 		"Is there a player on final checkpoint waiting for pioneer"
-		If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
+		disabled If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
 			== Current Array Element.CurrentCP + 1)) > 0);
-			Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
-				Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1));
-			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
-			Event Player.TempVariable.BlockPioneerNewPoint = True;
-			Event Player.TempVariable.ForceRespawn = True;
-			"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
-			Wait(0.200, Ignore Condition);
-			Global.CurrentPioneer = Event Player.TempVariable;
-			Wait(0.100, Ignore Condition);
-			Event Player.TempVariable.BlockPioneerNewPoint = False;
-			Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
-		Else;
-			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
-			Big Message(All Players(All Teams), Custom String("No one to pass pioneer to"));
-		End;
-		Event Player.BlockPioneerNewPoint = False;
+		disabled Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
+			Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1));
+		disabled Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+		disabled Event Player.TempVariable.BlockPioneerNewPoint = True;
+		disabled Event Player.TempVariable.ForceRespawn = True;
+		"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
+		disabled Wait(0.200, Ignore Condition);
+		disabled Global.CurrentPioneer = Event Player.TempVariable;
+		disabled Wait(0.100, Ignore Condition);
+		disabled Event Player.TempVariable.BlockPioneerNewPoint = False;
+		disabled Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
+		disabled Else;
+		disabled Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+		disabled Big Message(All Players(All Teams), Custom String("No one to pass pioneer to"));
+		disabled End;
+		disabled Event Player.BlockPioneerNewPoint = False;
+		Call Subroutine(PassPioneer);
 	}
 }
 
@@ -2250,7 +2346,7 @@ rule("Sub0: RespawnPlayer")
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
-		Event Player.CPSpecialRequirements = Array(0, 0, 0, 0, 0, 0);
+		Event Player.CPSpecialRequirements = Array(Null, Null, Null, Null);
 		Event Player.EffectLockSphereLocation = Empty Array;
 		Teleport(Event Player, Global.CPLocations[Event Player.CurrentCP]);
 		If(Is Button Held(Event Player, Button(Interact)));
@@ -2274,15 +2370,13 @@ rule("Sub0: RespawnPlayer")
 		Call Subroutine(CancelMomentum);
 		"Added this to fix issue where if you pressed R while using slam, the slam cooldown wasn't reset"
 		Wait(0.100, Ignore Condition);
-		Stop Chasing Player Variable(Event Player, SlamTimer);
-		Event Player.SlamTimer = 0;
 		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
 		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 		Set Ability Cooldown(Event Player, Button(Secondary Fire), 0);
 		Set Ultimate Charge(Event Player, 100);
 		Event Player.CancelPointTimer = 0;
 		"If player is not pioneer, player is not waiting for pioneer"
-		If(Count Of(Global.CPLocations) > Event Player.CurrentCP + 1);
+		If(Count Of(Global.CPLocations) > Event Player.CurrentCP + 1 && !Event Player.FreeRoamEnabled);
 			If(X Component Of(Global.CPAbilityCounts[Event Player.CurrentCP]) == 0);
 				Set Secondary Fire Enabled(Event Player, False);
 			Else;
@@ -2332,9 +2426,6 @@ rule("Sub0: RespawnPlayer")
 			Set Primary Fire Enabled(Event Player, True);
 			Set Ultimate Ability Enabled(Event Player, Global.UltimateAbilitiesEnabledConstant);
 		End;
-		Event Player.WinstonBouncyBubbleCooldown = 0;
-		Destroy Effect(Event Player.WinstonBubbleEffect);
-		Event Player.WinstonBubbleLocation = Null;
 		"Should Fix Phased Out Status issue"
 		Clear Status(Event Player, Phased Out);
 		"Don't phase out bastion, so you can Bastion Ult parkour"
@@ -2362,9 +2453,10 @@ rule("Sub0: RespawnPlayer")
 			Event Player.KillSphereLocation = Null;
 		End;
 		Event Player.WinstonWallClimbEnabled = True;
+		"Fix for Sigma - so your gravity gets reset after using the suck"
+		Set Gravity(Event Player, 100);
 		Event Player.ReplayPosition = Empty Array;
 		Event Player.ReplayFacing = Empty Array;
-		Set Gravity(Event Player, 100);
 		Event Player.EffectLockObtained = Empty Array;
 		Event Player.AbilitiesForEffectLock = Empty Array;
 		Event Player.AbilityLimitsDisplayVar = Global.CPAbilityCounts[Event Player.CurrentCP];
@@ -2407,7 +2499,7 @@ rule("Sub3: HandleSkipTimer")
 			Event Player.TimeSpentOnCP = 0;
 		Else;
 			Event Player.TimeSpentOnCP = 0;
-			Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, Destination and Rate);
+			Chase Player Variable At Rate(Event Player, TimeSpentOnCP, 9999, 1, None);
 		End;
 	}
 }
@@ -2513,6 +2605,9 @@ rule("Sub7: Create Effect Locks and Env / Kill spheres")
 			Destroy Effect(Event Player.TempMenuIDStore[Event Player.TempIterator]);
 			Destroy In-World Text(Event Player.TextIDTempStore[Event Player.TempIterator]);
 		End;
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MissionHUDTextIDArray), 1);
+			Destroy HUD Text(Event Player.MissionHUDTextIDArray[Event Player.TempIterator]);
+		End;
 		Event Player.TempMenuIDStore = Empty Array;
 		Event Player.TextIDTempStore = Empty Array;
 		If(Global.CurrentPioneer == Event Player);
@@ -2551,6 +2646,60 @@ rule("Sub7: Create Effect Locks and Env / Kill spheres")
 				None);
 			Modify Player Variable(Event Player, TempMenuIDStore, Append To Array, Last Created Entity);
 		End;
+		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.CPSpecialRequirements), 1);
+			If(Global.CPSpecialRequirementsArray[Event Player.CurrentCP][Event Player.TempIterator] != Null);
+				"Create Mission Orb"
+				Create Effect(Filtered Array(Event Player, Event Player.CPSpecialRequirements[Evaluate Once(Event Player.TempIterator)] == Null),
+					Sphere, Custom Color(64, 64, 64, 64), Global.CPSpecialRequirementsArray[Event Player.CurrentCP][Evaluate Once(
+					Event Player.TempIterator)], Evaluate Once(Array(10, 5, 15, 5)[Event Player.TempIterator]), Visible To);
+				Modify Player Variable(Event Player, TempMenuIDStore, Append To Array, Last Created Entity);
+				Create In-World Text(Filtered Array(Event Player, Event Player.CPSpecialRequirements[Evaluate Once(Event Player.TempIterator)
+					] == Null), Evaluate Once(Custom String("{0}", Array(Custom String("Down Diag"), Custom String("Headbounce"), Custom String(
+					"360"), Custom String("Punch Bounce"))[Event Player.TempIterator])),
+					Global.CPSpecialRequirementsArray[Event Player.CurrentCP][Evaluate Once(Event Player.TempIterator)], 1.500, Do Not Clip,
+					Visible To, Color(White), Default Visibility);
+				Modify Player Variable(Event Player, TextIDTempStore, Append To Array, Last Text ID);
+				Create HUD Text(Event Player, Custom String("{0}", Array(Ability Icon String(Hero(Tracer), Button(Ability 2)), Ability Icon String(
+					Hero(Doomfist), Button(Ability 1)), Ability Icon String(Hero(Reinhardt), Button(Ability 2)), Ability Icon String(Hero(Winston),
+					Button(Ability 1)))[Event Player.TempIterator]), Custom String("CP Special Requirement"), Custom String("{0} Required", Array(
+					Custom String("Downward Diagonal Punch"), Custom String("Headbounce"), Custom String("360"), Custom String("Punch Bounce"))
+					[Event Player.TempIterator]), Left, 3 + Event Player.TempIterator / 10, Color(Green), Color(Orange), Color(White), None,
+					Default Visibility);
+				Modify Player Variable(Event Player, MissionHUDTextIDArray, Append To Array, Last Text ID);
+			End;
+		End;
+	}
+}
+
+rule("Sub8: PassPioneer")
+{
+	event
+	{
+		Subroutine;
+		PassPioneer;
+	}
+
+	actions
+	{
+		"Is there a player on final checkpoint waiting for pioneer"
+		If(Count Of(Filtered Array(All Players(All Teams), Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations)
+			== Current Array Element.CurrentCP + 1)) > 0);
+			Event Player.TempVariable = Random Value In Array(Filtered Array(All Players(All Teams),
+				Global.CurrentPioneer != Current Array Element && Count Of(Global.CPLocations) == Current Array Element.CurrentCP + 1));
+			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+			Event Player.TempVariable.BlockPioneerNewPoint = True;
+			Event Player.TempVariable.ForceRespawn = True;
+			"Hopefully to avoid the pioneer rule from still being executed while player \"HandleSkipTimer\" subroutine is running"
+			Wait(0.200, Ignore Condition);
+			Global.CurrentPioneer = Event Player.TempVariable;
+			Wait(0.100, Ignore Condition);
+			Event Player.TempVariable.BlockPioneerNewPoint = False;
+			Big Message(All Players(All Teams), Custom String("Pioneer ran out of time. Pioneer passed to {0}", Global.CurrentPioneer));
+		Else;
+			Global.PioneerTimer = Global.PioneerTimeLimitConstant;
+			Big Message(All Players(All Teams), Custom String("No one to pass pioneer to"));
+		End;
+		Event Player.BlockPioneerNewPoint = False;
 	}
 }
 
@@ -2716,10 +2865,13 @@ rule("Green Sphere Rule (Pioneer Only) - In Sphere")
 	actions
 	{
 		Disable Movement Collision With Environment(Event Player, False);
+		Wait Until(Distance Between(Eye Position(Event Player), Event Player.GreenSphereLocation) > Global.GreenSphereRadiusConstant, 20);
+		Wait(0.250, Ignore Condition);
+		Enable Movement Collision With Environment(Event Player);
 	}
 }
 
-rule("Green Sphere Rule (Pioneer Only) - Outside Sphere")
+disabled rule("Green Sphere Rule (Pioneer Only) - Outside Sphere")
 {
 	event
 	{
@@ -2761,10 +2913,14 @@ rule("Green Sphere Rule (Non-Pioneer) - In Sphere")
 	actions
 	{
 		Disable Movement Collision With Environment(Event Player, False);
+		Wait Until(Distance Between(Eye Position(Event Player), Global.CPGreenSphereArray[Event Player.CurrentCP])
+			> Global.GreenSphereRadiusConstant, 20);
+		Wait(0.250, Ignore Condition);
+		Enable Movement Collision With Environment(Event Player);
 	}
 }
 
-rule("Green Sphere Rule (Non-Pioneer) - Outside Sphere")
+disabled rule("Green Sphere Rule (Non-Pioneer) - Outside Sphere")
 {
 	event
 	{
@@ -2859,7 +3015,7 @@ rule("Non-Pioneer Respawns if in Kill Sphere")
 	}
 }
 
-disabled rule("Sigma Abilities")
+disabled rule("Sigma Abilities - From Sigma Parkour by ReZero")
 {
 	event
 	{
@@ -3068,21 +3224,6 @@ disabled rule("WINSTON STUFF")
 	}
 }
 
-rule("Initialize Winston")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Winston;
-	}
-
-	actions
-	{
-		Event Player.WinstonBubbleLocation = Null;
-	}
-}
-
 rule("Winston Leap Grace - Toggle On When Using Leap")
 {
 	event
@@ -3122,65 +3263,6 @@ rule("Winston Leap Grace - Set Grace Variable Chase When Touching Ground")
 	actions
 	{
 		Chase Player Variable At Rate(Event Player, WinstonLeapGrace, 0, 1, Destination and Rate);
-	}
-}
-
-rule("Create Bubble")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Winston;
-	}
-
-	conditions
-	{
-		Is Using Ability 2(Event Player) == True;
-	}
-
-	actions
-	{
-		"Place Bubble on ground below player. Easier for new players to figure out what's going on (compared to Ray Cast bubble position)."
-		Event Player.WinstonBubbleLocation = Position Of(Event Player) + World Vector Of(Forward, Event Player, Rotation)
-			* Horizontal Speed Of(Event Player) * 0.300 + Down * Altitude Of(Event Player);
-		If(Distance Between(Event Player.WinstonBubbleLocation, Position Of(Event Player)) > 100);
-			Small Message(Event Player, Custom String("Barrier Cast Out Of Range (100m)"));
-			Set Ability Cooldown(Event Player, Button(Ability 2), 0);
-			Abort;
-		End;
-		Create Effect(Event Player, Sphere, Color(Blue), Event Player.WinstonBubbleLocation, 5, Visible To Position and Radius);
-		Event Player.WinstonBubbleEffect = Last Created Entity;
-		Event Player.WinstonBouncyBubbleCooldown = 9;
-		Chase Player Variable At Rate(Event Player, WinstonBouncyBubbleCooldown, 0, 1, Destination and Rate);
-		While(Event Player.WinstonBouncyBubbleCooldown > 0 && !Is Dead(Event Player));
-			Wait(0.100, Ignore Condition);
-		End;
-		Destroy Effect(Event Player.WinstonBubbleEffect);
-		Event Player.WinstonBubbleLocation = Null;
-	}
-}
-
-rule("Winston Bubble Physics Rule")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Winston;
-	}
-
-	conditions
-	{
-		Event Player.WinstonBubbleLocation != Null;
-		Distance Between(Position Of(Event Player), Event Player.WinstonBubbleLocation) <= 5;
-	}
-
-	actions
-	{
-		"Direct Impulse - Cancel's Player Motion, so physically inaccurate bounce"
-		Apply Impulse(Event Player, Direction Towards(Event Player.WinstonBubbleLocation, Position Of(Event Player)), Speed Of(
-			Event Player) * 1.300, To World, Cancel Contrary Motion);
 	}
 }
 
@@ -3274,19 +3356,18 @@ rule("Ana Sleep Dart Teleport")
 		Stop Camera(Event Player);
 		"The duration before Ana fires sleep dart"
 		Wait(0.300, Ignore Condition);
-		Event Player.AnaSleepDartTeleLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
-			+ Facing Direction Of(Event Player) * 180, All Players(All Teams), Event Player, True);
-		If(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) > 175);
+		Event Player.TempVariable3 = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player) + Facing Direction Of(
+			Event Player) * 180, All Players(All Teams), Event Player, True);
+		If(Distance Between(Eye Position(Event Player), Event Player.TempVariable3) > 175);
 			Wait(0.100, Ignore Condition);
 			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 			Abort;
 		End;
 		"Shorten ray cast to avoid unintended tele through surfaces"
-		Event Player.AnaSleepDartTeleLocation -= Direction Towards(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation)
-			* 0.500;
+		Event Player.TempVariable3 -= Direction Towards(Eye Position(Event Player), Event Player.TempVariable3) * 0.500;
 		"Sleep dart travel time"
-		Wait(Distance Between(Eye Position(Event Player), Event Player.AnaSleepDartTeleLocation) / 60, Ignore Condition);
-		Teleport(Event Player, Event Player.AnaSleepDartTeleLocation);
+		Wait(Distance Between(Eye Position(Event Player), Event Player.TempVariable3) / 60, Ignore Condition);
+		Teleport(Event Player, Event Player.TempVariable3);
 		Call Subroutine(CancelMomentum);
 	}
 }
@@ -3724,6 +3805,34 @@ rule("Make Ms Destructo Bot Invisible - Doesn't work on the mech lol")
 	}
 }
 
+disabled rule("Swag Mode: Hanzo Sonic At The Next CP")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.SwagModeEngaged == True;
+		"Is not on last point"
+		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
+		Is In Line of Sight(Eye Position(Event Player), Global.CPLocations[Event Player.CurrentCP + 1], Barriers Do Not Block LOS) == True;
+	}
+
+	actions
+	{
+		Play Effect(Event Player, Hanzo Sonic Arrow Initial Pulse Effect, Color(Team 1), Global.CPLocations[Event Player.CurrentCP + 1],
+			1);
+		Play Effect(Event Player, Hanzo Sonic Arrow Initial Pulse Effect, Color(Team 2), Global.CPLocations[Event Player.CurrentCP + 1],
+			1);
+		Wait(3, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
 rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 {
 	event
@@ -3772,7 +3881,7 @@ rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 	}
 }
 
-disabled rule("Swag Mode: Slam")
+rule("Swag Mode: 125 Slam => Boom Boom Boom")
 {
 	event
 	{
@@ -3785,12 +3894,25 @@ disabled rule("Swag Mode: Slam")
 	{
 		Event Player.SwagModeEngaged == True;
 		Is Using Ability 2(Event Player) == True;
+		"125 slam"
+		Event Player.SlamTimer >= 1.520;
 	}
 
 	actions
 	{
 		Wait Until(Is On Ground(Event Player), 7);
-		Play Effect(Event Player, Lúcio Sound Barrier Cast Effect, Color(Team 1), Position Of(Event Player), 1);
+		Abort If(!Is On Ground(Event Player) || False);
+		Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Position Of(Event Player) + Vector(
+			Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
+		Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
+		Wait(0.200, Ignore Condition);
+		Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 2), Position Of(Event Player) + Vector(
+			Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
+		Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
+		Wait(0.200, Ignore Condition);
+		Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Position Of(Event Player) + Vector(
+			Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
+		Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
 	}
 }
 
