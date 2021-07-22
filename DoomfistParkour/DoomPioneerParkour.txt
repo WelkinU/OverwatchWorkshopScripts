@@ -162,7 +162,7 @@ variables
 		37: DisableHUDConstant
 		38: EffectLocksOrderMatters
 		39: EffectLocksResetCooldownConstant
-		40: MrDestructoVector
+		40: AllowPlayerToPioneerWithSkip
 		41: MsDestructo
 		42: MissionOrbRadiusConstant
 
@@ -292,6 +292,8 @@ rule("Initialize Globals")
 			"Effect Locks Reset Ability Cooldowns (For Speedrunning)"), False, 0);
 		Global.MissionsEnabledConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
 			"Missions Enabled (360, Headbounce, Down Diag, etc)"), True, 0);
+		Global.AllowPlayerToPioneerWithSkip = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+			"Allow Players To Pioneer With Skip CP"), True, 1);
 		Global.PioneerMinDistanceConstant = 6;
 		Global.PrimaryFireUsefulForTheseHeros = Array(Hero(Ana));
 		Global.GameStarted = False;
@@ -304,7 +306,6 @@ rule("Initialize Globals")
 		"Kill Sphere Create Pioneer Only"
 		Create Effect(Filtered Array(Global.CurrentPioneer, Current Array Element.KillSphereLocation != Null), Sphere, Color(Red),
 			Global.CurrentPioneer.KillSphereLocation, Global.GreenSphereRadiusConstant, Visible To Position and Radius);
-		Global.MrDestructoVector = Empty Array;
 		Global.CPRadius = 2;
 		Global.GreenSphereRadiusConstant = 3.500;
 		Global.EffectLockSphereRadiusConstant = 1.700;
@@ -1051,7 +1052,7 @@ rule("Interact + Jump -> Skip Checkpoint")
 				Call Subroutine(RespawnPlayer);
 				"Allow player to pioneer using CP skip"
 				If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
-					If(Global.CurrentPioneer == Null);
+					If(Global.CurrentPioneer == Null && Global.AllowPlayerToPioneerWithSkip);
 						Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
 						Global.CurrentPioneer = Event Player;
 					End;
