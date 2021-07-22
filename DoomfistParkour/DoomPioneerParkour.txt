@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 14, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 22, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -204,7 +204,6 @@ variables
 		35: BlockPioneerPass
 		36: WinstonWallClimbEnabled
 		37: WinstonWallClimbTimer
-		42: MenuInWorldLocationTempStore
 		43: MenuTextIDTempStore
 		44: TempIterator
 		45: TempVariable3
@@ -367,7 +366,7 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Melee)), Input Binding String(Button(Crouch))), Custom String(
 			"{0}  +  {1}  | Reset Sphere Effects\r\n     +  Up/Down  | Change Size\r\n     +  Ult Status  | Hero Switch Menu\r\n{2}",
 			Input Binding String(Button(Interact)), Input Binding String(Button(Reload)), Custom String(
-			"{0}  +  {1}  | Teleport\r\n{0}  +  {2}  + Emote  | Pass Pioneer", Input Binding String(Button(Primary Fire)),
+			"{0}  +  {1}  | Teleport\r\n     +  {2}  + Emote  | Pass Pioneer", Input Binding String(Button(Primary Fire)),
 			Input Binding String(Button(Melee)), Input Binding String(Button(Secondary Fire))))), Left, 1, Color(White), Color(White),
 			Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Host Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
@@ -579,10 +578,8 @@ rule("Pioneer Create Point")
 	{
 		Global.CurrentPioneer == Event Player;
 		Is On Ground(Event Player) == True;
-		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
-		disabled Global.GameStarted == True;
-		disabled Has Spawned(Event Player) == True;
 		Event Player.BlockPioneerNewPoint == False;
+		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
 		"Can't pioneer in spectate mode"
 		Event Player.SpectateMode == False;
 		"Punch grace from Hax framework"
@@ -766,14 +763,18 @@ rule("Non-Pioneer Arrive At CP")
 		Event Player.CurrentCP += 1;
 		Event Player.MaxUnlockedCP = Max(Event Player.MaxUnlockedCP, Event Player.CurrentCP);
 		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
-			If(Global.CurrentPioneer == Null);
-				"So you can't pioneer your own point unless you are the only player alive (aka not spectating)"
-				If(Count Of(Filtered Array(All Players(All Teams), !Is Dummy Bot(Current Array Element))) == 1 || Last Of(Global.PioneerList)
-					!= Custom String("{0}", Event Player));
-					If(!Global.DisableHUDConstant);
-						Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
+			If(Global.CurrentPioneer == Null && True);
+				If(!Global.UsingMemoryRecall);
+					"So you can't pioneer your own point unless you are the only player alive (aka not spectating)"
+					If(Count Of(Filtered Array(All Players(All Teams), !Is Dummy Bot(Current Array Element))) == 1 || Last Of(Global.PioneerList)
+						!= Custom String("{0}", Event Player));
+						If(!Global.DisableHUDConstant);
+							Big Message(Event Player, Custom String("You are pioneer! Use your skills to make the next checkpoint!"));
+						End;
+						Global.CurrentPioneer = Event Player;
 					End;
-					Global.CurrentPioneer = Event Player;
+				Else;
+					Big Message(Event Player, Custom String("Complete"));
 				End;
 			End;
 		End;
@@ -875,32 +876,6 @@ rule("Start Pioneer Timer and set Invisible when player becomes pioneer")
 	}
 }
 
-disabled rule("Set Non-Pioneer Visible")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Global.CurrentPioneer != Event Player;
-		Has Spawned(Event Player) == True;
-	}
-
-	actions
-	{
-		Allow Button(Event Player, Button(Melee));
-		If(Event Player.Invisible);
-			Set Invisible(Event Player, All);
-		Else;
-			Set Invisible(Event Player, None);
-		End;
-	}
-}
-
 rule("Set Pioneer Timer to Zero if there isn't a pioneer")
 {
 	event
@@ -971,8 +946,6 @@ rule("Interact + Left Click: Camera To See Next Point (Left Clicking multiple ti
 		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
 		"To not interfere with the temp variable used in Pioneer Create Point rule"
 		Event Player.CancelPointTimer <= 0;
-		"To stop variable overlap with \"Interact + Ult Status - Change Hero\" rule"
-		Count Of(Event Player.MenuInWorldLocationTempStore) == 0;
 	}
 
 	actions
@@ -1160,32 +1133,14 @@ rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
 
 	actions
 	{
-		Event Player.MenuInWorldLocationTempStore = Empty Array;
-		Event Player.MenuTextIDTempStore = Empty Array;
-		For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
-			Modify Player Variable(Event Player, MenuInWorldLocationTempStore, Append To Array, Eye Position(Event Player)
-				+ Facing Direction Of(Event Player) * 1 + 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (
-				Event Player.TempIterator / Count Of(Global.HeroRoster))), Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(
-				Global.HeroRoster))), 0), Event Player, Rotation));
-			Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
-				Event Player.MenuInWorldLocationTempStore[Event Player.TempIterator] + Vector(0, -0.100, 0), 3, Do Not Clip, None, Color(
-				White), Default Visibility);
-			Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
-			Wait(0.016, Ignore Condition);
-		End;
-		Big Message(Event Player, Custom String("Release Interact Over The Hero You Want To Select"));
-		Wait Until(!Is Button Held(Event Player, Button(Interact)), 609);
-		Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.MenuInWorldLocationTempStore,
-			First Of(Sorted Array(Event Player.MenuInWorldLocationTempStore, Angle Between Vectors(Facing Direction Of(Event Player),
-			Direction Towards(Eye Position(Event Player), Current Array Element)))))]);
-		For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
-			Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
-		End;
-		If(Hero Of(Event Player) == Hero(Wrecking Ball));
-			Set Invisible(Event Player, None);
-		End;
-		Event Player.MenuInWorldLocationTempStore = Empty Array;
-		Event Player.MenuTextIDTempStore = Empty Array;
+		Event Player.BlockPioneerNewPoint = True;
+		Stop Forcing Player To Be Hero(Event Player);
+		Set Player Allowed Heroes(Event Player, Remove From Array(Global.HeroRoster, Hero Of(Event Player)));
+		Wait(1, Ignore Condition);
+		Set Player Allowed Heroes(Event Player, Global.HeroRoster);
+		Wait Until(Hero Of(Event Player) != False, 9999);
+		Call Subroutine(RespawnPlayer);
+		Event Player.BlockPioneerNewPoint = False;
 	}
 }
 
@@ -1489,9 +1444,7 @@ rule("Pioneer Save Replay")
 		"Has left starting CP or is using an ability"
 		(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius || Is Firing Secondary(
 			Event Player) || Is Using Ability 1(Event Player) || Is Using Ability 2(Event Player) || Is Using Ultimate(Event Player)
-			|| Event Player.ThreeSecondBounceTimer > 1) == True;
-		Global.GameStarted == True;
-		Has Spawned(Event Player) == True;
+			|| !Is On Ground(Event Player)) == True;
 		Event Player.CancelPointTimer == 0;
 		Global.ReplaysEnabledConstant == True;
 		Event Player.FreeRoamEnabled == False;
@@ -3552,7 +3505,7 @@ rule("Ms. Destructo | Created by nebula - slightly modified from original YENEP"
 
 	conditions
 	{
-		Has Spawned(Host Player) == True;
+		disabled Has Spawned(Host Player) == True;
 	}
 
 	actions
@@ -3845,8 +3798,6 @@ rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 	conditions
 	{
 		Is Button Held(Event Player, Button(Interact)) == True;
-		disabled Is Communicating Any Emote(Event Player) == True;
-		disabled Is Communicating(Event Player, Yes) == True;
 		Is Communicating Any Spray(Event Player) == True;
 	}
 
