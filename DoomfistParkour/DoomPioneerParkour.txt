@@ -207,7 +207,6 @@ variables
 		43: MenuTextIDTempStore
 		44: TempIterator
 		45: TempVariable3
-		46: RoadhogHookPosition
 		47: AbilitiesForEffectLock
 		48: TextIDTempStore
 		49: AbilityLimitsDisplayVar
@@ -2297,6 +2296,10 @@ rule("Sub0: RespawnPlayer")
 
 	actions
 	{
+		If(Event Player.SwagModeEngaged);
+			Play Effect(All Players(All Teams), Tracer Recall Disappear Effect, Color(Team 1), Position Of(Event Player), 100);
+			Play Effect(All Players(All Teams), Tracer Recall Disappear Sound, Color(Team 1), Position Of(Event Player), 100);
+		End;
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
@@ -3428,21 +3431,21 @@ rule("Change Hook to Grappling Hook")
 		"Initial impulse to let you hook in midair without falling too far while hook is out"
 		Apply Impulse(Event Player, Up, 3, To World, Cancel Contrary Motion);
 		"Issue here is that we are using ray cast to determine hook impact, which isn't visually accurate, so the hook may impact a wall but not be deteted."
-		Event Player.RoadhogHookPosition = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+		Event Player.TempVariable3 = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
 			+ 120 * Facing Direction Of(Event Player), All Players(All Teams), Event Player, True);
 		"Abort if hook didn't connect with a wall within 25m. For reference, 20m is hook range for normal roadhog."
-		If(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) > 25);
+		If(Distance Between(Position Of(Event Player), Event Player.TempVariable3) > 25);
 			Small Message(Event Player, Custom String("Out of hook range!"));
 			Set Ability Cooldown(Event Player, Button(Ability 1), 0);
 			Abort;
 		End;
 		"Wait for hook to \"hit\" something. Hook moves at 40m/s"
-		Wait(Distance Between(Position Of(Event Player), Event Player.RoadhogHookPosition) / 40, Ignore Condition);
+		Wait(Distance Between(Position Of(Event Player), Event Player.TempVariable3) / 40, Ignore Condition);
 		"Impulse that increases with hook range. Hook impulse = Base Impulse + Hook Range x Range Multiplier."
-		Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.RoadhogHookPosition), 20 + Distance Between(
-			Event Player.RoadhogHookPosition, Position Of(Event Player)) * 0.800, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.TempVariable3), 20 + Distance Between(
+			Event Player.TempVariable3, Position Of(Event Player)) * 0.800, To World, Cancel Contrary Motion);
 		"Large Linear Impulse. Disabled while testing impulse that increases with range."
-		disabled Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.RoadhogHookPosition), 40, To World,
+		disabled Apply Impulse(Event Player, Direction Towards(Position Of(Event Player), Event Player.TempVariable3), 40, To World,
 			Cancel Contrary Motion);
 	}
 }
