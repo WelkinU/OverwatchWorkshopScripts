@@ -13,8 +13,18 @@ settings
 
 	modes
 	{
+		Lúcioball
+		{
+			enabled maps
+			{
+			}
+		}
+
 		Skirmish
 		{
+			Hero Limit: Off
+			Kill Feed: Off
+
 			enabled maps
 			{
 				Dorado
@@ -23,15 +33,12 @@ settings
 
 		Team Deathmatch
 		{
+			Hero Limit: Off
+			Kill Feed: Off
+
 			enabled maps
 			{
 			}
-		}
-
-		General
-		{
-			Hero Limit: Off
-			Kill Feed: Off
 		}
 	}
 
@@ -445,6 +452,8 @@ rule("Initialize player + Ring Effects")
 		Event Player.FreeRoamEnabled = False;
 		Event Player.SwagModeEngaged = False;
 		Event Player.SwagEffectsIDArray = Empty Array;
+		"To make you load in as doomfist on lucioball maps"
+		Start Forcing Player To Be Hero(Event Player, Hero(Doomfist));
 	}
 }
 
@@ -600,7 +609,7 @@ rule("Pioneer Create Point")
 		Event Player.BlockPioneerPass = True;
 		Play Effect(Event Player, Ring Explosion Sound, Color(White), Event Player, 60);
 		Event Player.TempVariable2 = Position Of(Event Player);
-		Start Forcing Player Position(Event Player, Evaluate Once(Event Player.TempVariable2), True);
+		Start Forcing Player Position(Event Player, Evaluate Once(Position Of(Event Player)), False);
 		"Allow player 3 sec to cancel the CP"
 		Event Player.CancelPointTimer = 3;
 		Chase Player Variable At Rate(Event Player, CancelPointTimer, 0, 1, None);
@@ -621,7 +630,6 @@ rule("Pioneer Create Point")
 		End;
 		Stop Forcing Player Position(Event Player);
 		Destroy Progress Bar HUD Text(Event Player.MenuTextIDTempStore);
-		"Hopefully tempvariable doesn't conflict with \"Pioneer runs out of time\" rule"
 		For Player Variable(Event Player, TempVariable, 0, Count Of(All Living Players(All Teams)), 1);
 			If(All Living Players(All Teams)[Event Player.TempVariable].CurrentCP == Count Of(Global.CPLocations) - 1);
 				All Living Players(All Teams)[Event Player.TempVariable].ForceRespawn = True;
@@ -1133,14 +1141,41 @@ rule("Interact + Ultimate Status Voiceline = Pioneer can switch hero")
 
 	actions
 	{
-		Event Player.BlockPioneerNewPoint = True;
-		Stop Forcing Player To Be Hero(Event Player);
-		Set Player Allowed Heroes(Event Player, Remove From Array(Global.HeroRoster, Hero Of(Event Player)));
-		Wait(1, Ignore Condition);
-		Set Player Allowed Heroes(Event Player, Global.HeroRoster);
-		Wait Until(Hero Of(Event Player) != False, 9999);
-		Call Subroutine(RespawnPlayer);
-		Event Player.BlockPioneerNewPoint = False;
+		"Lucioball maps dont have a hero select screen, so normal method doesn't work, use wheel hero select menu instead"
+		If(Current Game Mode != Game Mode(Lúcioball));
+			Event Player.BlockPioneerNewPoint = True;
+			Stop Forcing Player To Be Hero(Event Player);
+			Set Player Allowed Heroes(Event Player, Remove From Array(Global.HeroRoster, Hero Of(Event Player)));
+			Wait(1, Ignore Condition);
+			Set Player Allowed Heroes(Event Player, Global.HeroRoster);
+			Wait Until(Hero Of(Event Player) != False, 9999);
+			Call Subroutine(RespawnPlayer);
+			Event Player.BlockPioneerNewPoint = False;
+		Else;
+			Event Player.TempVariable3 = Empty Array;
+			Event Player.MenuTextIDTempStore = Empty Array;
+			For Player Variable(Event Player, TempIterator, 0, Count Of(Global.HeroRoster), 1);
+				Modify Player Variable(Event Player, TempVariable3, Append To Array, Eye Position(Event Player) + Facing Direction Of(Event Player)
+					* 1 + 0.400 * World Vector Of(Vector(Sine From Degrees(360 * (Event Player.TempIterator / Count Of(Global.HeroRoster))),
+					Cosine From Degrees(360 * (Event Player.TempIterator / Count Of(Global.HeroRoster))), 0), Event Player, Rotation));
+				Create In-World Text(Event Player, Custom String("{0}", Hero Icon String(Global.HeroRoster[Event Player.TempIterator])),
+					Event Player.TempVariable3[Event Player.TempIterator] + Vector(0, -0.100, 0), 3, Do Not Clip, None, Color(White),
+					Default Visibility);
+				Modify Player Variable(Event Player, MenuTextIDTempStore, Append To Array, Last Text ID);
+				Wait(0.016, Ignore Condition);
+			End;
+			Big Message(Event Player, Custom String("Release Interact Over The Hero You Want To Select"));
+			Wait Until(!Is Button Held(Event Player, Button(Interact)), 609);
+			Start Forcing Player To Be Hero(Event Player, Global.HeroRoster[Index Of Array Value(Event Player.TempVariable3, First Of(
+				Sorted Array(Event Player.TempVariable3, Angle Between Vectors(Facing Direction Of(Event Player), Direction Towards(
+				Eye Position(Event Player), Current Array Element)))))]);
+			For Player Variable(Event Player, TempIterator, 0, Count Of(Event Player.MenuTextIDTempStore), 1);
+				Destroy In-World Text(Event Player.MenuTextIDTempStore[Event Player.TempIterator]);
+			End;
+			If(Hero Of(Event Player) == Hero(Wrecking Ball));
+				Set Invisible(Event Player, None);
+			End;
+		End;
 	}
 }
 
@@ -2298,7 +2333,7 @@ rule("Sub0: RespawnPlayer")
 	{
 		If(Event Player.SwagModeEngaged);
 			Play Effect(All Players(All Teams), Tracer Recall Disappear Effect, Color(Team 1), Position Of(Event Player), 100);
-			Play Effect(All Players(All Teams), Tracer Recall Disappear Sound, Color(Team 1), Position Of(Event Player), 100);
+			disabled Play Effect(All Players(All Teams), Tracer Recall Disappear Sound, Color(Team 1), Position Of(Event Player), 100);
 		End;
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
