@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 22, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 27, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -369,8 +369,8 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Visible To String and Color, Visible Never);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String(" \r\n- - - - - - - - - - - Pioneer Controls - - - - - - - - - - -\r\n{0}\r\n{1}\r\n", Custom String(
-			"{0} | Create Effect Lock\r\n{1} | Create Env. Collision Sphere\r\nGroup Up | Create Kill Sphere", Input Binding String(Button(
-			Melee)), Input Binding String(Button(Crouch))), Custom String(
+			"{0} | Create Effect Lock\r\nNeed Healing | Create Env. Collision Sphere\r\nGroup Up | Create Kill Sphere",
+			Input Binding String(Button(Melee))), Custom String(
 			"{0}  +  {1}  | Reset Sphere Effects\r\n     +  Up/Down  | Change Size\r\n     +  Ult Status  | Hero Switch Menu\r\n{2}",
 			Input Binding String(Button(Interact)), Input Binding String(Button(Reload)), Custom String(
 			"{0}  +  {1}  | Teleport\r\n     +  {2}  + Emote  | Pass Pioneer", Input Binding String(Button(Primary Fire)),
@@ -1258,15 +1258,18 @@ rule("Ult + Crouch + Ult Status = Free Roam")
 
 	actions
 	{
+		Event Player.BlockArriveNextPoint = True;
+		Event Player.FreeRoamEnabled = !Event Player.FreeRoamEnabled;
 		"Respawn player when exiting free roam, otherwise player could free roam to the next CP and then turn off free roam!"
-		If(Event Player.FreeRoamEnabled == True);
-			Call Subroutine(RespawnPlayer);
-		Else;
+		If(Event Player.FreeRoamEnabled);
 			Set Ability 1 Enabled(Event Player, True);
 			Set Ability 2 Enabled(Event Player, True);
+			Set Primary Fire Enabled(Event Player, True);
 			Set Secondary Fire Enabled(Event Player, True);
+		Else;
+			Call Subroutine(RespawnPlayer);
 		End;
-		Event Player.FreeRoamEnabled = !Event Player.FreeRoamEnabled;
+		Event Player.BlockArriveNextPoint = False;
 		Wait(0.100, Ignore Condition);
 		Small Message(Event Player, Event Player.FreeRoamEnabled ? Custom String("Free Roam Enabled") : Custom String(
 			"Free Roam Disabled"));
@@ -2812,7 +2815,7 @@ rule("Obtain Effect Lock Sphere (Non-Pioneer)")
 	}
 }
 
-rule("Pioneer Create Green Sphere with Crouch")
+rule("Pioneer Create Green Sphere with Need Healing Voiceline")
 {
 	event
 	{
@@ -2823,22 +2826,20 @@ rule("Pioneer Create Green Sphere with Crouch")
 
 	conditions
 	{
+		Is Communicating(Event Player, Need Healing) == True;
 		Global.CurrentPioneer == Event Player;
-		Is Button Held(Event Player, Button(Crouch)) == True;
-		Hero Of(Event Player) != Hero(Wrecking Ball);
 		Event Player.CancelPointTimer == 0;
 		Event Player.FreeRoamEnabled != True;
 	}
 
 	actions
 	{
-		disabled Event Player.GreenSphereLocation = Eye Position(Event Player);
 		Event Player.GreenSphereLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
 			+ Facing Direction Of(Event Player) * 12, Null, Event Player, True);
 	}
 }
 
-rule("Green Sphere Rule (Pioneer Only) - In Sphere")
+rule("Green Sphere Rule (Pioneer Only)")
 {
 	event
 	{
@@ -2863,30 +2864,7 @@ rule("Green Sphere Rule (Pioneer Only) - In Sphere")
 	}
 }
 
-disabled rule("Green Sphere Rule (Pioneer Only) - Outside Sphere")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Global.CurrentPioneer == Event Player;
-		Event Player.GreenSphereLocation != Null;
-		Distance Between(Eye Position(Event Player), Event Player.GreenSphereLocation) > Global.GreenSphereRadiusConstant;
-	}
-
-	actions
-	{
-		Wait(0.250, Ignore Condition);
-		Enable Movement Collision With Environment(Event Player);
-	}
-}
-
-rule("Green Sphere Rule (Non-Pioneer) - In Sphere")
+rule("Green Sphere Rule (Non-Pioneer)")
 {
 	event
 	{
@@ -2907,29 +2885,6 @@ rule("Green Sphere Rule (Non-Pioneer) - In Sphere")
 		Disable Movement Collision With Environment(Event Player, False);
 		Wait Until(Distance Between(Eye Position(Event Player), Global.CPGreenSphereArray[Event Player.CurrentCP])
 			> Global.GreenSphereRadiusConstant, 20);
-		Wait(0.250, Ignore Condition);
-		Enable Movement Collision With Environment(Event Player);
-	}
-}
-
-disabled rule("Green Sphere Rule (Non-Pioneer) - Outside Sphere")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Global.CurrentPioneer != Event Player;
-		Global.CPGreenSphereArray[Event Player.CurrentCP] != Null;
-		Distance Between(Eye Position(Event Player), Global.CPGreenSphereArray[Event Player.CurrentCP]) > Global.GreenSphereRadiusConstant;
-	}
-
-	actions
-	{
 		Wait(0.250, Ignore Condition);
 		Enable Movement Collision With Environment(Event Player);
 	}
@@ -3923,7 +3878,9 @@ rule("Swag Mode: Left Click => EMP")
 
 	actions
 	{
-		Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Ray Cast Hit Position(Eye Position(Event Player),
+		Play Effect(Event Player, Hanzo Sonic Arrow Initial Pulse Effect, Color(Team 1), Ray Cast Hit Position(Eye Position(Event Player),
+			Eye Position(Event Player) + Facing Direction Of(Event Player) * 180, Null, Event Player, False), 1);
+		disabled Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Ray Cast Hit Position(Eye Position(Event Player),
 			Eye Position(Event Player) + Facing Direction Of(Event Player) * 180, Null, Event Player, False), 1);
 	}
 }
