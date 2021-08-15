@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: July 27, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), using ideas & code from Hax, khandescension, nebula. Last Updated: Aug 15, 2021. Request a feature, report issue on discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -207,7 +207,7 @@ variables
 		31: sigma_barrier_position
 		32: Grace
 		33: WinstonLeapGrace
-		34: Count360Slam125
+		34: TempVariable4
 		35: BlockPioneerPass
 		36: WinstonWallClimbEnabled
 		37: WinstonWallClimbTimer
@@ -372,10 +372,10 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			"{0} | Create Effect Lock\r\nNeed Healing | Create Env. Collision Sphere\r\nGroup Up | Create Kill Sphere",
 			Input Binding String(Button(Melee))), Custom String(
 			"{0}  +  {1}  | Reset Sphere Effects\r\n     +  Up/Down  | Change Size\r\n     +  Ult Status  | Hero Switch Menu\r\n{2}",
-			Input Binding String(Button(Interact)), Input Binding String(Button(Reload)), Custom String(
-			"{0}  +  {1}  | Teleport\r\n     +  {2}  + Emote  | Pass Pioneer", Input Binding String(Button(Primary Fire)),
-			Input Binding String(Button(Melee)), Input Binding String(Button(Secondary Fire))))), Left, 1, Color(White), Color(White),
-			Color(White), Visible To and String, Default Visibility);
+			Input Binding String(Button(Interact)), Input Binding String(Button(Reload)), Custom String("{0}  +  {1}  | Teleport\r\n{2}",
+			Input Binding String(Button(Primary Fire)), Input Binding String(Button(Melee)), Custom String(
+			"{0}  +  {1}  + Emote  | Pass Pioneer", Input Binding String(Button(Primary Fire)), Input Binding String(Button(
+			Secondary Fire)))))), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(Filtered Array(Host Player, Is Button Held(Current Array Element, Button(Interact))), Null, Null, Custom String(
 			"- - - - - - - - - - - - - - - - - - - - - -Host Controls- - - - - - - - - - - - - - - - - - - - - -\r\n{0}\r\n{1}\r\n{2}",
 			Custom String("{0} + Hello | Dev Mode (Players Can Skip Levels)\r\n{1} + Emote + Dev Mode On | Delete Last CP",
@@ -445,10 +445,12 @@ rule("Initialize player + Ring Effects")
 			Visible To Position and Radius);
 		Create Effect(Filtered Array(Event Player, Count Of(Global.CPLocations) > Current Array Element.CurrentCP + 1), Ring, Color(
 			Purple), Global.CPLocations[Event Player.CurrentCP + 1], Global.CPRadius, Visible To Position and Radius);
-		Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player)
+		"Starting with this off, because it's not \"pro\" to have it on. Do people read the controls menu though? We'll see."
+		Event Player.BounceTimerEnabled = False;
+		"Re-enable this if bounce timer starts enabled. Right now it starts disabled."
+		disabled Chase Player Variable At Rate(Event Player, ThreeSecondBounceTimer, Speed Of(Event Player)
 			> 0.070 || Event Player.CancelPointTimer > 0 || Is On Ground(Event Player) ? 0 : 4, Speed Of(Event Player)
 			> 0.070 || Event Player.CancelPointTimer > 0 || Is On Ground(Event Player) ? 9999 : 1, Destination and Rate);
-		Event Player.BounceTimerEnabled = True;
 		Event Player.FreeRoamEnabled = False;
 		Event Player.SwagModeEngaged = False;
 		Event Player.SwagEffectsIDArray = Empty Array;
@@ -1701,6 +1703,12 @@ rule("Used Ability 1 (Uppercut)")
 		Else;
 			Event Player.AbilitiesForEffectLock[Count Of(Event Player.AbilitiesForEffectLock) - 1] += Up;
 		End;
+		If(Event Player.SwagModeEngaged && Distance Between(Position Of(Event Player) + World Vector Of(Vector(0, 0, 1.100), Event Player,
+			Rotation), Ray Cast Hit Position(Position Of(Event Player) + World Vector Of(Vector(0, 0, 1.100), Event Player, Rotation),
+			Position Of(Event Player) + World Vector Of(Vector(0, 0, 1.100), Event Player, Rotation) + Vector(0, 6, 0), Null, Event Player,
+			False)) < 5.500);
+			Play Effect(Event Player, Doomfist Rising Uppercut Impact Sound, Color(White), Position Of(Event Player), 100);
+		End;
 	}
 }
 
@@ -1848,33 +1856,6 @@ disabled rule("125 slam detector - better, but still not perfect")
 	}
 }
 
-disabled rule("125 Slam Detection")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		Doomfist;
-	}
-
-	conditions
-	{
-		Has Spawned(Event Player) == True;
-		"Actual time is 1.53 for 125 slam + cancel, but removing cancel ~.3 sec"
-		Event Player.SlamTimer >= 1.220;
-		Is Using Ability 2(Event Player) == True;
-		"To prevent player from just holding down slam at invalid slam angle to get a 125 slam"
-		Is Button Held(Event Player, Button(Ability 2)) == False;
-	}
-
-	actions
-	{
-		Event Player.Count360Slam125 += Up;
-		disabled Small Message(Event Player, Custom String("125 Slam"));
-		disabled Play Effect(Event Player, Buff Impact Sound, Color(White), Event Player, 60);
-	}
-}
-
 rule("Mission - Downward Diag")
 {
 	event
@@ -1912,7 +1893,7 @@ rule("Mission - Downward Diag")
 	}
 }
 
-rule("Mission - Headbounce (From Hax)")
+rule("Mission - Headbounce (HB Conditions From Hax)")
 {
 	event
 	{
@@ -1950,7 +1931,7 @@ rule("Mission - Headbounce (From Hax)")
 	}
 }
 
-rule("Mission - 360")
+rule("Mission - 360 (Updates every frame, so it detects very fast 360's)")
 {
 	event
 	{
@@ -2334,10 +2315,6 @@ rule("Sub0: RespawnPlayer")
 
 	actions
 	{
-		If(Event Player.SwagModeEngaged);
-			Play Effect(All Players(All Teams), Tracer Recall Disappear Effect, Color(Team 1), Position Of(Event Player), 100);
-			disabled Play Effect(All Players(All Teams), Tracer Recall Disappear Sound, Color(Team 1), Position Of(Event Player), 100);
-		End;
 		Stop Holding Button(Event Player, Button(Secondary Fire));
 		Event Player.CPAbilityCounts = Vector(0, 0, 0);
 		Event Player.CountUltimateTeleportPrimary = Vector(0, 0, 0);
@@ -3752,34 +3729,6 @@ rule("Make Ms Destructo Bot Invisible - Doesn't work on the mech lol")
 	}
 }
 
-disabled rule("Swag Mode: Hanzo Sonic At The Next CP")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		All;
-	}
-
-	conditions
-	{
-		Event Player.SwagModeEngaged == True;
-		"Is not on last point"
-		Count Of(Global.CPLocations) > Event Player.CurrentCP + 1;
-		Is In Line of Sight(Eye Position(Event Player), Global.CPLocations[Event Player.CurrentCP + 1], Barriers Do Not Block LOS) == True;
-	}
-
-	actions
-	{
-		Play Effect(Event Player, Hanzo Sonic Arrow Initial Pulse Effect, Color(Team 1), Global.CPLocations[Event Player.CurrentCP + 1],
-			1);
-		Play Effect(Event Player, Hanzo Sonic Arrow Initial Pulse Effect, Color(Team 2), Global.CPLocations[Event Player.CurrentCP + 1],
-			1);
-		Wait(3, Ignore Condition);
-		Loop If Condition Is True;
-	}
-}
-
 rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 {
 	event
@@ -3826,7 +3775,7 @@ rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 	}
 }
 
-rule("Swag Mode: 125 Slam => Boom Boom Boom")
+rule("Swag Mode: Normal Slam -> Boom ---------------- 125 Slam => Boom Boom Boom")
 {
 	event
 	{
@@ -3839,25 +3788,31 @@ rule("Swag Mode: 125 Slam => Boom Boom Boom")
 	{
 		Event Player.SwagModeEngaged == True;
 		Is Using Ability 2(Event Player) == True;
-		"125 slam"
-		Event Player.SlamTimer >= 1.520;
 	}
 
 	actions
 	{
 		Wait Until(Is On Ground(Event Player), 7);
-		Abort If(!Is On Ground(Event Player) || False);
-		Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Position Of(Event Player) + Vector(
-			Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
-		Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
-		Wait(0.200, Ignore Condition);
-		Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 2), Position Of(Event Player) + Vector(
-			Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
-		Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
-		Wait(0.200, Ignore Condition);
-		Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Position Of(Event Player) + Vector(
-			Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
-		Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
+		Abort If(!Is On Ground(Event Player));
+		disabled Wait(0.033, Ignore Condition);
+		Abort If(Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) <= Global.CPRadius);
+		Event Player.TempVariable4 = Position Of(Event Player);
+		If(Event Player.SlamTimer > 1.520);
+			Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Event Player.TempVariable4 + Vector(
+				Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
+			Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
+			Wait(0.200, Ignore Condition);
+			Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Event Player.TempVariable4 + Vector(
+				Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
+			Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
+			Wait(0.200, Ignore Condition);
+			Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Event Player.TempVariable4 + Vector(
+				Random Integer(-4, 4), 0, Random Integer(-4, 4)), 1);
+			Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
+		Else;
+			Play Effect(All Players(All Teams), Doomfist Meteor Strike Impact Effect, Color(Team 1), Event Player.TempVariable4, 1);
+			Play Effect(Event Player, Doomfist Meteor Strike Impact Sound, Color(White), Position Of(Event Player), 100);
+		End;
 	}
 }
 
