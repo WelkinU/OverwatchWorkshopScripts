@@ -75,11 +75,6 @@ settings
 				Spawn With Ultimate Ready: On
 			}
 
-			Doomfist
-			{
-				Seismic Slam Cooldown Time: 66%
-			}
-
 			Genji
 			{
 				Ammunition Clip Size Scalar: 25%
@@ -3467,265 +3462,91 @@ disabled rule("Other Stuff")
 	}
 }
 
-rule("Ms. Destructo | Created by nebula - slightly modified from original YENEP")
+rule("Improved Ms. Destructo - Faster and a lot less code and hardcoded map positions. Original version by Nebula (YENEP)")
 {
 	event
 	{
 		Ongoing - Global;
 	}
 
-	conditions
-	{
-		disabled Has Spawned(Host Player) == True;
-	}
-
 	actions
 	{
-		Wait(2, Ignore Condition);
-		Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(0, 200, 0), Vector(0, 0, 0));
-		Global.MsDestructo = Last Created Entity;
-		disabled Set Invisible(First Of(Filtered Array(All Players(All Teams), Is Dummy Bot(Current Array Element) && Hero Of(Current Array Element)
-			== Hero(D.Va))), All);
-		Start Forcing Dummy Bot Name(Global.MsDestructo, Custom String("Ms. Destructo"));
-		Wait(3, Ignore Condition);
-		If(Current Map == Map(Hanamura) || Current Map == Map(Hanamura Winter));
-			Teleport(Global.MsDestructo, Vector(15.759, 30.576, -27.201));
-		Else If(Current Map == Map(Horizon Lunar Colony));
-			Teleport(Global.MsDestructo, Vector(31.759, 40.003, -59.476));
-		Else If(Current Map == Map(Paris));
-			Teleport(Global.MsDestructo, Vector(-54.508, 40.179, -10.866));
-		Else If(Current Map == Map(Temple of Anubis));
-			Teleport(Global.MsDestructo, Vector(-26.780, 23.366, 40.284));
-		Else If(Current Map == Map(Dorado));
-			Teleport(Global.MsDestructo, Vector(69.418, 42.103, -17.712));
-		Else If(Current Map == Map(Havana));
-			Teleport(Global.MsDestructo, Vector(9.382, 38.635, -81.276));
-		Else If(Current Map == Map(Junkertown));
-			Teleport(Global.MsDestructo, Vector(9.382, 38.635, -81.276));
-		Else If(Current Map == Map(Rialto));
-			Teleport(Global.MsDestructo, Vector(9.756, 30.753, -41.395));
-		Else If(Current Map == Map(Route 66));
-			Teleport(Global.MsDestructo, Vector(30.313, 28.237, -16.925));
-		Else If(Current Map == Map(Watchpoint: Gibraltar));
-			Teleport(Global.MsDestructo, Vector(73.985, 26.198, -109.338));
-		Else If(Current Map == Map(Blizzard World) || Current Map == Map(Blizzard World Winter));
-			Teleport(Global.MsDestructo, Vector(-21.030, 35.127, 88.381));
-		Else If(Current Map == Map(Eichenwalde) || Current Map == Map(Eichenwalde Halloween));
-			Teleport(Global.MsDestructo, Vector(-21.030, 35.127, 88.381));
-		Else If(Current Map == Map(Hollywood) || Current Map == Map(Hollywood Halloween));
-			Teleport(Global.MsDestructo, Vector(-0.355, 28.167, -22.396));
-		Else If(Current Map == Map(King's Row) || Current Map == Map(King's Row Winter));
-			Teleport(Global.MsDestructo, Vector(-56.869, 24.061, -32.132));
-		Else If(Current Map == Map(Numbani));
-			Teleport(Global.MsDestructo, Vector(-56.869, 24.061, -32.132));
-		Else If(Current Map == Map(Ayutthaya));
-			Teleport(Global.MsDestructo, Vector(16.965, 26.541, -7.130));
-		Else If(Current Map == Map(Busan Downtown Lunar New Year));
-			Teleport(Global.MsDestructo, Vector(51.885, 37.172, -113.654));
-		Else If(Current Map == Map(Busan Sanctuary Lunar New Year));
-			Teleport(Global.MsDestructo, Vector(-329.934, 56.136, 149.839));
-		Else If(Current Map == Map(Ilios Lighthouse));
-			Teleport(Global.MsDestructo, Vector(322.988, 15.716, -37.732));
-		Else If(Current Map == Map(Ilios Ruins));
-			Teleport(Global.MsDestructo, Vector(27.711, 87.241, -161.298));
-		Else If(Current Map == Map(Ilios Well));
-			Teleport(Global.MsDestructo, Vector(-223.895, 34.756, 0.890));
-		Else If(Current Map == Map(Lijiang Control Center) || Current Map == Map(Lijiang Control Center Lunar New Year));
-			Teleport(Global.MsDestructo, Vector(-5.808, 324.398, 282.523));
-		Else If(Current Map == Map(Lijiang Garden) || Current Map == Map(Lijiang Garden Lunar New Year));
-			Teleport(Global.MsDestructo, Vector(-0.414, 156.197, 148.681));
-		Else If(Current Map == Map(Lijiang Night Market) || Current Map == Map(Lijiang Night Market Lunar New Year));
-			Teleport(Global.MsDestructo, Vector(-0.381, 53.736, -33.335));
-		Else If(Current Map == Map(Nepal Sanctum));
-			Teleport(Global.MsDestructo, Vector(83.100, 178.926, 0.593));
-		Else If(Current Map == Map(Nepal Shrine));
-			Teleport(Global.MsDestructo, Vector(-49.803, 63.290, -0.413));
-		Else If(Current Map == Map(Nepal Village) || Current Map == Map(Nepal Village Winter));
-			Teleport(Global.MsDestructo, Vector(-184.659, -38.730, -0.783));
-		Else If(Current Map == Map(Oasis City Center));
-			Teleport(Global.MsDestructo, Vector(150.125, 30.619, 251.966));
-		Else If(Current Map == Map(Oasis Gardens));
-			Teleport(Global.MsDestructo, Vector(134.888, 36.760, -240.736));
-		Else If(Current Map == Map(Oasis University));
-			Teleport(Global.MsDestructo, Vector(-195.549, 60.350, -0.098));
-		Else If(Current Map == Map(Black Forest) || Current Map == Map(Black Forest Winter));
-			Teleport(Global.MsDestructo, Vector(-9.622, 44.751, 5.635));
-		Else If(Current Map == Map(Castillo));
-			Teleport(Global.MsDestructo, Vector(-100.828, 76.566, 60.021));
-		Else If(Current Map == Map(Ecopoint: Antarctica) || Current Map == Map(Ecopoint: Antarctica Winter));
-			Teleport(Global.MsDestructo, Vector(-6.186, 35.564, 1.378));
-		Else If(Current Map == Map(Château Guillard) || Current Map == Map(Château Guillard Halloween));
-			Teleport(Global.MsDestructo, Vector(200.414, 82.412, 78.813));
-		Else If(Current Map == Map(Kanezaka));
-			Teleport(Global.MsDestructo, Vector(-36.319, 32.305, 0.472));
-		Else If(Current Map == Map(Necropolis));
-			Teleport(Global.MsDestructo, Vector(-1.144, 47.168, -2.946));
-		Else If(Current Map == Map(Petra));
-			Teleport(Global.MsDestructo, Vector(9.678, 28.313, 13.400));
-		Else If(Current Map == Map(Volskaya Industries));
-			Teleport(Global.MsDestructo, Vector(-49.147, 22.344, 76.844));
-		Else If(Current Map == Map(Practice Range));
-			Teleport(Global.MsDestructo, Vector(54.948, 50.769, 3.930));
-		Else If(Current Map == Map(Ilios));
-			Teleport(Global.MsDestructo, Vector(322.988, 40, -37.732));
-			Start Scaling Player(Global.MsDestructo, 20, True);
+		Abort If(Current Game Mode == Game Mode(Lúcioball));
+		Wait(1, Ignore Condition);
+		If(Array Contains(Array(Map(Busan), Map(Ilios), Map(Lijiang Tower), Map(Nepal), Map(Oasis)), Current Map));
+			Global.MsDestructo = Empty Array;
+			If(Current Map == Map(Ilios));
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(322.988, 40, -37.732), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(27.711, 200, -161.298), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-223.895, 120, 0.890), Vector(0, 0, 0));
+			Else If(Current Map == Map(Busan));
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(51.885, 37.172, -113.654), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-329.934, 56.136, 149.839), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(227.210, 43.353, 252.640), Vector(0, 0, 0));
+			Else If(Current Map == Map(Lijiang Tower) || Current Map == Map(Lijiang Tower Lunar New Year));
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-5.808, 324.398, 282.523), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-0.414, 156.197, 148.681), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-0.381, 53.736, -33.335), Vector(0, 0, 0));
+			Else If(Current Map == Map(Nepal));
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(83.100, 178.926, 0.593), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-49.803, 63.290, -0.413), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-184.659, -38.730, -0.783), Vector(0, 0, 0));
+			Else If(Current Map == Map(Oasis));
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(150.125, 30.619, 251.966), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(134.888, 36.760, -240.736), Vector(0, 0, 0));
+				Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Vector(-195.549, 60.350, -0.098), Vector(0, 0, 0));
+			End;
+			Modify Global Variable(MsDestructo, Append To Array, Last Created Entity);
+			Set Invisible(Global.MsDestructo[0], All);
+			Set Invisible(Global.MsDestructo[1], All);
+			Set Invisible(Global.MsDestructo[2], All);
+			Set Ultimate Ability Enabled(Global.MsDestructo[0], True);
+			Set Ultimate Ability Enabled(Global.MsDestructo[1], True);
+			Set Ultimate Ability Enabled(Global.MsDestructo[2], True);
+			Start Scaling Player(Global.MsDestructo[0], 50, True);
+			Start Scaling Player(Global.MsDestructo[1], 50, True);
+			Start Scaling Player(Global.MsDestructo[2], 50, True);
+			Set Ultimate Charge(Global.MsDestructo[0], 100);
+			Set Ultimate Charge(Global.MsDestructo[1], 100);
+			Set Ultimate Charge(Global.MsDestructo[2], 100);
+			Start Holding Button(Global.MsDestructo[0], Button(Ultimate));
+			Start Holding Button(Global.MsDestructo[1], Button(Ultimate));
+			Start Holding Button(Global.MsDestructo[2], Button(Ultimate));
+			Wait(4, Ignore Condition);
+			Destroy Dummy Bot(Team Of(Global.MsDestructo[0]), Slot Of(Global.MsDestructo[0]));
+			Destroy Dummy Bot(Team Of(Global.MsDestructo[1]), Slot Of(Global.MsDestructo[1]));
+			Destroy Dummy Bot(Team Of(Global.MsDestructo[2]), Slot Of(Global.MsDestructo[2]));
+		Else;
+			If(Array Contains(Array(Game Mode(Deathmatch), Game Mode(Team Deathmatch), Game Mode(Elimination)), Current Game Mode));
+				Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Position Of(First Of(Spawn Points(All Teams))), Vector(0, 0, 0));
+				Wait(2, Ignore Condition);
+			Else;
+				If(Array Contains(Array(Map(Hollywood), Map(Hollywood Halloween)), Current Map));
+					Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, Position Of(First Of(Spawn Points(Team 1))), Vector(0, 0, 0));
+				Else;
+					Create Dummy Bot(Hero(D.Va), Team Of(Host Player), -1, (Position Of(First Of(Spawn Points(Team 1))) + Position Of(First Of(
+						Spawn Points(Team 2)))) / 2 + Vector(0, 20, 0), Vector(0, 0, 0));
+				End;
+			End;
+			Global.MsDestructo = Last Created Entity;
+			Set Invisible(Global.MsDestructo, All);
 			Set Ultimate Ability Enabled(Global.MsDestructo, True);
-			Wait(3, Ignore Condition);
+			Start Scaling Player(Global.MsDestructo, 250, True);
 			Set Ultimate Charge(Global.MsDestructo, 100);
 			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(27.711, 200, -161.298));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(-223.895, 120, 0.890));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Destroy Dummy Bot(Team Of(Global.MsDestructo), Slot Of(Global.MsDestructo));
-		Else If(Current Map == Map(Busan));
-			Teleport(Global.MsDestructo, Vector(51.885, 37.172, -113.654));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Set Ultimate Ability Enabled(Global.MsDestructo, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(-329.934, 56.136, 149.839));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(227.210, 43.353, 252.640));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Destroy Dummy Bot(Team Of(Global.MsDestructo), Slot Of(Global.MsDestructo));
-		Else If(Current Map == Map(Lijiang Tower) || Current Map == Map(Lijiang Tower Lunar New Year));
-			Teleport(Global.MsDestructo, Vector(-5.808, 324.398, 282.523));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Set Ultimate Ability Enabled(Global.MsDestructo, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(-0.414, 156.197, 148.681));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(-0.381, 53.736, -33.335));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Destroy Dummy Bot(Team Of(Global.MsDestructo), Slot Of(Global.MsDestructo));
-		Else If(Current Map == Map(Nepal));
-			Teleport(Global.MsDestructo, Vector(83.100, 178.926, 0.593));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Set Ultimate Ability Enabled(Global.MsDestructo, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(-49.803, 63.290, -0.413));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(-184.659, -38.730, -0.783));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Destroy Dummy Bot(Team Of(Global.MsDestructo), Slot Of(Global.MsDestructo));
-		Else If(Current Map == Map(Oasis));
-			Teleport(Global.MsDestructo, Vector(150.125, 30.619, 251.966));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Set Ultimate Ability Enabled(Global.MsDestructo, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(134.888, 36.760, -240.736));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Stop Scaling Player(Global.MsDestructo);
-			Teleport(Global.MsDestructo, Vector(-195.549, 60.350, -0.098));
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Stop Scaling Player(Global.MsDestructo);
+			Wait(4, Ignore Condition);
 			Destroy Dummy Bot(Team Of(Global.MsDestructo), Slot Of(Global.MsDestructo));
 		End;
-		If(Is Dummy Bot(Global.MsDestructo) == True);
-			Start Scaling Player(Global.MsDestructo, 20, True);
-			Set Ultimate Ability Enabled(Global.MsDestructo, True);
-			Wait(3, Ignore Condition);
-			Set Ultimate Charge(Global.MsDestructo, 100);
-			Start Holding Button(Global.MsDestructo, Button(Ultimate));
-			Wait(8, Ignore Condition);
-			Destroy Dummy Bot(Team Of(Global.MsDestructo), Slot Of(Global.MsDestructo));
-	}
-}
-
-rule("Make Ms Destructo Bot Invisible - Doesn't work on the mech lol")
-{
-	event
-	{
-		Ongoing - Each Player;
-		All;
-		D.Va;
-	}
-
-	conditions
-	{
-		Has Spawned(Event Player) == True;
-		Is Dummy Bot(Event Player) == True;
-	}
-
-	actions
-	{
-		Set Invisible(Event Player, All);
 	}
 }
 
@@ -3816,7 +3637,7 @@ rule("Swag Mode: Normal Slam -> Boom ---------------- 125 Slam => Boom Boom Boom
 	}
 }
 
-rule("Swag Mode: Left Click => EMP")
+rule("Swag Mode: Left Click => Hanzo Sonic")
 {
 	event
 	{
