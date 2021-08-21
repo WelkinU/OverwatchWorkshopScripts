@@ -222,6 +222,7 @@ variables
 		57: SwagModeEngaged
 		58: SwagEffectsIDArray
 		59: MissionHUDTextIDArray
+		60: PlayerToSpec
 }
 
 subroutines
@@ -451,6 +452,7 @@ rule("Initialize player + Ring Effects")
 		Event Player.SwagEffectsIDArray = Empty Array;
 		"To make you load in as doomfist on lucioball maps"
 		Start Forcing Player To Be Hero(Event Player, Hero(Doomfist));
+		Event Player.SpectateMode = 0;
 	}
 }
 
@@ -586,8 +588,8 @@ rule("Pioneer Create Point")
 		Is On Ground(Event Player) == True;
 		Event Player.BlockPioneerNewPoint == False;
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) > Global.CPRadius;
-		"Can't pioneer in spectate mode"
-		Event Player.SpectateMode == False;
+		"Can't pioneer in normal spectate mode, but can pioneer in 3rd person spectate"
+		Event Player.SpectateMode != 1;
 		"Punch grace from Hax framework"
 		(!True || Is Firing Secondary(Event Player) || Event Player.Grace < 0.120) == True;
 		"Winston Leap Bhop Fix"
@@ -868,12 +870,12 @@ rule("Start Pioneer Timer and set Invisible when player becomes pioneer")
 		Global.PioneerTimer = Global.PioneerTimeLimitConstant;
 		Chase Global Variable At Rate(PioneerTimer, 0, 1, Destination and Rate);
 		Disallow Button(Event Player, Button(Melee));
-		If(Hero Of(Event Player) != Hero(Wrecking Ball));
+		If(Hero Of(Event Player) != Hero(Wrecking Ball) && Event Player.SpectateMode != 2);
 			Set Invisible(Event Player, All);
 		End;
 		Wait Until(Global.CurrentPioneer != Event Player, 99999);
 		Allow Button(Event Player, Button(Melee));
-		If(Event Player.Invisible);
+		If(Event Player.Invisible && Event Player.SpectateMode != 2);
 			Set Invisible(Event Player, All);
 		Else;
 			Set Invisible(Event Player, None);
@@ -1095,7 +1097,8 @@ rule("Interact + Melee : Spectate Other Players (Also Ult + Ability1 + Ability 2
 	actions
 	{
 		Enable Death Spectate All Players(All Players(All Teams));
-		If(Is Dead(Event Player));
+		"Exit normal spectate"
+		If(Event Player.SpectateMode == 1);
 			Enable Built-In Game Mode Respawning(Event Player);
 			Resurrect(Event Player);
 			Wait(0.100, Ignore Condition);
@@ -1105,14 +1108,62 @@ rule("Interact + Melee : Spectate Other Players (Also Ult + Ability1 + Ability 2
 			Else;
 				Teleport(Event Player, First Of(Spawn Points(Team Of(Event Player))));
 			End;
-			Event Player.SpectateMode = False;
+			Event Player.SpectateMode = 0;
+		"Exit 3rd person spec"
+		Else If(Event Player.SpectateMode == 2);
+			Stop Camera(Event Player);
+			Event Player.SpectateMode = 0;
+			If(Event Player.PlayerToSpec.Invisible);
+				Set Invisible(Event Player.PlayerToSpec, All);
+			End;
+		"Enter spectate"
 		Else;
-			Big Message(Event Player, Custom String("Use \"Interact + Melee\" to exit Spectate Mode!"));
-			Event Player.SpectateMode = True;
-			Disable Built-In Game Mode Respawning(Event Player);
-			Kill(Event Player, Null);
+			"Used interact + melee, not upper/slam/ult - enter into normal spectate"
+			If(Is Button Held(Event Player, Button(Melee)) && !Is Button Held(Event Player, Button(Ultimate)));
+				disabled Big Message(Event Player, Custom String("Use \"Interact + Melee\" to exit Spectate Mode!"));
+				Event Player.SpectateMode = 1;
+				Disable Built-In Game Mode Respawning(Event Player);
+				Kill(Event Player, Null);
+			"Enter 3rd person spectate"
+			Else;
+				"3rd person spectate"
+				Event Player.SpectateMode = 2;
+				Set Invisible(Event Player, None);
+				Event Player.PlayerToSpec = Event Player;
+				Start Camera(Event Player, Ray Cast Hit Position(Eye Position(Event Player.PlayerToSpec), Eye Position(Event Player.PlayerToSpec)
+					+ World Vector Of(Vector(-1.500, 3, -5), Event Player.PlayerToSpec, Rotation), Null, Event Player, False),
+					Ray Cast Hit Position(Eye Position(Event Player.PlayerToSpec), Eye Position(Event Player.PlayerToSpec) + Facing Direction Of(
+					Event Player.PlayerToSpec) * 15, Null, Event Player, False), 30);
+			End;
 		End;
 		Set Status(Event Player, Null, Phased Out, 9999);
+	}
+}
+
+rule("Interact + A / D: 3rd Person Spec, Switch Player")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.SpectateMode == 2;
+		Is Button Held(Event Player, Button(Interact)) == True;
+		Absolute Value(X Component Of(Throttle Of(Event Player))) == 1;
+	}
+
+	actions
+	{
+		If(Event Player.PlayerToSpec.Invisible);
+			Set Invisible(Event Player.PlayerToSpec, All);
+		End;
+		Event Player.PlayerToSpec = All Players(All Teams)[(Index Of Array Value(All Players(All Teams), Event Player.PlayerToSpec)
+			- X Component Of(Throttle Of(Event Player)) + Count Of(All Players(All Teams))) % Count Of(All Players(All Teams))];
+		Set Invisible(Event Player.PlayerToSpec, None);
 	}
 }
 
@@ -1191,9 +1242,9 @@ rule("Interact + Up/Down to increase/decrease pioneer player size")
 		Event Player.CurrentCP + 1 == Count Of(Global.CPLocations);
 		Is Button Held(Event Player, Button(Interact)) == True;
 		Absolute Value(Z Component Of(Throttle Of(Event Player))) == 1;
-		Global.GameStarted == True;
 		"Technically abusable, making large radius to avoid issues with 5x scale not allowing players to get smaller because they can't stay close enough to the CP start"
 		Distance Between(Global.CPLocations[Event Player.CurrentCP], Position Of(Event Player)) < 8;
+		disabled Global.GameStarted == True;
 		disabled Is On Ground(Event Player) == True;
 	}
 
@@ -2130,7 +2181,7 @@ rule("Handle Player Death")
 
 	conditions
 	{
-		Event Player.SpectateMode != True;
+		Event Player.SpectateMode != 1;
 	}
 
 	actions
