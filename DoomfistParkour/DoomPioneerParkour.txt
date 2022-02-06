@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), ideas & code from Hax, khandescension, nebula, Lastshot. Last Updated: Aug 21, 2021. Request feature, report issue, update history: discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
+		Description: "Doomfist Pioneering Parkour - Code WARMR. Press Interact for controls. Change game parameters: Lobby -> Settings -> Workshop Settings. Made by WelkinTern, based on original Pioneer Parkour by kaeku (X8080), ideas & code from Hax, khandescension, nebula, Lastshot. Last Updated: Feb 6, 2022. Request feature, report issue, update history: discord.gg/doomfistparkour or https://github.com/WelkinU/OverwatchWorkshopScripts/"
 	}
 
 	lobby
@@ -167,6 +167,8 @@ variables
 		40: AllowPlayerToPioneerWithSkip
 		41: MsDestructo
 		42: MissionOrbRadiusConstant
+		43: RGBSkinColors
+		44: AllowPioneerMemoryRecallConstant
 
 	player:
 		0: CurrentCP
@@ -206,7 +208,8 @@ variables
 		35: BlockPioneerPass
 		36: WinstonWallClimbEnabled
 		37: WinstonWallClimbTimer
-		38: ThirdPersonSpecHUDIDStore
+		38: ThirdPersonSpecTarget
+		39: ThirdPersonSpecHUDIDStore
 		43: MenuTextIDTempStore
 		44: TempIterator
 		45: TempVariable3
@@ -223,7 +226,6 @@ variables
 		57: SwagModeEngaged
 		58: SwagEffectsIDArray
 		59: MissionHUDTextIDArray
-		60: ThirdPersonSpecTarget
 }
 
 subroutines
@@ -314,6 +316,8 @@ rule("Initialize Globals")
 		Global.EffectLockSphereRadiusConstant = 1.700;
 		Global.PlayerMoveSpeedConstant = 100;
 		Global.MissionOrbRadiusConstant = 5;
+		Global.AllowPioneerMemoryRecallConstant = Workshop Setting Toggle(Custom String("Important Settings"), Custom String(
+			"Allow Player To Pioneer In Memory Recall Mode"), True, 1);
 	}
 }
 
@@ -334,6 +338,7 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create HUD Text(Filtered Array(All Players(All Teams), Global.GameStarted == False), Custom String(
 			"{0} Press R to Create Origin Point!", Host Player), Null, Null, Top, 0, Color(Green), Color(White), Color(White),
 			Visible To and String, Default Visibility);
+		Global.S = Last Text ID;
 		"Only show pioneer info to players within 1-2 CP's of final CP"
 		Create HUD Text(Filtered Array(All Players(All Teams),
 			Global.GameStarted && Global.CurrentPioneer != Null && Current Array Element.CurrentCP + 2 >= Count Of(Global.CPLocations)),
@@ -355,11 +360,10 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			"    +  {0}  | Skip CP (After {1}sec)\r\n    +  {2}  | Previous CP", Input Binding String(Button(Jump)), Global.SkipTimeLimit,
 			Input Binding String(Button(Crouch))), Custom String("{1}\r\n{0}\r\n{2}", Custom String(
 			"{0}  +  {1}  | Toggle Invisiblity\r\nNeed Healing/Help | Replay Pioneer Route", Input Binding String(Button(Jump)),
-			Input Binding String(Button(Crouch))), Custom String("    +  {0}  | Toggle Bounce Timer & Bhop Reset Detector\r\n{1}",
-			Input Binding String(Button(Ultimate)), Custom String("{0}  +  {1}  +  {2} | 3rd Person Spectate", Input Binding String(Button(
-			Ultimate)), Input Binding String(Button(Ability 1)), Input Binding String(Button(Ability 2)))), Custom String(
-			"{0}  +  {1}  + Ult Status | Free Roam", Input Binding String(Button(Ultimate)), Input Binding String(Button(Crouch)))))),
-			Left, 0, Color(White), Color(White), Color(White), Visible To and String, Visible Never);
+			Input Binding String(Button(Crouch))), Custom String("    +  {0}  | Toggle Bounce Timer & Bhop Reset Detector",
+			Input Binding String(Button(Ultimate))), Custom String("{0}  +  {1}  + Ult Status | Free Roam", Input Binding String(Button(
+			Ultimate)), Input Binding String(Button(Crouch)))))), Left, 0, Color(White), Color(White), Color(White), Visible To and String,
+			Visible Never);
 		Create HUD Text(Filtered Array(All Players(All Teams), Is Button Held(Current Array Element, Button(Interact))), Null, Null,
 			Custom String("{0}  +   Spray  |  Swag Mode", Input Binding String(Button(Interact))), Left, 0.100, Color(White), Color(White),
 			Custom Color(128 + 127 * Cosine From Degrees(Total Time Elapsed * 100), 128 + 127 * Cosine From Degrees(
@@ -383,9 +387,6 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 			Custom String(
 			"3. Open Workshop Editor, open first rule & paste. \r\nDelete the two \"ReplayPioneer\" variables (giant arrays)"))), Right, 2,
 			Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-		Create HUD Text(All Living Players(All Teams), Null, Null, Custom String("Checkpoint {0}/{1} - Time Spent On CP {2}",
-			Local Player.CurrentCP, Count Of(Global.CPLocations) - 1, Local Player.TimeSpentOnCP), Top, 0, Color(White), Color(White),
-			Color(White), Visible To and String, Default Visibility);
 		"Push the progress bar for stall 3 sec bounce timer down the screen"
 		Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300), Null, Null,
 			Custom String("{0}", String Slice(Custom String(
@@ -395,10 +396,9 @@ rule("Global HUD + Controls HUD + General Effects / Icons")
 		Create Progress Bar HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.ThreeSecondBounceTimer > 0.300),
 			Local Player.ThreeSecondBounceTimer / 0.030, Custom String("Bounce Timer"), Top, 10, Color(White), Color(White),
 			Visible To and Values, Default Visibility);
-		"Skip Reminder - Commented out for lowering server load right now."
-		disabled Create HUD Text(Filtered Array(All Living Players(All Teams), Current Array Element.TimeSpentOnCP > Global.SkipTimeLimit), Null,
-			Custom String("Skip Checkpoint Available"), Custom String("{0} + {1}", Input Binding String(Button(Interact)),
-			Input Binding String(Button(Jump))), Left, 2, Color(White), Color(Orange), Color(White), Visible To and String,
+		Create HUD Text(Filtered Array(All Players(All Teams), Local Player.SpectateMode > 0), Null, Null, Custom String(
+			"Spectate Mode Controls\r\n{0}    |  3rd Person Spec\r\n{1}    |  Fly Mode", Input Binding String(Button(Ultimate)),
+			Input Binding String(Button(Reload))), Left, 2, Color(White), Color(White), Color(White), Visible To and String,
 			Default Visibility);
 	}
 }
@@ -478,7 +478,11 @@ rule("Player-Specific HUD")
 		Create HUD Text(All Players(All Teams), Null, Null, Custom String("{0} {1}", Evaluate Once(Event Player),
 			Event Player.MaxUnlockedCP), Right, 100 - Event Player.MaxUnlockedCP, Color(White), Color(White), Color(Green),
 			Visible To Sort Order and String, Default Visibility);
-		Create HUD Text(Filtered Array(Event Player, Global.AbilityCountsEnabledConstant && Current Array Element.CurrentCP + 1 < Count Of(
+		Create HUD Text(Event Player, Null, Null, Custom String("Checkpoint {0}/{1} - Time Spent On CP {2}", Event Player.CurrentCP,
+			Count Of(Global.CPLocations) - 1, Event Player.TimeSpentOnCP), Top, 0, Color(White), Color(White), Color(White),
+			Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(Event Player,
+			Global.AbilityCountsEnabledConstant && Current Array Element.SpectateMode == 0 && Current Array Element.CurrentCP + 1 < Count Of(
 			Global.CPLocations)), Custom String("Checkpoint Abilty Limits\r\n{0} {1} {2}", Custom String("{0} {1}", Ability Icon String(
 			Hero Of(Event Player), Button(Secondary Fire)), X Component Of(Event Player.AbilityLimitsDisplayVar)), Custom String("{0} {1}",
 			Ability Icon String(Hero Of(Event Player), Button(Ability 1)), Y Component Of(Event Player.AbilityLimitsDisplayVar)),
@@ -548,6 +552,7 @@ rule("Create Origin Point (First Checkpoint)")
 		Global.CPPlayerScaleArray = Empty Array;
 		Global.EffectLockAbilitiesArray = Empty Array;
 		Global.CPSpecialRequirementsArray = Empty Array;
+		Destroy HUD Text(Global.S);
 	}
 }
 
@@ -773,7 +778,7 @@ rule("Non-Pioneer Arrive At CP")
 		Event Player.MaxUnlockedCP = Max(Event Player.MaxUnlockedCP, Event Player.CurrentCP);
 		If(Count Of(Global.CPLocations) == Event Player.CurrentCP + 1);
 			If(Global.CurrentPioneer == Null && True);
-				If(!Global.UsingMemoryRecall);
+				If(!Global.UsingMemoryRecall || Global.AllowPioneerMemoryRecallConstant);
 					"So you can't pioneer your own point unless you are the only player alive (aka not spectating)"
 					If(Count Of(Filtered Array(All Players(All Teams), !Is Dummy Bot(Current Array Element))) == 1 || Last Of(Global.PioneerList)
 						!= Custom String("{0}", Event Player));
@@ -923,13 +928,12 @@ rule("Reload - Quick Reset")
 	conditions
 	{
 		Is Button Held(Event Player, Button(Reload)) == True;
-		disabled Is On Ground(Event Player) != True;
 		"This condition is so this rule doesn't get executed at same time as a player is using the level cancel"
 		Event Player.CancelPointTimer == 0;
 		"So player can't R and get teleported outside map before origin point is selected"
 		Global.GameStarted == True;
-		"Quick Reset Disabled for Ana, so you can reload - modify the array here for additional disable"
-		disabled Index Of Array Value(Global.PrimaryFireUsefulForTheseHeros, Hero Of(Event Player)) < 0;
+		"Don't reset while in death spectate or fly mode"
+		Array Contains(Array(1, 3), Event Player.SpectateMode) == False;
 	}
 
 	actions
@@ -1102,10 +1106,13 @@ rule("Interact + Melee : Spectate Other Players  |   Ult + Ability1 + Ability 2 
 		((Is Button Held(Event Player, Button(Melee)) && Is Button Held(Event Player, Button(Interact))) || (Is Button Held(Event Player,
 			Button(Ultimate)) && Is Button Held(Event Player, Button(Ability 1)) && Is Button Held(Event Player, Button(Ability 2))))
 			== True;
+		Array Contains(Array(0, 1), Event Player.SpectateMode) == True;
 	}
 
 	actions
 	{
+		Start Holding Button(Event Player, Button(Ultimate));
+		Stop Holding Button(Event Player, Button(Ultimate));
 		Enable Death Spectate All Players(All Players(All Teams));
 		"Exit normal spectate"
 		If(Event Player.SpectateMode == 1);
@@ -1119,37 +1126,37 @@ rule("Interact + Melee : Spectate Other Players  |   Ult + Ability1 + Ability 2 
 				Teleport(Event Player, First Of(Spawn Points(Team Of(Event Player))));
 			End;
 			Event Player.SpectateMode = 0;
-		"Exit 3rd person spec"
-		Else If(Event Player.SpectateMode == 2);
-			Destroy HUD Text(Event Player.ThirdPersonSpecHUDIDStore);
-			Stop Camera(Event Player);
-			Event Player.SpectateMode = 0;
-			If(Event Player.ThirdPersonSpecTarget.Invisible);
-				Set Invisible(Event Player.ThirdPersonSpecTarget, All);
-			End;
+			"Exit 3rd person spec"
+			disabled Else If(Event Player.SpectateMode == 2);
+			disabled Destroy HUD Text(Event Player.ThirdPersonSpecHUDIDStore);
+			disabled Stop Camera(Event Player);
+			disabled Event Player.SpectateMode = 0;
+			disabled If(Event Player.ThirdPersonSpecTarget.Invisible);
+			disabled Set Invisible(Event Player.ThirdPersonSpecTarget, All);
+			disabled End;
 		"Enter spectate"
 		Else;
 			"Used interact + melee, not upper/slam/ult - enter into normal spectate"
-			If(Is Button Held(Event Player, Button(Melee)) && !Is Button Held(Event Player, Button(Ultimate)));
-				Event Player.SpectateMode = 1;
-				Disable Built-In Game Mode Respawning(Event Player);
-				Kill(Event Player, Null);
+			disabled If(Is Button Held(Event Player, Button(Melee)) && !Is Button Held(Event Player, Button(Ultimate)));
+			Event Player.SpectateMode = 1;
+			Disable Built-In Game Mode Respawning(Event Player);
+			Kill(Event Player, Null);
 			"Enter 3rd person spectate"
-			Else;
-				"3rd person spectate"
-				Event Player.SpectateMode = 2;
-				Set Invisible(Event Player, None);
-				Event Player.ThirdPersonSpecTarget = Event Player;
-				Start Camera(Event Player, Ray Cast Hit Position(Eye Position(Event Player.ThirdPersonSpecTarget), Eye Position(
-					Event Player.ThirdPersonSpecTarget) + World Vector Of(Vector(-1.500, 3, -5), Event Player.ThirdPersonSpecTarget, Rotation),
-					Null, Event Player, False), Ray Cast Hit Position(Eye Position(Event Player.ThirdPersonSpecTarget), Eye Position(
-					Event Player.ThirdPersonSpecTarget) + Facing Direction Of(Event Player.ThirdPersonSpecTarget) * 15, Null, Event Player, False),
-					30);
-				Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n{0}  +  {1} Left / Right {2}  |  Switch 3rd Person Spec Target",
-					Input Binding String(Button(Interact)), Icon String(Arrow: Left), Icon String(Arrow: Right)), Top, 2, Color(White), Color(
-					White), Color(White), String, Default Visibility);
-				Event Player.ThirdPersonSpecHUDIDStore = Last Text ID;
-			End;
+			disabled Else;
+			"3rd person spectate"
+			disabled Event Player.SpectateMode = 2;
+			disabled Set Invisible(Event Player, None);
+			disabled Event Player.ThirdPersonSpecTarget = Event Player;
+			disabled Start Camera(Event Player, Ray Cast Hit Position(Eye Position(Event Player.ThirdPersonSpecTarget), Eye Position(
+				Event Player.ThirdPersonSpecTarget) + World Vector Of(Vector(-1.500, 3, -5), Event Player.ThirdPersonSpecTarget, Rotation),
+				Null, Event Player, False), Ray Cast Hit Position(Eye Position(Event Player.ThirdPersonSpecTarget), Eye Position(
+				Event Player.ThirdPersonSpecTarget) + Facing Direction Of(Event Player.ThirdPersonSpecTarget) * 15, Null, Event Player, False),
+				30);
+			disabled Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n{0}  +  {1} Left / Right {2}  |  Switch 3rd Person Spec Target",
+				Input Binding String(Button(Interact)), Icon String(Arrow: Left), Icon String(Arrow: Right)), Top, 2, Color(White), Color(
+				White), Color(White), String, Default Visibility);
+			disabled Event Player.ThirdPersonSpecHUDIDStore = Last Text ID;
+			disabled End;
 		End;
 		Set Status(Event Player, Null, Phased Out, 9999);
 	}
@@ -2077,7 +2084,8 @@ rule("Mission - Punch Bounce (From Hax but simplified)")
 	{
 		Wait Until(Event Player.Grace <= 0, 3);
 		Event Player.TempVariable3 = Position Of(Event Player);
-		Wait(0.250, Ignore Condition);
+		"Was 0.25 in hax"
+		Wait(0.350, Ignore Condition);
 		If(Vertical Speed Of(Event Player) > 5 && Altitude Of(Event Player) > 0.500);
 			If(Event Player == Global.CurrentPioneer);
 				Event Player.CPSpecialRequirements[3] = Event Player.TempVariable3;
@@ -2772,6 +2780,8 @@ rule("Pioneer Create Effect Lock Sphere with Melee")
 		(Event Player.EffectLockSphereLocation == Empty Array || Is True For All(Event Player.EffectLockSphereLocation, Distance Between(
 			Eye Position(Event Player), Current Array Element) > Global.EffectLockSphereRadiusConstant * 2)) == True;
 		Event Player.FreeRoamEnabled != True;
+		"Don't reset while in death spectate or fly mode"
+		Array Contains(Array(1, 3), Event Player.SpectateMode) == False;
 	}
 
 	actions
@@ -2880,8 +2890,12 @@ rule("Pioneer Create Green Sphere with Need Healing Voiceline")
 
 	actions
 	{
-		Event Player.GreenSphereLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
-			+ Facing Direction Of(Event Player) * 12, Null, Event Player, True);
+		If(Event Player.SpectateMode != 3);
+			Event Player.GreenSphereLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+				+ Facing Direction Of(Event Player) * 12, Null, Event Player, True);
+		Else;
+			Event Player.GreenSphereLocation = Eye Position(Event Player);
+		End;
 	}
 }
 
@@ -2899,6 +2913,7 @@ rule("Green Sphere Rule (Pioneer Only)")
 		Global.CurrentPioneer == Event Player;
 		Event Player.GreenSphereLocation != Null;
 		Distance Between(Eye Position(Event Player), Event Player.GreenSphereLocation) < Global.GreenSphereRadiusConstant;
+		Event Player.SpectateMode != 3;
 	}
 
 	actions
@@ -2924,6 +2939,7 @@ rule("Green Sphere Rule (Non-Pioneer)")
 		Global.CurrentPioneer != Event Player;
 		Global.CPGreenSphereArray[Event Player.CurrentCP] != Null;
 		Distance Between(Eye Position(Event Player), Global.CPGreenSphereArray[Event Player.CurrentCP]) < Global.GreenSphereRadiusConstant;
+		Event Player.SpectateMode != 3;
 	}
 
 	actions
@@ -2955,10 +2971,14 @@ rule("Pioneer Create Kill Sphere With Group Up")
 
 	actions
 	{
-		Event Player.KillSphereLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
-			+ Facing Direction Of(Event Player) * 20, Null, Event Player, True);
 		Small Message(Event Player, Custom String("Kill Sphere Created!"));
-		Play Effect(Event Player, Buff Explosion Sound, Color(White), Event Player, 60);
+		disabled Play Effect(Event Player, Buff Explosion Sound, Color(White), Event Player, 60);
+		If(Event Player.SpectateMode != 3);
+			Event Player.KillSphereLocation = Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player)
+				+ Facing Direction Of(Event Player) * 20, Null, Event Player, True);
+		Else;
+			Event Player.KillSphereLocation = Eye Position(Event Player);
+		End;
 	}
 }
 
@@ -2976,6 +2996,7 @@ rule("Pioneer Respawns if in kill sphere")
 		Global.CurrentPioneer == Event Player;
 		Event Player.KillSphereLocation != Null;
 		Distance Between(Eye Position(Event Player), Event Player.KillSphereLocation) < Global.GreenSphereRadiusConstant;
+		Event Player.SpectateMode != 3;
 	}
 
 	actions
@@ -2999,6 +3020,7 @@ rule("Non-Pioneer Respawns if in Kill Sphere")
 		Global.CurrentPioneer != Event Player;
 		Global.CPKillSphereArray[Event Player.CurrentCP] != Null;
 		Distance Between(Eye Position(Event Player), Global.CPKillSphereArray[Event Player.CurrentCP]) < Global.GreenSphereRadiusConstant;
+		Event Player.SpectateMode != 3;
 	}
 
 	actions
@@ -3630,7 +3652,7 @@ rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 	{
 		Ongoing - Each Player;
 		All;
-		Doomfist;
+		All;
 	}
 
 	conditions
@@ -3641,21 +3663,23 @@ rule("Engage Swag Mode: Interact + Spray (RGB Skin happens here)")
 
 	actions
 	{
-		"Hold interact for this long while emoting"
-		disabled Wait(0.500, Abort When False);
 		Event Player.SwagModeEngaged = !Event Player.SwagModeEngaged;
 		Wait(0.100, Ignore Condition);
 		Small Message(Event Player, Event Player.SwagModeEngaged ? Custom String("Swag Mode Engaged") : Custom String(
 			"Swag Mode Disengaged"));
 		If(Event Player.SwagModeEngaged);
-			"RGB Skin - Based on 1v11 Boss Fight by GIGGELMAN - ZEA8D"
-			For Player Variable(Event Player, TempIterator, 0, 6, 1);
-				Create Effect(All Players(All Teams), Ring, Evaluate Once(Array(Color(Rose), Color(Sky Blue), Color(Orange), Color(Red), Color(
+			Global.RGBSkinColors = Array(Color(Sky Blue), Color(Lime Green), Color(Orange), Color(Blue), Color(Lime Green), Color(Orange),
+				Color(Rose));
+			For Player Variable(Event Player, TempIterator, 0, Count Of(Global.RGBSkinColors), 1);
+				"Static RGB Skin"
+				disabled Create Effect(All Players(All Teams), Ring, Evaluate Once(Array(Color(Rose), Color(Sky Blue), Color(Orange), Color(Red), Color(
 					Lime Green), Color(Blue), Custom Color(255, 205, 14, 255), Color(Purple))[Event Player.TempIterator]), Event Player,
 					Evaluate Once(1.100 - 0.800 * (Event Player.TempIterator / 7)), Visible To Position and Radius);
-				disabled Create Effect(All Players(All Teams), Ring, Evaluate Once(Array(Color(Rose), Custom Color(255, 205, 14, 255), Color(Orange),
-					Custom Color(204, 164, 0, 255), Color(Sky Blue), Color(Blue), Color(Lime Green))[Event Player.TempIterator]), Event Player,
-					Evaluate Once(0.900 - 0.800 * (Event Player.TempIterator / 10)), Visible To Position and Radius);
+				"Moving RGB Skin - Linear \"modulo\" ring radius"
+				Create Effect(All Players(All Teams), Ring, Evaluate Once(Global.RGBSkinColors[Event Player.TempIterator]), Event Player, (
+					Evaluate Once(1.300 - Event Player.TempIterator / Count Of(Global.RGBSkinColors)) + Total Time Elapsed * 0.200) % 1.100 + (
+					Array Contains(Array(Hero(Reinhardt), Hero(Winston), Hero(Roadhog)), Hero Of(Event Player)) ? 0.800 : 0),
+					Visible To Position and Radius);
 				Modify Player Variable(Event Player, SwagEffectsIDArray, Append To Array, Last Created Entity);
 			End;
 			Create Effect(All Players(All Teams), Ana Nano Boosted Effect, Color(Team 1), Event Player, 1, Visible To Position and Radius);
@@ -3732,5 +3756,122 @@ rule("Swag Mode: Left Click => Hanzo Sonic")
 			Eye Position(Event Player) + Facing Direction Of(Event Player) * 180, Null, Event Player, False), 1);
 		disabled Play Effect(Event Player, Sombra EMP Explosion Effect, Color(Team 1), Ray Cast Hit Position(Eye Position(Event Player),
 			Eye Position(Event Player) + Facing Direction Of(Event Player) * 180, Null, Event Player, False), 1);
+	}
+}
+
+rule("Spectate Mode + Ultimate button: Enter 3rd Person Spec")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Array Contains(Array(1, 2), Event Player.SpectateMode) == True;
+		Is Button Held(Event Player, Button(Ultimate)) == True;
+	}
+
+	actions
+	{
+		"Exit 3rd person spec"
+		If(Event Player.SpectateMode == 2);
+			Destroy HUD Text(Event Player.ThirdPersonSpecHUDIDStore);
+			Stop Camera(Event Player);
+			Event Player.SpectateMode = 1;
+			If(Event Player.ThirdPersonSpecTarget.Invisible);
+				Set Invisible(Event Player.ThirdPersonSpecTarget, All);
+			End;
+			Kill(Event Player, Null);
+		"Enter 3rd person spectate"
+		Else;
+			"3rd person spectate"
+			Event Player.SpectateMode = 2;
+			Set Invisible(Event Player, None);
+			Event Player.ThirdPersonSpecTarget = Event Player;
+			Start Camera(Event Player, Ray Cast Hit Position(Eye Position(Event Player.ThirdPersonSpecTarget), Eye Position(
+				Event Player.ThirdPersonSpecTarget) + World Vector Of(Vector(-1.500, 3, -5), Event Player.ThirdPersonSpecTarget, Rotation),
+				Null, Event Player, False), Ray Cast Hit Position(Eye Position(Event Player.ThirdPersonSpecTarget), Eye Position(
+				Event Player.ThirdPersonSpecTarget) + Facing Direction Of(Event Player.ThirdPersonSpecTarget) * 50, Null, Event Player, False),
+				30);
+			Create HUD Text(Event Player, Null, Null, Custom String(" \r\n\r\n{0}  +  {1} Left / Right {2}  |  Switch 3rd Person Spec Target",
+				Input Binding String(Button(Interact)), Icon String(Arrow: Left), Icon String(Arrow: Right)), Top, 2, Color(White), Color(
+				White), Color(White), String, Default Visibility);
+			Event Player.ThirdPersonSpecHUDIDStore = Last Text ID;
+			Resurrect(Event Player);
+		End;
+	}
+}
+
+rule("Spectate Mode + Reload:  Fly Mode (Based on Yurodd Walls)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Array Contains(Array(1, 3), Event Player.SpectateMode) == True;
+		Is Button Held(Event Player, Button(Reload)) == True;
+	}
+
+	actions
+	{
+		Big Message(Event Player, Custom String("Fly Mode Engaged"));
+		Stop Holding Button(Event Player, Button(Reload));
+		Wait Until(!Is Button Held(Event Player, Button(Reload)), 1);
+		Resurrect(Event Player);
+		Event Player.SpectateMode = 3;
+		Set Gravity(Event Player, 0);
+		Disable Movement Collision With Environment(Event Player, True);
+		While(Event Player.SpectateMode == 3);
+			If(Throttle Of(Event Player) != Vector(Empty Array, Empty Array, Empty Array));
+				Apply Impulse(Event Player, Cross Product(Up, Normalize(World Vector Of(Throttle Of(Event Player), Event Player, Rotation))),
+					0.001, To World, Cancel Contrary Motion);
+				Apply Impulse(Event Player, Cross Product(Down, Normalize(World Vector Of(Throttle Of(Event Player), Event Player, Rotation))),
+					0.001, To World, Cancel Contrary Motion);
+				Apply Impulse(Event Player, Direction Towards(Eye Position(Event Player), Eye Position(Event Player) + Normalize(World Vector Of(
+					Throttle Of(Event Player), Event Player, Rotation))), 10, To World, Cancel Contrary Motion);
+				If(Is Button Held(Event Player, Button(Crouch)) == False);
+					Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
+				End;
+				If(Is Button Held(Event Player, Button(Jump)) == False);
+					Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
+				End;
+			Else;
+				If(Speed Of(Event Player) > 0.010);
+					Apply Impulse(Event Player, Left, 0.001, To World, Cancel Contrary Motion);
+					Apply Impulse(Event Player, Right, 0.001, To World, Cancel Contrary Motion);
+					Apply Impulse(Event Player, Forward, 0.001, To World, Cancel Contrary Motion);
+					Apply Impulse(Event Player, Backward, 0.001, To World, Cancel Contrary Motion);
+					If(Is Button Held(Event Player, Button(Crouch)) == False);
+						Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
+					End;
+					If(Is Button Held(Event Player, Button(Jump)) == False);
+						Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
+					End;
+				End;
+			End;
+			If(Is Button Held(Event Player, Button(Jump)));
+				Apply Impulse(Event Player, Up, 10, To World, Cancel Contrary Motion);
+			Else If(Is Button Held(Event Player, Button(Crouch)));
+				Apply Impulse(Event Player, Down, 10, To World, Cancel Contrary Motion);
+			End;
+			If(Is Button Held(Event Player, Button(Reload)));
+				Event Player.SpectateMode = 1;
+			End;
+			Wait Until(Throttle Of(Event Player) != Vector(Empty Array, Empty Array, Empty Array)
+				|| Event Player.SpectateMode != 3 || Is Button Held(Event Player, Button(Jump)) || Is Button Held(Event Player, Button(Crouch))
+				|| Is Button Held(Event Player, Button(Reload)), 99999);
+			Wait(0.016, Ignore Condition);
+		End;
+		Set Gravity(Event Player, 100);
+		Enable Movement Collision With Environment(Event Player);
+		Kill(Event Player, Null);
 	}
 }
