@@ -2,7 +2,7 @@ settings
 {
 	main
 	{
-		Description: "Learn Ana set-nade spots on Eichenwalde, Route66, Anubis, Hanamura, Dorado, Hollywood, Blz World, Kings Row, Nepal, JTown, Volskaya. Code 2Y555. Created by WelkinTern. Last Update Aug 21, 2021."
+		Description: "Learn Ana set-nade spots on Eichenwalde, Route66, Anubis, Hanamura, Dorado, Hollywood, Blz World, Kings Row, Nepal, JTown, Volskaya. Code 2Y555. Created by WelkinTern. Last Update Aug 21, 2021. Code also here: https://github.com/WelkinU/OverwatchWorkshopScripts/blob/master/OtherScripts/AnaNadeTrainer.txt"
 	}
 
 	lobby
