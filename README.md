@@ -38,6 +38,15 @@ Eliminate the enemy hero within 4 seconds to advance to the next checkpoint! On 
 | :- | :- |
 | [Kings Row](DoomfistParkour/DoomfistRolloutsKingsRow_1_0_0.txt) | TEATW | 
 
+## Extra Cut-Paste Workshop Scripts
+These are workshops with rules intended to be pasted into other scripts. These are located in the utils folder.
+| Map | Description |
+| :- | :- |
+| [MsDestructo](utils/FastMsDestructo.txt) | QUICKLY destroys all map railings / destructable map objects with a giant Dva ultimate. Optimized for faster runtime, less hardcoded positions, multiple Dva bots on King of the Hill maps for 3x speedup. Based on the original by Nebulas YENEP [[Discord]](https://discord.com/channels/689587520496730129/757303228021866606/851573753698975755) |
+| [MrDestructoBot](utils/DestroyMapRailings.txt) [DEPRECIATED] | Obsoleted by MsDestructo Bot, its the most compact and fastest runtime... This workshop includes railing data for all relevant maps. [Map data](https://nebulaow.github.io/MrDestructo-Data) from nebulaOW |
+| Skybox Detector | Detect if a player is on the skybox and make them fall through it. Originally used as a map-agnostic solution for Ana parkour/pioneer |
+| Multi-hero Wheel Select Menu | In-world custom hero selection menu. See [README.md](utils/README.md) |
+| In-Game Keyboard | Creates an in-world keyboard for the user. See [README.md](utils/README.md) |
 
 ## Special Workshop Tools
 Run these HTML files in a web browser. (Need Javascript enabled)
@@ -46,17 +55,3 @@ Run these HTML files in a web browser. (Need Javascript enabled)
 | --- | --- |
 | [Workshop Merger](workshop_merger.html) | Merge one workshop into another. Handles merging of rules, variables, and subroutines. Example usage would be to merge a small testing workshop into a larger workshop.
 | [Code Finder (Experimental)](code_finder.html) | If you have a list of Workshop Codes, this finds codes similar to a phrase you enter. For example, entering "Tower Defense" with the default codes suggests TP0WR as the best match. Uses the SIFT4 algorithm to match.
-
-
-## Extra Cut-Paste Workshop Scripts
-These are workshops with rules intended to be pasted into other scripts. These are located in the utils folder.
-| Map | Description |
-| :- | :- |
-| [MsDestructo] | Destroys all map railings / destructable map objects FAST with a giant Dva ultimate. Optimized for faster runtime, less hardcoded positions, multiple Dva bots on King of the Hill maps for 3x speedup. Based on the original by Nebulas YENEP [[Discord]](https://discord.com/channels/689587520496730129/757303228021866606/851573753698975755) |
-| [MrDestructoBot](utils/DestroyMapRailings.txt) [DEPRECIATED] | Obsoleted by MsDestructo Bot, its the most compact and fastest runtime... This workshop includes railing data for all relevant maps. [Map data](https://nebulaow.github.io/MrDestructo-Data) from nebulaOW |
-| Skybox Detector | Detect if a player is on the skybox and make them fall through it. Originally used as a map-agnostic solution for Ana parkour/pioneer |
-| Multi-hero Wheel Select Menu | In-world custom hero selection menu. See [README.md](utils/README.md) |
-| In-Game Keyboard | Creates an in-world keyboard for the user. See [README.md](utils/README.md) |
-
-
-
