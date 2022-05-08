@@ -3,7 +3,7 @@ settings
 	main
 	{
 		Description: "Destroy all map railings FAST. Just add the workshop rule to your workshop, and set DVA to start with ult in Settings -> Heros -> DVA. Original version by Nebula (YENEP)"
-		Mode Name: "MsDestructo"
+		Mode Name: "MsDestructo - Code DYMSR"
 	}
 
 	modes
